@@ -5,7 +5,7 @@ created: 2025-01-13 07:53:00
 priority: Medium
 category: Feature
 owner: None
-board: In Progress
+board: Done
 ---
 
 ## Description
@@ -55,3 +55,5 @@ For example if I change the exercises in a program, it means that it is a totall
 2025-01-13 07:53:00 - Created
 
 2025-01-13 08:25:15 - Moved to In Progress
+
+2025-01-13 08:48:28 - Moved to Done
