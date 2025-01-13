@@ -4,8 +4,8 @@ title: create a repository to manage exercises
 created: 2025-01-13 07:53:45
 priority: Medium
 category: Feature
-owner: 
-board: Backlog
+owner: None
+board: Done
 ---
 
 ## Description
@@ -18,3 +18,7 @@ Such as in memory, file or database.
 
 ## History
 2025-01-13 07:53:45 - Created
+
+2025-01-13 08:49:08 - Moved to In Progress
+
+2025-01-13 09:05:49 - Moved to Done
