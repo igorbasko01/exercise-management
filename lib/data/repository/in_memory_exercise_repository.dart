@@ -10,11 +10,6 @@ class InMemoryExerciseRepository extends ExerciseRepository {
   }
 
   @override
-  Future<void> deleteExercise(Exercise exercise) async {
-    _exercises.remove(exercise);
-  }
-
-  @override
   Future<List<Exercise>> getExercises() async {
     return _exercises;
   }
@@ -22,11 +17,5 @@ class InMemoryExerciseRepository extends ExerciseRepository {
   @override
   Future<Exercise> getExercise(String id) async {
     return _exercises.firstWhere((exercise) => exercise.id == id);
-  }
-
-  @override
-  Future<void> updateExercise(Exercise exercise) async {
-    final index = _exercises.indexWhere((e) => e.id == exercise.id);
-    _exercises[index] = exercise;
   }
 }
