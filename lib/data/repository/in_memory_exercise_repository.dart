@@ -1,3 +1,5 @@
+import 'package:exercise_management/core/iterable_extensions.dart';
+import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise.dart';
 import 'package:exercise_management/data/repository/exercise_repository.dart';
 
@@ -5,17 +7,34 @@ class InMemoryExerciseRepository extends ExerciseRepository {
   final List<Exercise> _exercises = [];
 
   @override
-  Future<void> addExercise(Exercise exercise) async {
+  Future<Result<Exercise>> addExercise(Exercise exercise) async {
+    if (exercise.id == null) {
+      exercise = exercise.copyWith(id: uniqueId());
+    }
+
+    if (_exercises.contains(exercise)) {
+      return Result.failure(ExerciseAlreadyExistsException('Exercise ${exercise.id} already exists'));
+    }
+
     _exercises.add(exercise);
+    return Result.success(exercise);
   }
 
   @override
-  Future<List<Exercise>> getExercises() async {
-    return _exercises;
+  Future<Result<List<Exercise>>> getExercises() async {
+    return Result.success(_exercises);
   }
 
   @override
-  Future<Exercise> getExercise(String id) async {
-    return _exercises.firstWhere((exercise) => exercise.id == id);
+  Future<Result<Exercise>> getExercise(String id) async {
+    var exercise = _exercises.firstWhereOrNull((exercise) => exercise.id == id);
+    if (exercise == null) {
+      return Result.failure(ExerciseNotFoundException('Exercise $id not found'));
+    }
+    return Result.success(exercise);
+  }
+
+  String uniqueId() {
+    return DateTime.now().millisecondsSinceEpoch.toString();
   }
 }
