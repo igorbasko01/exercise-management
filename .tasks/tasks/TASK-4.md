@@ -5,11 +5,11 @@ created: 2025-01-13 07:54:08
 priority: Medium
 category: Feature
 owner: None
-board: In Progress
+board: Done
 ---
 
 ## Description
-Create a service to manage exercises. It should be able to list existing exercises and create new exercises, update and delete exercises.
+Create a service to manage exercises. It should be able to list existing exercises and create new exercises.
 
 ## Notes
 
@@ -18,3 +18,5 @@ Create a service to manage exercises. It should be able to list existing exercis
 2025-01-13 07:54:08 - Created
 
 2025-01-13 21:46:09 - Moved to In Progress
+
+2025-01-17 11:46:53 - Moved to Done
