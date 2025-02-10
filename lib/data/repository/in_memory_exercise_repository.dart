@@ -3,7 +3,7 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise.dart';
 import 'package:exercise_management/data/repository/exercise_repository.dart';
 
-class InMemoryExerciseRepository extends ExerciseRepository {
+class InMemoryExerciseRepository extends ExerciseTemplateRepository {
   final List<ExerciseTemplate> _exercises = [];
 
   @override
@@ -36,5 +36,26 @@ class InMemoryExerciseRepository extends ExerciseRepository {
 
   String uniqueId() {
     return DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
+  @override
+  Future<Result<ExerciseTemplate>> deleteExercise(String id) {
+    var exerciseIndex = _exercises.indexWhere((e) => e.id == id);
+    if (exerciseIndex == -1) {
+      return Future.value(Result.failure(ExerciseNotFoundException('Exercise $id not found')));
+    }
+    var exercise = _exercises.removeAt(exerciseIndex);
+    return Future.value(Result.success(exercise));
+  }
+
+  @override
+  Future<Result<ExerciseTemplate>> updateExercise(ExerciseTemplate exercise) async {
+    var exerciseIndex = _exercises.indexWhere((e) => e.id == exercise.id);
+    if (exerciseIndex == -1) {
+      return Result.failure(ExerciseNotFoundException('Exercise ${exercise.id} not found'));
+    }
+    var storedExercise = _exercises[exerciseIndex];
+    _exercises[exerciseIndex] = exercise.copyWith(id: storedExercise.id);
+    return Result.success(exercise);
   }
 }

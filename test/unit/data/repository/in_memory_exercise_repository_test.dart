@@ -135,4 +135,169 @@ void main() {
     expect(exercise.error, isA<ExerciseNotFoundException>());
     expect(exercise.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
   });
+
+  test('updateExercise should update the exercise with the given id', () async {
+    final exercise1 = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final exercise2 = ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    await inMemoryExerciseRepository.addExercise(exercise1);
+    await inMemoryExerciseRepository.addExercise(exercise2);
+
+    final updatedExercise = exercise2.copyWith(name: 'Better Squat');
+
+    final result = await inMemoryExerciseRepository.updateExercise(updatedExercise);
+
+    final exercises = await inMemoryExerciseRepository.getExercises();
+
+    expect(result.isSuccess, true);
+    expect(exercises.data, [exercise1, updatedExercise]);
+  });
+
+  test('updateExercise should throw an exception if the exercise does not exist', () async {
+    final exercise1 = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final exercise2 = ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    await inMemoryExerciseRepository.addExercise(exercise1);
+    await inMemoryExerciseRepository.addExercise(exercise2);
+
+    final updatedExercise = ExerciseTemplate(
+      id: '3',
+      name: 'Better Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    final result = await inMemoryExerciseRepository.updateExercise(updatedExercise);
+
+    expect(result.isFailure, true);
+    expect(result.error, isA<ExerciseNotFoundException>());
+    expect(result.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
+  });
+
+  test('updateExercise should throw an exception if a null id is provided', () async {
+    final exercise = ExerciseTemplate(
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final result = await inMemoryExerciseRepository.updateExercise(exercise);
+
+    expect(result.isFailure, true);
+    expect(result.error, isA<ExerciseNotFoundException>());
+    expect(result.error.toString(), 'ExerciseNotFoundException: Exercise null not found');
+  });
+
+  test('deleteExercise should remove the exercise with the given id', () async {
+    final exercise1 = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final exercise2 = ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    await inMemoryExerciseRepository.addExercise(exercise1);
+    await inMemoryExerciseRepository.addExercise(exercise2);
+
+    await inMemoryExerciseRepository.deleteExercise('2');
+
+    final exercises = await inMemoryExerciseRepository.getExercises();
+
+    expect(exercises.data, [exercise1]);
+  });
+
+  test('deleteExercise should remove the exercise with the given id even if not last', () async {
+    final exercise1 = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final exercise2 = ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    final exercise3 = ExerciseTemplate(
+      id: '3',
+      name: 'Deadlift',
+      muscleGroup: MuscleGroup.hamstrings,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    await inMemoryExerciseRepository.addExercise(exercise1);
+    await inMemoryExerciseRepository.addExercise(exercise2);
+    await inMemoryExerciseRepository.addExercise(exercise3);
+
+    await inMemoryExerciseRepository.deleteExercise('2');
+
+    final exercises = await inMemoryExerciseRepository.getExercises();
+
+    expect(exercises.data, [exercise1, exercise3]);
+  });
+
+  test('deleteExercise should throw an exception if the exercise does not exist', () async {
+    final exercise1 = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
+    final exercise2 = ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+    );
+
+    await inMemoryExerciseRepository.addExercise(exercise1);
+    await inMemoryExerciseRepository.addExercise(exercise2);
+
+    final result = await inMemoryExerciseRepository.deleteExercise('3');
+
+    expect(result.isFailure, true);
+    expect(result.error, isA<ExerciseNotFoundException>());
+    expect(result.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
+  });
+
+  test('deleteExercise should throw an exception if an empty id is provided', () async {
+    final result = await inMemoryExerciseRepository.deleteExercise('');
+
+    expect(result.isFailure, true);
+    expect(result.error, isA<ExerciseNotFoundException>());
+    expect(result.error.toString(), 'ExerciseNotFoundException: Exercise  not found');
+  });
 }

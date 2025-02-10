@@ -5,12 +5,12 @@ created: 2025-01-13 08:21:50
 priority: Medium
 category: Feature
 owner: None
-board: In Progress
+board: Backlog
 ---
 
 ## Description
 Create a home page for app navigation.
-For now it should show a button to navigate to 
+using the `DESIGN.md` file, just create a home screen with a welcome message and an empyt navigation drawer.
 
 ## Notes
 
@@ -19,3 +19,5 @@ For now it should show a button to navigate to
 2025-01-13 08:21:50 - Created
 
 2025-01-17 14:28:54 - Moved to In Progress
+
+2025-02-10 21:49:01 - Moved to Backlog
