@@ -13,7 +13,7 @@ void main() {
   });
 
   test('addExercise should add an exercise to the repository', () async {
-    final exercise = Exercise(
+    final exercise = ExerciseTemplate(
       id: '1',
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
@@ -29,7 +29,7 @@ void main() {
   });
 
   test('addExercise should generate an exercise id if null provided', () async {
-    final exercise = Exercise(
+    final exercise = ExerciseTemplate(
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
       repetitionsRangeTarget: RepetitionsRange.medium,
@@ -43,7 +43,7 @@ void main() {
   });
 
   test('addExercise with an existing exercise should fail', () async {
-    final exercise = Exercise(
+    final exercise = ExerciseTemplate(
       id: '1',
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
@@ -60,14 +60,14 @@ void main() {
   });
 
   test('getExercises should return all exercises from the repository', () async {
-    final exercise1 = Exercise(
+    final exercise1 = ExerciseTemplate(
       id: '1',
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
       repetitionsRangeTarget: RepetitionsRange.medium,
     );
 
-    final exercise2 = Exercise(
+    final exercise2 = ExerciseTemplate(
       id: '2',
       name: 'Squat',
       muscleGroup: MuscleGroup.quadriceps,
@@ -89,14 +89,14 @@ void main() {
   });
 
   test('getExercise should return the exercise with the given id', () async {
-    final exercise1 = Exercise(
+    final exercise1 = ExerciseTemplate(
       id: '1',
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
       repetitionsRangeTarget: RepetitionsRange.medium,
     );
 
-    final exercise2 = Exercise(
+    final exercise2 = ExerciseTemplate(
       id: '2',
       name: 'Squat',
       muscleGroup: MuscleGroup.quadriceps,
@@ -112,14 +112,14 @@ void main() {
   });
 
   test('getExercise should throw an exception if the exercise does not exist', () async {
-    final exercise1 = Exercise(
+    final exercise1 = ExerciseTemplate(
       id: '1',
       name: 'Bench Press',
       muscleGroup: MuscleGroup.chest,
       repetitionsRangeTarget: RepetitionsRange.medium,
     );
 
-    final exercise2 = Exercise(
+    final exercise2 = ExerciseTemplate(
       id: '2',
       name: 'Squat',
       muscleGroup: MuscleGroup.quadriceps,

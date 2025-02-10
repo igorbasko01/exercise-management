@@ -1,14 +1,14 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 
-class Exercise {
+class ExerciseTemplate {
   final String? id;
   final String name;
   final MuscleGroup muscleGroup;
   final RepetitionsRange repetitionsRangeTarget;
   final String? description;
 
-  Exercise({
+  ExerciseTemplate({
     this.id,
     required this.name,
     required this.muscleGroup,
@@ -16,8 +16,8 @@ class Exercise {
     this.description,
   });
 
-  Exercise copyWith({required String id}) {
-    return Exercise(
+  ExerciseTemplate copyWith({required String id}) {
+    return ExerciseTemplate(
       id: id,
       name: name,
       muscleGroup: muscleGroup,

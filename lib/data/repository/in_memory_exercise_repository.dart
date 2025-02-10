@@ -4,10 +4,10 @@ import 'package:exercise_management/data/models/exercise.dart';
 import 'package:exercise_management/data/repository/exercise_repository.dart';
 
 class InMemoryExerciseRepository extends ExerciseRepository {
-  final List<Exercise> _exercises = [];
+  final List<ExerciseTemplate> _exercises = [];
 
   @override
-  Future<Result<Exercise>> addExercise(Exercise exercise) async {
+  Future<Result<ExerciseTemplate>> addExercise(ExerciseTemplate exercise) async {
     if (exercise.id == null) {
       exercise = exercise.copyWith(id: uniqueId());
     }
@@ -21,12 +21,12 @@ class InMemoryExerciseRepository extends ExerciseRepository {
   }
 
   @override
-  Future<Result<List<Exercise>>> getExercises() async {
+  Future<Result<List<ExerciseTemplate>>> getExercises() async {
     return Result.success(_exercises);
   }
 
   @override
-  Future<Result<Exercise>> getExercise(String id) async {
+  Future<Result<ExerciseTemplate>> getExercise(String id) async {
     var exercise = _exercises.firstWhereOrNull((exercise) => exercise.id == id);
     if (exercise == null) {
       return Result.failure(ExerciseNotFoundException('Exercise $id not found'));
