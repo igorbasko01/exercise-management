@@ -4,21 +4,26 @@ title: add service for ExerciseTemplate
 created: 2025-02-10 22:18:32
 priority: Medium
 category: Feature
-owner: 
-board: Backlog
+owner: None
+board: In Progress
 ---
 
 ## Description
 Should implement the following methods:
 - [ ] Exercise Template Service - A service for managing exercise templates. Contains:
-  - [ ] Create Exercise Template - Creates a new exercise template.
+  - [x] Create Exercise Template - Creates a new exercise template.
   - [ ] Get Exercise Template - Gets an exercise template by id.
   - [ ] Get Exercise Templates - Gets all exercise templates.
   - [ ] Update Exercise Template - Updates an exercise template. Only allow update if no exercise sets are associated with the template.
   - [ ] Delete Exercise Template - Deletes an exercise template. Only allow delete if no exercise sets are associated with the template.
+
+2025-02-11 - I will start working only on the create ang get methods. 
+Later when I will create the ExerciseSetRepository, I will add the rest of the methods, as they depend on the ExerciseSetRepository.
 
 ## Notes
 
 
 ## History
 2025-02-10 22:18:32 - Created
+
+2025-02-11 07:06:39 - Moved to In Progress

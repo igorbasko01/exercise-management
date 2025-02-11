@@ -5,7 +5,7 @@ created: 2025-02-10 22:19:45
 priority: Medium
 category: Feature
 owner: None
-board: In Progress
+board: Backlog
 ---
 
 ## Description
@@ -26,3 +26,5 @@ board: In Progress
 2025-02-10 22:19:45 - Created
 
 2025-02-10 22:20:39 - Moved to In Progress
+
+2025-02-11 07:05:46 - Moved to Backlog

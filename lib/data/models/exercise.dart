@@ -32,24 +32,39 @@ class ExerciseTemplate {
     );
   }
 
+  ExerciseTemplate copyWithoutId(
+      {String? name,
+      MuscleGroup? muscleGroup,
+      RepetitionsRange? repetitionsRangeTarget,
+      String? description}) {
+    return ExerciseTemplate(
+      id: null,
+      name: name ?? this.name,
+      muscleGroup: muscleGroup ?? this.muscleGroup,
+      repetitionsRangeTarget:
+          repetitionsRangeTarget ?? this.repetitionsRangeTarget,
+      description: description ?? this.description,
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
     return other is ExerciseTemplate &&
-      other.id == id &&
-      other.name == name &&
-      other.muscleGroup == muscleGroup &&
-      other.repetitionsRangeTarget == repetitionsRangeTarget &&
-      other.description == description;
+        other.id == id &&
+        other.name == name &&
+        other.muscleGroup == muscleGroup &&
+        other.repetitionsRangeTarget == repetitionsRangeTarget &&
+        other.description == description;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      name.hashCode ^
-      muscleGroup.hashCode ^
-      repetitionsRangeTarget.hashCode ^
-      description.hashCode;
+        name.hashCode ^
+        muscleGroup.hashCode ^
+        repetitionsRangeTarget.hashCode ^
+        description.hashCode;
   }
 }

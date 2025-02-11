@@ -32,7 +32,7 @@ A design document for the exercise management app.
   - [ ] Get Latest Exercise Set by Exercise Template Id - Gets the latest exercise set for an exercise template.
 ## Services
 - [ ] Exercise Template Service - A service for managing exercise templates. Contains:
-  - [ ] Create Exercise Template - Creates a new exercise template.
+  - [x] Create Exercise Template - Creates a new exercise template.
   - [ ] Get Exercise Template - Gets an exercise template by id.
   - [ ] Get Exercise Templates - Gets all exercise templates.
   - [ ] Update Exercise Template - Updates an exercise template. Only allow update if no exercise sets are associated with the template.
