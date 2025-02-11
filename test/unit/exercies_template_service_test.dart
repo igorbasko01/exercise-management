@@ -49,4 +49,68 @@ void main() {
     expect(result.data?.id, isNotNull);
     expect(result.data?.id, isNot('1'));
   });
+
+  test('getExerciseTemplates should return all exercises from the repository', () async {
+    var exercise1 = ExerciseTemplate(
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.high,
+      description: 'Lie on a bench and press the barbell away from your chest'
+    );
+
+    var exercise2 = ExerciseTemplate(
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+      description: 'Stand with a barbell on your shoulders and squat down'
+    );
+
+    await exerciseTemplateService.addExerciseTemplate(exercise1);
+    await exerciseTemplateService.addExerciseTemplate(exercise2);
+
+    var result = await exerciseTemplateService.getExerciseTemplates();
+
+    expect(result.isSuccess, true);
+    expect(result.data?.length, 2);
+    expect(result.data?[0].name, exercise1.name);
+    expect(result.data?[1].name, exercise2.name);
+  });
+
+  test('getExerciseTemplates should return empty list if no exercises are added', () async {
+    var result = await exerciseTemplateService.getExerciseTemplates();
+
+    expect(result.isSuccess, true);
+    expect(result.data?.length, 0);
+  });
+
+  test('getExerciseTemplateById should return the exercise with the given id', () async {
+    var exercise1 = ExerciseTemplate(
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.high,
+      description: 'Lie on a bench and press the barbell away from your chest'
+    );
+
+    var exercise2 = ExerciseTemplate(
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.high,
+      description: 'Stand with a barbell on your shoulders and squat down'
+    );
+
+    var addedExercise1 = await exerciseTemplateService.addExerciseTemplate(exercise1);
+    await exerciseTemplateService.addExerciseTemplate(exercise2);
+
+    var result = await exerciseTemplateService.getExerciseTemplateById(addedExercise1.data?.id ?? '');
+
+    expect(result.isSuccess, true);
+    expect(result.data?.name, exercise1.name);
+  });
+
+  test('getExerciseTemplateById should return failure if no exercise with the given id is found', () async {
+    var result = await exerciseTemplateService.getExerciseTemplateById('1');
+
+    expect(result.isFailure, true);
+    expect(result.error, isA<ExerciseNotFoundException>());
+  });
 }
