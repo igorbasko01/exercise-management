@@ -22,7 +22,7 @@ extension UnpackResult<T> on Result<T> {
     required Function(Exception error) onFailure,
   }) {
     if (isSuccess) {
-      onSuccess(data!);
+      onSuccess(data as T);
     } else {
       onFailure(error!);
     }

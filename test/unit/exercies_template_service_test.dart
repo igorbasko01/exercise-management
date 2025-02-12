@@ -1,6 +1,5 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
-import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise.dart';
 import 'package:exercise_management/data/repository/exercise_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_repository.dart';
