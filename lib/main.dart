@@ -1,6 +1,6 @@
-import 'package:exercise_management/presentation/exercise_sets_page.dart';
-import 'package:exercise_management/presentation/exercise_templates_page.dart';
-import 'package:exercise_management/presentation/home_page.dart';
+import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
+import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
+import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
