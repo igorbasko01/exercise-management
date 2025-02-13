@@ -7,6 +7,22 @@ class ExerciseTemplatesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _exerciseTemplatesList(),
+        Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: () {},
+              child: const Icon(Icons.add),
+            )
+        )
+      ],
+    );
+  }
+
+  Consumer<ExerciseTemplatesViewModel> _exerciseTemplatesList() {
     return Consumer<ExerciseTemplatesViewModel>(
         builder: (context, viewModel, child) {
       if (viewModel.isLoading) {
