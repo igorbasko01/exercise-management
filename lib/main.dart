@@ -1,10 +1,26 @@
+import 'package:exercise_management/data/repository/in_memory_exercise_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
+import 'package:exercise_management/service/exercise_template_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MultiProvider(
+    providers: [
+      Provider<ExerciseTemplateService>(
+        create: (context) =>
+            ExerciseTemplateService(InMemoryExerciseRepository()),
+      ),
+      ChangeNotifierProvider(
+          create: (context) => ExerciseTemplatesViewModel(
+              context.read<ExerciseTemplateService>())
+            ..fetchExerciseTemplates())
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -38,8 +54,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static final List<Widget> _pages = <Widget>[
     const HomePage(),
-    const ExerciseTemplatesPage(),
     const ExerciseSetsPage(),
+    const ExerciseTemplatesPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -57,10 +73,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const[
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Sets'),
-          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Exercises'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.fitness_center), label: 'Sets'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.library_books), label: 'Exercises'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
