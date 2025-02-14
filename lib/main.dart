@@ -1,4 +1,4 @@
-import 'package:exercise_management/data/repository/in_memory_exercise_repository.dart';
+import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';

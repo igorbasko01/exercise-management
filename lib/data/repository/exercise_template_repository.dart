@@ -1,6 +1,6 @@
 import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
 
 abstract class ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> addExercise(ExerciseTemplate exercise);

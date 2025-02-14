@@ -1,6 +1,6 @@
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise.dart';
-import 'package:exercise_management/data/repository/exercise_repository.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 
 class ExerciseTemplateService {
   final ExerciseTemplateRepository _exerciseTemplateRepository;

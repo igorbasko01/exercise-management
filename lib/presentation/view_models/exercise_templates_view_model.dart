@@ -1,5 +1,5 @@
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/service/exercise_template_service.dart';
 import 'package:flutter/material.dart';
 
