@@ -1,22 +1,21 @@
+import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
-import 'package:exercise_management/service/exercise_template_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   runApp(MultiProvider(
     providers: [
-      Provider<ExerciseTemplateService>(
-        create: (context) =>
-            ExerciseTemplateService(InMemoryExerciseRepository()),
+      Provider<ExerciseTemplateRepository>(
+        create: (context) => InMemoryExerciseRepository(),
       ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
-              context.read<ExerciseTemplateService>())
+              context.read())
             ..fetchExerciseTemplates())
     ],
     child: const MyApp(),
