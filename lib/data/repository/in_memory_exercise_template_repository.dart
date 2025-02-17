@@ -13,25 +13,25 @@ class InMemoryExerciseRepository extends ExerciseTemplateRepository {
     }
 
     if (_exercises.contains(exercise)) {
-      return Result.failure(ExerciseAlreadyExistsException('Exercise ${exercise.id} already exists'));
+      return Result.error(ExerciseAlreadyExistsException('Exercise ${exercise.id} already exists'));
     }
 
     _exercises.add(exercise);
-    return Result.success(exercise);
+    return Result.ok(exercise);
   }
 
   @override
   Future<Result<List<ExerciseTemplate>>> getExercises() async {
-    return Result.success(_exercises);
+    return Result.ok(_exercises);
   }
 
   @override
   Future<Result<ExerciseTemplate>> getExercise(String id) async {
     var exercise = _exercises.firstWhereOrNull((exercise) => exercise.id == id);
     if (exercise == null) {
-      return Result.failure(ExerciseNotFoundException('Exercise $id not found'));
+      return Result.error(ExerciseNotFoundException('Exercise $id not found'));
     }
-    return Result.success(exercise);
+    return Result.ok(exercise);
   }
 
   String uniqueId() {
@@ -42,20 +42,20 @@ class InMemoryExerciseRepository extends ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> deleteExercise(String id) {
     var exerciseIndex = _exercises.indexWhere((e) => e.id == id);
     if (exerciseIndex == -1) {
-      return Future.value(Result.failure(ExerciseNotFoundException('Exercise $id not found')));
+      return Future.value(Result.error(ExerciseNotFoundException('Exercise $id not found')));
     }
     var exercise = _exercises.removeAt(exerciseIndex);
-    return Future.value(Result.success(exercise));
+    return Future.value(Result.ok(exercise));
   }
 
   @override
   Future<Result<ExerciseTemplate>> updateExercise(ExerciseTemplate exercise) async {
     var exerciseIndex = _exercises.indexWhere((e) => e.id == exercise.id);
     if (exerciseIndex == -1) {
-      return Result.failure(ExerciseNotFoundException('Exercise ${exercise.id} not found'));
+      return Result.error(ExerciseNotFoundException('Exercise ${exercise.id} not found'));
     }
     var storedExercise = _exercises[exerciseIndex];
     _exercises[exerciseIndex] = exercise.copyWith(id: storedExercise.id);
-    return Result.success(exercise);
+    return Result.ok(exercise);
   }
 }

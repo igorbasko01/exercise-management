@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
@@ -24,8 +25,8 @@ void main() {
 
     final exercises = await inMemoryExerciseRepository.getExercises();
 
-    expect(result.isSuccess, true);
-    expect(exercises.data, [exercise]);
+    expect(result, isA<Ok<ExerciseTemplate>>());
+    expect((exercises as Ok<List<ExerciseTemplate>>).value, [exercise]);
   });
 
   test('addExercise should generate an exercise id if null provided', () async {
@@ -37,9 +38,9 @@ void main() {
 
     await inMemoryExerciseRepository.addExercise(exercise);
 
-    final exercises = (await inMemoryExerciseRepository.getExercises());
+    final exercises = (await inMemoryExerciseRepository.getExercises()) as Ok<List<ExerciseTemplate>>;
 
-    expect(exercises.data?.first.id, isNotNull);
+    expect(exercises.value.first.id, isNotNull);
   });
 
   test('addExercise with an existing exercise should fail', () async {
@@ -50,11 +51,11 @@ void main() {
       repetitionsRangeTarget: RepetitionsRange.medium,
     );
 
-    final resultOriginal = await inMemoryExerciseRepository.addExercise(exercise);
-    final resultDuplicate = await inMemoryExerciseRepository.addExercise(exercise);
+    final resultOriginal = await inMemoryExerciseRepository.addExercise(exercise) as Ok<ExerciseTemplate>;
+    final resultDuplicate = await inMemoryExerciseRepository.addExercise(exercise) as Error<ExerciseTemplate>;
 
-    expect(resultOriginal.isSuccess, true);
-    expect(resultDuplicate.isSuccess, false);
+    expect(resultOriginal, isA<Ok<ExerciseTemplate>>());
+    expect(resultDuplicate, isA<Error<ExerciseTemplate>>());
     expect(resultDuplicate.error, isA<ExerciseAlreadyExistsException>());
     expect(resultDuplicate.error.toString(), 'ExerciseAlreadyExistsException: Exercise 1 already exists');
   });
@@ -77,15 +78,15 @@ void main() {
     await inMemoryExerciseRepository.addExercise(exercise1);
     await inMemoryExerciseRepository.addExercise(exercise2);
 
-    final exercises = await inMemoryExerciseRepository.getExercises();
+    final exercises = await inMemoryExerciseRepository.getExercises() as Ok<List<ExerciseTemplate>>;
 
-    expect(exercises.data, [exercise1, exercise2]);
+    expect(exercises.value, [exercise1, exercise2]);
   });
 
   test('getExercises should return an empty list if no exercises are in the repository', () async {
-    final exercises = await inMemoryExerciseRepository.getExercises();
+    final exercises = await inMemoryExerciseRepository.getExercises() as Ok<List<ExerciseTemplate>>;
 
-    expect(exercises.data, []);
+    expect(exercises.value, []);
   });
 
   test('getExercise should return the exercise with the given id', () async {
@@ -106,9 +107,9 @@ void main() {
     await inMemoryExerciseRepository.addExercise(exercise1);
     await inMemoryExerciseRepository.addExercise(exercise2);
 
-    final exercise = await inMemoryExerciseRepository.getExercise('2');
+    final exercise = await inMemoryExerciseRepository.getExercise('2') as Ok<ExerciseTemplate>;
 
-    expect(exercise.data, exercise2);
+    expect(exercise.value, exercise2);
   });
 
   test('getExercise should throw an exception if the exercise does not exist', () async {
@@ -129,9 +130,9 @@ void main() {
     await inMemoryExerciseRepository.addExercise(exercise1);
     await inMemoryExerciseRepository.addExercise(exercise2);
 
-    final exercise = await inMemoryExerciseRepository.getExercise('3');
+    final exercise = await inMemoryExerciseRepository.getExercise('3') as Error<ExerciseTemplate>;
 
-    expect(exercise.isFailure, true);
+    expect(exercise, isA<Error<ExerciseTemplate>>());
     expect(exercise.error, isA<ExerciseNotFoundException>());
     expect(exercise.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
   });
@@ -158,10 +159,10 @@ void main() {
 
     final result = await inMemoryExerciseRepository.updateExercise(updatedExercise);
 
-    final exercises = await inMemoryExerciseRepository.getExercises();
+    final exercises = await inMemoryExerciseRepository.getExercises() as Ok<List<ExerciseTemplate>>;
 
-    expect(result.isSuccess, true);
-    expect(exercises.data, [exercise1, updatedExercise]);
+    expect(result, isA<Ok<ExerciseTemplate>>());
+    expect(exercises.value, [exercise1, updatedExercise]);
   });
 
   test('updateExercise should throw an exception if the exercise does not exist', () async {
@@ -189,9 +190,9 @@ void main() {
       repetitionsRangeTarget: RepetitionsRange.high,
     );
 
-    final result = await inMemoryExerciseRepository.updateExercise(updatedExercise);
+    final result = await inMemoryExerciseRepository.updateExercise(updatedExercise) as Error<ExerciseTemplate>;
 
-    expect(result.isFailure, true);
+    expect(result, isA<Error<ExerciseTemplate>>());
     expect(result.error, isA<ExerciseNotFoundException>());
     expect(result.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
   });
@@ -203,9 +204,9 @@ void main() {
       repetitionsRangeTarget: RepetitionsRange.medium,
     );
 
-    final result = await inMemoryExerciseRepository.updateExercise(exercise);
+    final result = await inMemoryExerciseRepository.updateExercise(exercise) as Error<ExerciseTemplate>;
 
-    expect(result.isFailure, true);
+    expect(result, isA<Error<ExerciseTemplate>>());
     expect(result.error, isA<ExerciseNotFoundException>());
     expect(result.error.toString(), 'ExerciseNotFoundException: Exercise null not found');
   });
@@ -230,9 +231,9 @@ void main() {
 
     await inMemoryExerciseRepository.deleteExercise('2');
 
-    final exercises = await inMemoryExerciseRepository.getExercises();
+    final exercises = await inMemoryExerciseRepository.getExercises() as Ok<List<ExerciseTemplate>>;
 
-    expect(exercises.data, [exercise1]);
+    expect(exercises.value, [exercise1]);
   });
 
   test('deleteExercise should remove the exercise with the given id even if not last', () async {
@@ -263,9 +264,9 @@ void main() {
 
     await inMemoryExerciseRepository.deleteExercise('2');
 
-    final exercises = await inMemoryExerciseRepository.getExercises();
+    final exercises = await inMemoryExerciseRepository.getExercises() as Ok<List<ExerciseTemplate>>;
 
-    expect(exercises.data, [exercise1, exercise3]);
+    expect(exercises.value, [exercise1, exercise3]);
   });
 
   test('deleteExercise should throw an exception if the exercise does not exist', () async {
@@ -286,17 +287,17 @@ void main() {
     await inMemoryExerciseRepository.addExercise(exercise1);
     await inMemoryExerciseRepository.addExercise(exercise2);
 
-    final result = await inMemoryExerciseRepository.deleteExercise('3');
+    final result = await inMemoryExerciseRepository.deleteExercise('3') as Error<ExerciseTemplate>;
 
-    expect(result.isFailure, true);
+    expect(result, isA<Error<ExerciseTemplate>>());
     expect(result.error, isA<ExerciseNotFoundException>());
     expect(result.error.toString(), 'ExerciseNotFoundException: Exercise 3 not found');
   });
 
   test('deleteExercise should throw an exception if an empty id is provided', () async {
-    final result = await inMemoryExerciseRepository.deleteExercise('');
+    final result = await inMemoryExerciseRepository.deleteExercise('') as Error<ExerciseTemplate>;
 
-    expect(result.isFailure, true);
+    expect(result, isA<Error<ExerciseTemplate>>());
     expect(result.error, isA<ExerciseNotFoundException>());
     expect(result.error.toString(), 'ExerciseNotFoundException: Exercise  not found');
   });

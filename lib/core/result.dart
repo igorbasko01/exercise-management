@@ -1,32 +1,43 @@
 import 'package:exercise_management/core/base_exception.dart';
 
-class Result<T> {
-  final T? data;
-  final BaseException? error;
+/// A class that represents the result of an operation that can either succeed or fail.
+///
+/// Evaluate the result using a switch statement:
+/// ```dart
+/// switch (result) {
+///  case Result.ok(value):
+///  // handle success
+///  break;
+///  case Result.error(error):
+///  // handle error
+///  break;
+///  default:
+///  // handle other cases
+///  break;
+/// }
+/// ```
+sealed class Result<T> {
+  const Result();
 
-  Result._({this.data, this.error});
+  const factory Result.ok(T value) = Ok._;
 
-  factory Result.success(T data) {
-    return Result._(data: data);
-  }
-
-  factory Result.failure(BaseException error) {
-    return Result._(error: error);
-  }
-
-  bool get isSuccess => data != null;
-  bool get isFailure => error != null;
+  const factory Result.error(BaseException error) = Error._;
 }
 
-extension UnpackResult<T> on Result<T> {
-  void unpack({
-    required Function(T data) onSuccess,
-    required Function(BaseException error) onFailure,
-  }) {
-    if (isSuccess) {
-      onSuccess(data as T);
-    } else {
-      onFailure(error!);
-    }
-  }
+final class Ok<T> extends Result<T> {
+  const Ok._(this.value);
+
+  final T value;
+
+  @override
+  String toString() => 'Result<$T>.ok($value)';
+}
+
+final class Error<T> extends Result<T> {
+  const Error._(this.error);
+
+  final BaseException error;
+
+  @override
+  String toString() => 'Result<$T>.error($error)';
 }

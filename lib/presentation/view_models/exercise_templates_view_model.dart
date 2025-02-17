@@ -22,16 +22,15 @@ class ExerciseTemplatesViewModel extends ChangeNotifier {
 
     final result = await _exerciseTemplateService.getExerciseTemplates();
 
-    result.unpack(
-      onSuccess: (exerciseTemplates) {
-        _exerciseTemplates = exerciseTemplates;
+    switch (result) {
+      case Ok():
+        _exerciseTemplates = result.value;
         _isLoading = false;
-      },
-      onFailure: (error) {
-        _errorMessage = error.message;
-      },
-    );
-
+        break;
+      case Error():
+        _errorMessage = result.error.message;
+        break;
+    }
     notifyListeners();
   }
 }

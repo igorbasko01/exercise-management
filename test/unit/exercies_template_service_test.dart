@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
@@ -25,12 +26,13 @@ void main() {
     );
 
     var result = await exerciseTemplateService.addExerciseTemplate(exercise);
+    var actualResult = result as Ok<ExerciseTemplate>;
 
-    expect(result.isSuccess, true);
-    expect(result.data?.name, exercise.name);
-    expect(result.data?.muscleGroup, exercise.muscleGroup);
-    expect(result.data?.repetitionsRangeTarget, exercise.repetitionsRangeTarget);
-    expect(result.data?.description, exercise.description);
+    expect(result, isA<Ok<ExerciseTemplate>>());
+    expect(actualResult.value.name, exercise.name);
+    expect(actualResult.value.muscleGroup, exercise.muscleGroup);
+    expect(actualResult.value.repetitionsRangeTarget, exercise.repetitionsRangeTarget);
+    expect(actualResult.value.description, exercise.description);
   });
 
   test('addExerciseTemplate should ignore id and pass without id to the repository', () async {
@@ -43,10 +45,11 @@ void main() {
     );
 
     var result = await exerciseTemplateService.addExerciseTemplate(exercise);
+    var actualResult = result as Ok<ExerciseTemplate>;
 
-    expect(result.isSuccess, true);
-    expect(result.data?.id, isNotNull);
-    expect(result.data?.id, isNot('1'));
+    expect(result, isA<Ok<ExerciseTemplate>>());
+    expect(actualResult.value.id, isNotNull);
+    expect(actualResult.value.id, isNot('1'));
   });
 
   test('getExerciseTemplates should return all exercises from the repository', () async {
@@ -68,18 +71,20 @@ void main() {
     await exerciseTemplateService.addExerciseTemplate(exercise2);
 
     var result = await exerciseTemplateService.getExerciseTemplates();
+    var actualResult = result as Ok<List<ExerciseTemplate>>;
 
-    expect(result.isSuccess, true);
-    expect(result.data?.length, 2);
-    expect(result.data?[0].name, exercise1.name);
-    expect(result.data?[1].name, exercise2.name);
+    expect(result, isA<Ok<List<ExerciseTemplate>>>());
+    expect(actualResult.value.length, 2);
+    expect(actualResult.value[0].name, exercise1.name);
+    expect(actualResult.value[1].name, exercise2.name);
   });
 
   test('getExerciseTemplates should return empty list if no exercises are added', () async {
     var result = await exerciseTemplateService.getExerciseTemplates();
+    var actualResult = result as Ok<List<ExerciseTemplate>>;
 
-    expect(result.isSuccess, true);
-    expect(result.data?.length, 0);
+    expect(result, isA<Ok<List<ExerciseTemplate>>>());
+    expect(actualResult.value.length, 0);
   });
 
   test('getExerciseTemplateById should return the exercise with the given id', () async {
@@ -97,19 +102,21 @@ void main() {
       description: 'Stand with a barbell on your shoulders and squat down'
     );
 
-    var addedExercise1 = await exerciseTemplateService.addExerciseTemplate(exercise1);
+    var addedExercise1 = await exerciseTemplateService.addExerciseTemplate(exercise1) as Ok<ExerciseTemplate>;
     await exerciseTemplateService.addExerciseTemplate(exercise2);
 
-    var result = await exerciseTemplateService.getExerciseTemplateById(addedExercise1.data?.id ?? '');
+    var result = await exerciseTemplateService.getExerciseTemplateById(addedExercise1.value.id ?? '');
+    var actualResult = result as Ok<ExerciseTemplate>;
 
-    expect(result.isSuccess, true);
-    expect(result.data?.name, exercise1.name);
+    expect(result, isA<Ok<ExerciseTemplate>>());
+    expect(actualResult.value.name, exercise1.name);
   });
 
   test('getExerciseTemplateById should return failure if no exercise with the given id is found', () async {
     var result = await exerciseTemplateService.getExerciseTemplateById('1');
+    var actualResult = result as Error;
 
-    expect(result.isFailure, true);
-    expect(result.error, isA<ExerciseNotFoundException>());
+    expect(result, isA<Error>());
+    expect(actualResult.error, isA<ExerciseNotFoundException>());
   });
 }
