@@ -15,8 +15,8 @@ void main() {
       ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
-              context.read())
-            ..fetchExerciseTemplates())
+              exerciseTemplateRepository:  context.read())
+            ..fetchExerciseTemplates.execute())
     ],
     child: const MyApp(),
   ));
