@@ -31,6 +31,16 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Exercise Template')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _buildForm(),
+      ),
+    );
+  }
+
+  Form _buildForm() {
     return Form(
       key: _formKey,
       child: Column(
@@ -59,7 +69,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
               decoration: const InputDecoration(labelText: 'Repetitions Range'),
               items: RepetitionsRange.values.map((repetitionsRange) {
                 return DropdownMenuItem(
-                    value: _selectedRepetitionsRange,
+                    value: repetitionsRange,
                     child: Text(repetitionsRange.range.toString()));
               }).toList(),
               onChanged: (newValue) {

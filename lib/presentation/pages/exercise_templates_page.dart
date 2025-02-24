@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/presentation/pages/add_exercise_template_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,10 @@ class ExerciseTemplatesPage extends StatelessWidget {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const AddExerciseTemplatePage()));
+              },
               child: const Icon(Icons.add),
             )
         )
