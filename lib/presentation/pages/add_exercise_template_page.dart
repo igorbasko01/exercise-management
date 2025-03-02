@@ -1,6 +1,8 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AddExerciseTemplatePage extends StatefulWidget {
   const AddExerciseTemplatePage({super.key});
@@ -38,6 +40,22 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
         child: _buildForm(),
       ),
     );
+  }
+
+  void _saveExerciseTemplate() {
+    if (_formKey.currentState!.validate()) {
+      final viewModel = context.read<ExerciseTemplatesViewModel>();
+      viewModel.addExerciseTemplate(
+        _nameController.text,
+        _selectedMuscleGroup,
+        _selectedRepetitionsRange,
+        _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+      );
+
+      Navigator.pop(context);
+    }
   }
 
   Form _buildForm() {
@@ -79,7 +97,12 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
               }),
           TextFormField(
             controller: _descriptionController,
-            decoration: const InputDecoration(labelText: 'Description'),
+            decoration:
+                const InputDecoration(labelText: 'Description (optional)'),
+          ),
+          ElevatedButton(
+            onPressed: _saveExerciseTemplate,
+            child: const Text('Save'),
           ),
         ],
       ),
