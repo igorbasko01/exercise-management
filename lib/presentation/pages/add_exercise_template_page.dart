@@ -1,11 +1,14 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class AddExerciseTemplatePage extends StatefulWidget {
-  const AddExerciseTemplatePage({super.key});
+  final ExerciseTemplate? exerciseTemplate;
+
+  const AddExerciseTemplatePage({super.key, this.exerciseTemplate});
 
   @override
   State<AddExerciseTemplatePage> createState() =>
@@ -14,14 +17,23 @@ class AddExerciseTemplatePage extends StatefulWidget {
 
 class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  MuscleGroup _selectedMuscleGroup = MuscleGroup.chest;
-  RepetitionsRange _selectedRepetitionsRange = RepetitionsRange.medium;
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late MuscleGroup _selectedMuscleGroup;
+  late RepetitionsRange _selectedRepetitionsRange;
 
   @override
   void initState() {
     super.initState();
+    _nameController =
+        TextEditingController(text: widget.exerciseTemplate?.name ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.exerciseTemplate?.description ?? '');
+    _selectedMuscleGroup =
+        widget.exerciseTemplate?.muscleGroup ?? MuscleGroup.chest;
+    _selectedRepetitionsRange =
+        widget.exerciseTemplate?.repetitionsRangeTarget ??
+            RepetitionsRange.medium;
   }
 
   @override
@@ -34,7 +46,10 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Exercise Template')),
+      appBar: AppBar(
+          title: Text(widget.exerciseTemplate == null
+              ? 'Add Exercise Template'
+              : 'Edit Exercise Template')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _buildForm(),
@@ -45,14 +60,27 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
   void _saveExerciseTemplate() {
     if (_formKey.currentState!.validate()) {
       final viewModel = context.read<ExerciseTemplatesViewModel>();
-      viewModel.addExerciseTemplate(
-        _nameController.text,
-        _selectedMuscleGroup,
-        _selectedRepetitionsRange,
-        _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-      );
+      if (widget.exerciseTemplate == null) {
+        viewModel.addExerciseTemplate(
+          _nameController.text,
+          _selectedMuscleGroup,
+          _selectedRepetitionsRange,
+          _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+        );
+      } else {
+        final exerciseTemplate = ExerciseTemplate(
+          id: widget.exerciseTemplate!.id,
+          name: _nameController.text,
+          muscleGroup: _selectedMuscleGroup,
+          repetitionsRangeTarget: _selectedRepetitionsRange,
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+        );
+        viewModel.updateExerciseTemplate(exerciseTemplate);
+      }
 
       Navigator.pop(context);
     }
@@ -75,7 +103,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
               items: MuscleGroup.values.map((muscleGroup) {
                 return DropdownMenuItem(
                     value: muscleGroup,
-                    child: Text(muscleGroup.toString().split('.').last));
+                    child: Text(muscleGroup.name));
               }).toList(),
               onChanged: (newValue) {
                 setState(() {

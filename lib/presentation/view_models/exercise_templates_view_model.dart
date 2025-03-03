@@ -37,4 +37,16 @@ class ExerciseTemplatesViewModel extends ChangeNotifier {
     notifyListeners();
     return result;
   }
+
+  Future<Result<ExerciseTemplate>> deleteExerciseTemplate(String id) async {
+    final result = await _exerciseTemplateRepository.deleteExercise(id);
+    notifyListeners();
+    return result;
+  }
+
+  Future<Result<ExerciseTemplate>> updateExerciseTemplate(ExerciseTemplate exerciseTemplate) async {
+    final result = await _exerciseTemplateRepository.updateExercise(exerciseTemplate);
+    notifyListeners();
+    return result;
+  }
 }

@@ -6,6 +6,6 @@ class Range {
 
   @override
   String toString() {
-    return 'Range{min: $min, max: $max}';
+    return '$min to $max';
   }
 }

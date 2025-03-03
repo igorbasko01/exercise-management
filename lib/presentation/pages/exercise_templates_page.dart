@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_template_page.dart';
@@ -58,7 +59,19 @@ class ExerciseTemplatesPage extends StatelessWidget {
             return ListTile(
               title: Text(exercise.name),
               subtitle: Text(exercise.description ??
-                  'Main muscle group: ${exercise.muscleGroup}'),
+                  'Main muscle group: ${exercise.muscleGroup.name}, '
+                      'Repetitions range: ${exercise.repetitionsRangeTarget.range.toString()}'),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        AddExerciseTemplatePage(exerciseTemplate: exercise)));
+              },
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  viewModel.deleteExerciseTemplate(exercise.id!);
+                },
+              ),
             );
           });
     });
