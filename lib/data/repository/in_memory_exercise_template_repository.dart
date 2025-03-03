@@ -1,7 +1,9 @@
 import 'package:exercise_management/core/iterable_extensions.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/utils.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 
 class InMemoryExerciseRepository extends ExerciseTemplateRepository {
   final List<ExerciseTemplate> _exercises = [];
@@ -32,10 +34,6 @@ class InMemoryExerciseRepository extends ExerciseTemplateRepository {
       return Result.error(ExerciseNotFoundException('Exercise $id not found'));
     }
     return Result.ok(exercise);
-  }
-
-  String uniqueId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
   }
 
   @override

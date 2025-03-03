@@ -2,8 +2,8 @@ import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
-import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
