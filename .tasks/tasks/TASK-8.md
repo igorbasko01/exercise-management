@@ -5,7 +5,7 @@ created: 2025-02-10 22:18:32
 priority: Medium
 category: Feature
 owner: None
-board: Backlog
+board: Done
 ---
 
 ## Description
@@ -20,6 +20,10 @@ Should implement the following methods:
 2025-02-11 - I will start working only on the create ang get methods. 
 Later when I will create the ExerciseSetRepository, I will add the rest of the methods, as they depend on the ExerciseSetRepository.
 
+2025-03-05 - I went with a different direction of using a ViewModel. I was wrong with the terminology, and basically 
+what I thought that a service was, is actually called a use case, or at least it similar in some aspects to what I 
+thought that the service should do.
+
 ## Notes
 
 
@@ -29,3 +33,5 @@ Later when I will create the ExerciseSetRepository, I will add the rest of the m
 2025-02-11 07:06:39 - Moved to In Progress
 
 2025-02-11 09:06:06 - Moved to Backlog
+
+2025-03-05 18:14:53 - Moved to Done

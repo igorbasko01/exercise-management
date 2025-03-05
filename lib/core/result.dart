@@ -5,11 +5,11 @@ import 'package:exercise_management/core/base_exception.dart';
 /// Evaluate the result using a switch statement:
 /// ```dart
 /// switch (result) {
-///  case Result.ok(value):
-///  // handle success
+///  case Ok<Type>():
+///  // handle success using: result.value
 ///  break;
-///  case Result.error(error):
-///  // handle error
+///  case Error<Type>():
+///  // handle error using: result.error
 ///  break;
 ///  default:
 ///  // handle other cases
