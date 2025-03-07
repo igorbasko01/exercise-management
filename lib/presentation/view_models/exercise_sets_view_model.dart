@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/command.dart';
+import 'package:exercise_management/core/logger.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -9,16 +10,19 @@ import 'package:exercise_management/presentation/models/exercise_set_presentatio
 import 'package:flutter/material.dart';
 
 class ExerciseSetsViewModel extends ChangeNotifier {
-  ExerciseSetsViewModel({required ExerciseSetRepository exerciseSetRepository, required ExerciseTemplateRepository exerciseTemplateRepository})
+  ExerciseSetsViewModel(
+      {required ExerciseSetRepository exerciseSetRepository,
+      required ExerciseTemplateRepository exerciseTemplateRepository})
       : _exerciseSetRepository = exerciseSetRepository,
         _exerciseTemplateRepository = exerciseTemplateRepository {
-    fetchExerciseSets = Command0(_fetchExerciseSets);
+    fetchExerciseSets =
+        Command0<List<ExerciseSetPresentation>>(_fetchExerciseSets);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
 
-  late final Command0 fetchExerciseSets;
+  late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets() async {
     final List<ExerciseSetPresentation> exerciseSetsPresentation = [];
@@ -27,14 +31,18 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     switch (result) {
       case Ok<List<ExerciseSet>>():
         for (var exerciseSet in result.value) {
-          final exerciseTemplateResult = await _exerciseTemplateRepository.getExercise(exerciseSet.exerciseTemplateId);
+          final exerciseTemplateResult = await _exerciseTemplateRepository
+              .getExercise(exerciseSet.exerciseTemplateId);
           switch (exerciseTemplateResult) {
             case Ok<ExerciseTemplate>():
-              final exerciseSetPresentation = ExerciseSetPresentationMapper.from(exerciseSet, exerciseTemplateResult.value);
+              final exerciseSetPresentation =
+                  ExerciseSetPresentationMapper.from(
+                      exerciseSet, exerciseTemplateResult.value);
               exerciseSetsPresentation.add(exerciseSetPresentation);
               break;
             case Error():
-              return Result.error(exerciseTemplateResult.error);
+              logger.e(
+                  'Error fetching exercise template id: ${exerciseSet.exerciseTemplateId}');
           }
         }
         break;

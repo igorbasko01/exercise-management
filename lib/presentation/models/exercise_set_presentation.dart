@@ -16,4 +16,29 @@ class ExerciseSetPresentation {
     required this.repetitions,
     required this.displayName,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is ExerciseSetPresentation &&
+        other.setId == setId &&
+        other.exerciseTemplateId == exerciseTemplateId &&
+        other.dateTime == dateTime &&
+        other.equipmentWeight == equipmentWeight &&
+        other.platesWeight == platesWeight &&
+        other.repetitions == repetitions &&
+        other.displayName == displayName;
+  }
+
+  @override
+  int get hashCode {
+    return setId.hashCode ^
+        exerciseTemplateId.hashCode ^
+        dateTime.hashCode ^
+        equipmentWeight.hashCode ^
+        platesWeight.hashCode ^
+        repetitions.hashCode ^
+        displayName.hashCode;
+  }
 }

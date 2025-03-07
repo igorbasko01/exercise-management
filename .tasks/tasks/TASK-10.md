@@ -4,8 +4,8 @@ title: implement basic view model for exercise sets
 created: 2025-03-05 18:18:51
 priority: Medium
 category: Feature
-owner: 
-board: Backlog
+owner: None
+board: In Progress
 ---
 
 ## Description
@@ -23,3 +23,5 @@ For each of the implementations I should use the Command pattern.
 
 ## History
 2025-03-05 18:18:51 - Created
+
+2025-03-05 22:36:51 - Moved to In Progress
