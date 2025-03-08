@@ -25,31 +25,39 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets() async {
-    final List<ExerciseSetPresentation> exerciseSetsPresentation = [];
     final result = await _exerciseSetRepository.getExercises();
-    // for each exercise set, fetch the exercise template
+
     switch (result) {
       case Ok<List<ExerciseSet>>():
-        for (var exerciseSet in result.value) {
-          final exerciseTemplateResult = await _exerciseTemplateRepository
-              .getExercise(exerciseSet.exerciseTemplateId);
-          switch (exerciseTemplateResult) {
-            case Ok<ExerciseTemplate>():
-              final exerciseSetPresentation =
-                  ExerciseSetPresentationMapper.from(
-                      exerciseSet, exerciseTemplateResult.value);
-              exerciseSetsPresentation.add(exerciseSetPresentation);
-              break;
-            case Error():
-              logger.e(
-                  'Error fetching exercise template id: ${exerciseSet.exerciseTemplateId}');
-          }
-        }
-        break;
+        final exerciseSetsPresentation = await _processExerciseSets(result);
+        return Result.ok(exerciseSetsPresentation);
       case Error():
         return Result.error(result.error);
     }
-    return Result.ok(exerciseSetsPresentation);
+  }
+
+  Future<List<ExerciseSetPresentation>> _processExerciseSets(
+      Ok<List<ExerciseSet>> result) async {
+    final List<ExerciseSetPresentation> exerciseSetsPresentation = [];
+    // for each exercise set, fetch the exercise template
+    for (var exerciseSet in result.value) {
+      final exerciseTemplateResult = await _exerciseTemplateRepository
+          .getExercise(exerciseSet.exerciseTemplateId);
+
+      switch (exerciseTemplateResult) {
+        case Ok<ExerciseTemplate>():
+          final exerciseSetPresentation = ExerciseSetPresentationMapper.from(
+              exerciseSet, exerciseTemplateResult.value);
+          exerciseSetsPresentation.add(exerciseSetPresentation);
+          break;
+        case Error():
+          logger.e(
+              'Error fetching exercise template id: ${exerciseSet.exerciseTemplateId}');
+          break;
+      }
+    }
+
+    return exerciseSetsPresentation;
   }
 
   Future<Result<ExerciseSet>> addExerciseSet(ExerciseSet exerciseSet) async {
