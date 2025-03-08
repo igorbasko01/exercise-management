@@ -17,12 +17,18 @@ class ExerciseSetsViewModel extends ChangeNotifier {
         _exerciseTemplateRepository = exerciseTemplateRepository {
     fetchExerciseSets =
         Command0<List<ExerciseSetPresentation>>(_fetchExerciseSets);
+    addExerciseSet = Command1<ExerciseSet, ExerciseSet>(_addExerciseSet);
+    deleteExerciseSet = Command1<ExerciseSet, String>(_deleteExerciseSet);
+    updateExerciseSet = Command1<ExerciseSet, ExerciseSet>(_updateExerciseSet);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
+  late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
+  late final Command1<ExerciseSet, String> deleteExerciseSet;
+  late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets() async {
     final result = await _exerciseSetRepository.getExercises();
@@ -60,21 +66,16 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return exerciseSetsPresentation;
   }
 
-  Future<Result<ExerciseSet>> addExerciseSet(ExerciseSet exerciseSet) async {
-    final result = await _exerciseSetRepository.addExercise(exerciseSet);
-    notifyListeners();
-    return result;
+  Future<Result<ExerciseSet>> _addExerciseSet(ExerciseSet exerciseSet) async {
+    return await _exerciseSetRepository.addExercise(exerciseSet);
   }
 
-  Future<Result<ExerciseSet>> deleteExerciseSet(String id) async {
-    final result = await _exerciseSetRepository.deleteExercise(id);
-    notifyListeners();
-    return result;
+  Future<Result<ExerciseSet>> _deleteExerciseSet(String id) async {
+    return await _exerciseSetRepository.deleteExercise(id);
   }
 
-  Future<Result<ExerciseSet>> updateExerciseSet(ExerciseSet exerciseSet) async {
-    final result = await _exerciseSetRepository.updateExercise(exerciseSet);
-    notifyListeners();
-    return result;
+  Future<Result<ExerciseSet>> _updateExerciseSet(
+      ExerciseSet exerciseSet) async {
+    return await _exerciseSetRepository.updateExercise(exerciseSet);
   }
 }
