@@ -61,14 +61,14 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
     if (_formKey.currentState!.validate()) {
       final viewModel = context.read<ExerciseTemplatesViewModel>();
       if (widget.exerciseTemplate == null) {
-        viewModel.addExerciseTemplate(
-          _nameController.text,
-          _selectedMuscleGroup,
-          _selectedRepetitionsRange,
-          _descriptionController.text.trim().isEmpty
+        viewModel.addExerciseTemplateCommand.execute(ExerciseTemplate(
+          name: _nameController.text,
+          muscleGroup: _selectedMuscleGroup,
+          repetitionsRangeTarget: _selectedRepetitionsRange,
+          description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
-        );
+        ));
       } else {
         final exerciseTemplate = ExerciseTemplate(
           id: widget.exerciseTemplate!.id,
@@ -79,7 +79,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
               ? null
               : _descriptionController.text.trim(),
         );
-        viewModel.updateExerciseTemplate(exerciseTemplate);
+        viewModel.updateExerciseTemplateCommand.execute(exerciseTemplate);
       }
 
       Navigator.pop(context);
@@ -102,8 +102,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
               decoration: const InputDecoration(labelText: 'Muscle Group'),
               items: MuscleGroup.values.map((muscleGroup) {
                 return DropdownMenuItem(
-                    value: muscleGroup,
-                    child: Text(muscleGroup.name));
+                    value: muscleGroup, child: Text(muscleGroup.name));
               }).toList(),
               onChanged: (newValue) {
                 setState(() {

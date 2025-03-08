@@ -4,8 +4,8 @@ title: use command pattern for all actions in exercise template view model
 created: 2025-03-05 22:33:35
 priority: Medium
 category: Feature
-owner: 
-board: Backlog
+owner: None
+board: Done
 ---
 
 ## Description
@@ -18,3 +18,7 @@ remaining actions.
 
 ## History
 2025-03-05 22:33:35 - Created
+
+2025-03-08 15:20:00 - Moved to In Progress
+
+2025-03-08 15:29:51 - Moved to Done

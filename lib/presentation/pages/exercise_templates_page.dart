@@ -23,8 +23,7 @@ class ExerciseTemplatesPage extends StatelessWidget {
                     builder: (context) => const AddExerciseTemplatePage()));
               },
               child: const Icon(Icons.add),
-            )
-        )
+            ))
       ],
     );
   }
@@ -40,18 +39,24 @@ class ExerciseTemplatesPage extends StatelessWidget {
 
       if (viewModel.fetchExerciseTemplates.error) {
         return Center(
-          child: Text((viewModel.fetchExerciseTemplates.result as Error).toString()),
+          child: Text(
+              (viewModel.fetchExerciseTemplates.result as Error).toString()),
         );
       }
 
-      if (viewModel.fetchExerciseTemplates.completed
-          && (viewModel.fetchExerciseTemplates.result as Ok<List<ExerciseTemplate>>).value.isEmpty) {
+      if (viewModel.fetchExerciseTemplates.completed &&
+          (viewModel.fetchExerciseTemplates.result
+                  as Ok<List<ExerciseTemplate>>)
+              .value
+              .isEmpty) {
         return const Center(
           child: Text('No exercises found'),
         );
       }
 
-      var exercises = (viewModel.fetchExerciseTemplates.result as Ok<List<ExerciseTemplate>>).value;
+      var exercises = (viewModel.fetchExerciseTemplates.result
+              as Ok<List<ExerciseTemplate>>)
+          .value;
       return ListView.builder(
           itemCount: exercises.length,
           itemBuilder: (context, index) {
@@ -69,7 +74,7 @@ class ExerciseTemplatesPage extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () {
-                  viewModel.deleteExerciseTemplate(exercise.id!);
+                  viewModel.deleteExerciseTemplateCommand.execute(exercise.id!);
                 },
               ),
             );
