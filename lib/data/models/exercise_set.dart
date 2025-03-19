@@ -1,3 +1,4 @@
+/// ExerciseSet is an exercise set that was performed.
 class ExerciseSet {
   final String? id;
   final String exerciseTemplateId;

@@ -1,6 +1,7 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 
+/// This class represents a description of an exercise.
 class ExerciseTemplate {
   final String? id;
   final String name;
