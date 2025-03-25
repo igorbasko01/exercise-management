@@ -2,24 +2,31 @@ import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
-import 'package:exercise_management/presentation/models/exercise_set_presentation.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late InMemoryExerciseRepository exerciseTemplateRepository;
   late InMemoryExerciseSetRepository exerciseSetRepository;
+  late InMemoryExerciseSetPresentationRepository
+      exerciseSetPresentationRepository;
   late ExerciseSetsViewModel viewModel;
 
   setUp(() {
     exerciseTemplateRepository = InMemoryExerciseRepository();
     exerciseSetRepository = InMemoryExerciseSetRepository();
+    exerciseSetPresentationRepository =
+        InMemoryExerciseSetPresentationRepository(
+            exerciseSetRepository: exerciseSetRepository,
+            exerciseTemplateRepository: exerciseTemplateRepository);
     viewModel = ExerciseSetsViewModel(
         exerciseSetRepository: exerciseSetRepository,
-        exerciseTemplateRepository: exerciseTemplateRepository);
+        exerciseSetPresentationRepository: exerciseSetPresentationRepository);
   });
 
   test('fetchExerciseSets returns a list of ExerciseSetPresentation on success',

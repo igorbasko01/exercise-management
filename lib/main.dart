@@ -1,8 +1,13 @@
+import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
+import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,10 +18,27 @@ void main() {
       Provider<ExerciseTemplateRepository>(
         create: (context) => InMemoryExerciseRepository(),
       ),
+      Provider<ExerciseSetRepository>(
+        create: (context) => InMemoryExerciseSetRepository(),
+      ),
+      ProxyProvider2<ExerciseSetRepository, ExerciseTemplateRepository,
+          ExerciseSetPresentationRepository>(
+        update: (_, exerciseSetRepository, exerciseTemplateRepository, __) =>
+            InMemoryExerciseSetPresentationRepository(
+                exerciseSetRepository:
+                    exerciseSetRepository as InMemoryExerciseSetRepository,
+                exerciseTemplateRepository:
+                    exerciseTemplateRepository as InMemoryExerciseRepository),
+      ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
-            ..fetchExerciseTemplates.execute())
+            ..fetchExerciseTemplates.execute()),
+      ChangeNotifierProvider(
+          create: (context) => ExerciseSetsViewModel(
+              exerciseSetRepository: context.read(),
+              exerciseSetPresentationRepository: context.read())
+            ..fetchExerciseSets.execute())
     ],
     child: const MyApp(),
   ));

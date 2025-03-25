@@ -1,6 +1,6 @@
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
-import 'package:exercise_management/presentation/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,12 +17,9 @@ class ExerciseSetsPage extends StatelessWidget {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-              onPressed: () {
-
-              },
+              onPressed: () {},
               child: const Icon(Icons.add),
-            )
-        )
+            ))
       ],
     );
   }
@@ -42,14 +39,19 @@ class ExerciseSetsPage extends StatelessWidget {
         );
       }
 
-      if (viewModel.fetchExerciseSets.completed
-          && (viewModel.fetchExerciseSets.result as Ok<List<ExerciseSet>>).value.isEmpty) {
+      if (viewModel.fetchExerciseSets.completed &&
+          (viewModel.fetchExerciseSets.result
+                  as Ok<List<ExerciseSetPresentation>>)
+              .value
+              .isEmpty) {
         return const Center(
           child: Text('No exercises found'),
         );
       }
 
-      var exercises = (viewModel.fetchExerciseSets.result as Ok<List<ExerciseSetPresentation>>).value;
+      var exercises = (viewModel.fetchExerciseSets.result
+              as Ok<List<ExerciseSetPresentation>>)
+          .value;
       return ListView.builder(
           itemCount: exercises.length,
           itemBuilder: (context, index) {
@@ -58,9 +60,7 @@ class ExerciseSetsPage extends StatelessWidget {
               title: Text(exercise.displayName),
               subtitle: Text('Repetitions done: ${exercise.repetitions}, '
                   'Plates Weight: ${exercise.platesWeight}'),
-              onTap: () {
-
-              },
+              onTap: () {},
             );
           });
     });
