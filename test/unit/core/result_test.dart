@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('should create an ok result', () {
-    const result = Result.ok(42);
+    final result = Result.ok(42);
     expect(result, isA<Ok>());
     expect((result as Ok).value, 42);
   });

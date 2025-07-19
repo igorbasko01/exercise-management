@@ -1,5 +1,4 @@
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
