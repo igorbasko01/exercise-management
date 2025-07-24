@@ -5,17 +5,18 @@ import 'package:exercise_management/data/models/exercise_set_presentation_mapper
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 
 class InMemoryExerciseSetPresentationRepository
     extends ExerciseSetPresentationRepository {
   final InMemoryExerciseSetRepository _exerciseSetRepository;
-  final InMemoryExerciseRepository _exerciseTemplateRepository;
+  final ExerciseTemplateRepository _exerciseTemplateRepository;
 
   InMemoryExerciseSetPresentationRepository(
       {required InMemoryExerciseSetRepository exerciseSetRepository,
-      required InMemoryExerciseRepository exerciseTemplateRepository})
+      required ExerciseTemplateRepository exerciseTemplateRepository})
       : _exerciseSetRepository = exerciseSetRepository,
         _exerciseTemplateRepository = exerciseTemplateRepository;
 

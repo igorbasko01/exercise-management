@@ -1,9 +1,12 @@
+import 'package:exercise_management/data/database/database_factory.dart';
+import 'package:exercise_management/data/database/exercise_database_migrations.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
@@ -11,12 +14,28 @@ import 'package:exercise_management/presentation/view_models/exercise_sets_view_
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
-void main() {
+import 'data/database/exercise_database_creation.dart';
+
+Future<String> getDatabasePath() async {
+  final databasesPath = await getDatabasesPath();
+  return join(databasesPath, 'exercise_management.db');
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final path = await getDatabasePath();
+  final database = await AppDatabaseFactory.createDatabase(
+      path, createStatements, ExerciseDatabaseMigrations());
+
   runApp(MultiProvider(
     providers: [
+      Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
-        create: (context) => InMemoryExerciseRepository(),
+          create: (_) => SqfliteExerciseTemplateRepository(database),
       ),
       Provider<ExerciseSetRepository>(
         create: (context) => InMemoryExerciseSetRepository(),
@@ -28,7 +47,7 @@ void main() {
                 exerciseSetRepository:
                     exerciseSetRepository as InMemoryExerciseSetRepository,
                 exerciseTemplateRepository:
-                    exerciseTemplateRepository as InMemoryExerciseRepository),
+                    exerciseTemplateRepository as SqfliteExerciseTemplateRepository),
       ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
