@@ -17,7 +17,7 @@ void main() {
   });
 
   test('should go to ok case', () {
-    const result = Result.ok(42);
+    final result = Result.ok(42);
     switch (result) {
       case Ok<int>():
         expect(result.value, 42);

@@ -17,7 +17,7 @@ void main() {
     mockDatabaseMigrations = ExerciseDatabaseMigrations();
   });
 
-  test('should execute all createStatements withouth errors', () async {
+  test('should execute all createStatements without errors', () async {
     final database = await AppDatabaseFactory.createDatabase(
         inMemoryDatabasePath, createStatements, mockDatabaseMigrations);
     final tables = await database

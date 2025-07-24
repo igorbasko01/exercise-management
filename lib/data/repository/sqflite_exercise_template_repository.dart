@@ -47,12 +47,16 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> updateExercise(
       ExerciseTemplate exercise) async {
     try {
-      await database.update(
+      int count = await database.update(
         tableName,
         exercise.toMap(),
         where: 'id = ?',
         whereArgs: [exercise.id],
       );
+      if (count == 0) {
+        return Result.error(
+            ExerciseNotFoundException('Exercise ${exercise.id} not found'));
+      }
       return Result.ok(exercise);
     } catch (e) {
       return Result.error(
