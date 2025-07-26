@@ -1,6 +1,5 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_template_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
@@ -44,19 +43,13 @@ class ExerciseTemplatesPage extends StatelessWidget {
         );
       }
 
-      if (viewModel.fetchExerciseTemplates.completed &&
-          (viewModel.fetchExerciseTemplates.result
-                  as Ok<List<ExerciseTemplate>>)
-              .value
-              .isEmpty) {
+      if (viewModel.exercises.isEmpty) {
         return const Center(
           child: Text('No exercises found'),
         );
       }
 
-      var exercises = (viewModel.fetchExerciseTemplates.result
-              as Ok<List<ExerciseTemplate>>)
-          .value;
+      var exercises = viewModel.exercises;
       return ListView.builder(
           itemCount: exercises.length,
           itemBuilder: (context, index) {

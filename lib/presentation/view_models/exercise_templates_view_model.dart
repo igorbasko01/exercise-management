@@ -27,26 +27,58 @@ class ExerciseTemplatesViewModel extends ChangeNotifier {
   late final Command1<ExerciseTemplate, ExerciseTemplate>
       updateExerciseTemplateCommand;
 
+  List<ExerciseTemplate> _exercises = [];
+
+  List<ExerciseTemplate> get exercises => _exercises;
+
   void _onCommandExecuted() {
     notifyListeners();
   }
 
   Future<Result<void>> _fetchExerciseTemplates() async {
-    return await _exerciseTemplateRepository.getExercises();
+    final result = await _exerciseTemplateRepository.getExercises();
+    switch (result) {
+      case Ok<List<ExerciseTemplate>>():
+        _exercises = result.value;
+        return Result.ok(null);
+      case Error():
+        return Result.error(result.error);
+    }
   }
 
   Future<Result<ExerciseTemplate>> _addExerciseTemplate(
       ExerciseTemplate exerciseTemplate) async {
-    return await _exerciseTemplateRepository.addExercise(exerciseTemplate);
+    final addResult = await _exerciseTemplateRepository.addExercise(exerciseTemplate);
+    switch (addResult) {
+      case Ok<ExerciseTemplate>():
+        await _fetchExerciseTemplates();
+        return Result.ok(addResult.value);
+      case Error():
+        return Result.error(addResult.error);
+    }
   }
 
   Future<Result<ExerciseTemplate>> _deleteExerciseTemplate(String id) async {
-    return await _exerciseTemplateRepository.deleteExercise(id);
+    final deleteResult = await _exerciseTemplateRepository.deleteExercise(id);
+    switch (deleteResult) {
+      case Ok<ExerciseTemplate>():
+        await _fetchExerciseTemplates();
+        return Result.ok(deleteResult.value);
+      case Error():
+        return Result.error(deleteResult.error);
+    }
   }
 
   Future<Result<ExerciseTemplate>> _updateExerciseTemplate(
       ExerciseTemplate exerciseTemplate) async {
-    return await _exerciseTemplateRepository.updateExercise(exerciseTemplate);
+    final updateResult = await _exerciseTemplateRepository.updateExercise(exerciseTemplate);
+    switch (updateResult) {
+      case Ok<ExerciseTemplate>():
+        await _fetchExerciseTemplates();
+        return Result.ok(updateResult.value);
+      case Error():
+        return Result.error(updateResult.error);
+    }
   }
 
   @override
