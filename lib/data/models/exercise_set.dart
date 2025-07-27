@@ -51,6 +51,28 @@ class ExerciseSet {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'exercise_template_id': exerciseTemplateId,
+      'date_time': dateTime.toIso8601String(),
+      'equipment_weight': equipmentWeight,
+      'plates_weight': platesWeight,
+      'repetitions': repetitions,
+    };
+  }
+
+  factory ExerciseSet.fromMap(Map<String, dynamic> map) {
+    return ExerciseSet(
+      id: map['id']?.toString(),
+      exerciseTemplateId: map['exercise_template_id'].toString(),
+      dateTime: DateTime.parse(map['date_time'] as String),
+      equipmentWeight: (map['equipment_weight'] as num).toDouble(),
+      platesWeight: (map['plates_weight'] as num).toDouble(),
+      repetitions: map['repetitions'] as int,
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
