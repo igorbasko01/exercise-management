@@ -112,4 +112,71 @@ void main() {
     expect((getResult2).value.platesWeight, exerciseSet2.platesWeight);
     expect((getResult2).value.repetitions, exerciseSet2.repetitions);
   });
+
+  test('getExercise with non-existing id should fail', () async {
+    final getResult = await repository.getExercise('non_existing_id');
+    expect(getResult, isA<Error>());
+    expect((getResult as Error<ExerciseSet>).error, isA<ExerciseNotFoundException>());
+  });
+
+  test('deleteExercise should remove exercise by id', () async {
+    final exerciseSet = ExerciseSet(
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final addResult = await repository.addExercise(exerciseSet);
+    expect(addResult, isA<Ok>());
+
+    final addedExerciseSet = (addResult as Ok<ExerciseSet>).value;
+
+    final deleteResult = await repository.deleteExercise(addedExerciseSet.id!);
+    expect(deleteResult, isA<Ok>());
+
+    final getResult = await repository.getExercise(addedExerciseSet.id!);
+    expect(getResult, isA<Error>());
+    expect((getResult as Error<ExerciseSet>).error, isA<ExerciseNotFoundException>());
+  });
+
+  test('deleteExercise with non-existing id should fail', () async {
+    final deleteResult = await repository.deleteExercise('non_existing_id');
+    expect(deleteResult, isA<Error>());
+    expect((deleteResult as Error<ExerciseSet>).error, isA<ExerciseNotFoundException>());
+  });
+
+  test('updateExercise should update existing exercise', () async {
+    final exerciseSet = ExerciseSet(
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final addResult = await repository.addExercise(exerciseSet);
+    expect(addResult, isA<Ok>());
+
+    final updatedExerciseSet = (addResult as Ok<ExerciseSet>).value.copyWith(equipmentWeight: 15);
+    final updateResult = await repository.updateExercise(updatedExerciseSet);
+    expect(updateResult, isA<Ok>());
+    expect((updateResult as Ok<ExerciseSet>).value.equipmentWeight, 15);
+  });
+
+  test('updateExercise with non-existing id should fail', () async {
+    final exerciseSet = ExerciseSet(
+      id: 'non_existing_id',
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final updateResult = await repository.updateExercise(exerciseSet);
+    expect(updateResult, isA<Error>());
+    expect((updateResult as Error<ExerciseSet>).error, isA<ExerciseNotFoundException>());
+  });
 }

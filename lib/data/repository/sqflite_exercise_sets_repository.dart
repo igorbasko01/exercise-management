@@ -23,9 +23,24 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   }
 
   @override
-  Future<Result<ExerciseSet>> deleteExercise(String id) {
-    // TODO: implement deleteExercise
-    throw UnimplementedError();
+  Future<Result<ExerciseSet>> deleteExercise(String id) async {
+    final exerciseSetResult = await getExercise(id);
+    if (exerciseSetResult is Error<ExerciseSet>) {
+      return exerciseSetResult;
+    }
+
+    final exerciseSet = (exerciseSetResult as Ok<ExerciseSet>).value;
+
+    final count = await database.delete(
+      tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (count == 0)
+    {
+      return Result.error(ExerciseNotFoundException('Exercise $id not found'));
+    }
+    return Result.ok(exerciseSet);
   }
 
   @override
@@ -48,8 +63,22 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   }
 
   @override
-  Future<Result<ExerciseSet>> updateExercise(ExerciseSet exerciseSet) {
-    // TODO: implement updateExercise
-    throw UnimplementedError();
+  Future<Result<ExerciseSet>> updateExercise(ExerciseSet exerciseSet) async {
+    try {
+      int count = await database.update(
+        tableName,
+        exerciseSet.toMap(),
+        where: 'id = ?',
+        whereArgs: [exerciseSet.id],
+      );
+      if (count == 0) {
+        return Result.error(
+            ExerciseNotFoundException('Exercise ${exerciseSet.id} not found'));
+      }
+      return Result.ok(exerciseSet);
+    } catch (e) {
+      return Result.error(
+          ExerciseNotFoundException('Exercise ${exerciseSet.id} not found'));
+    }
   }
 }
