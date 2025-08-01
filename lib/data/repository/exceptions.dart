@@ -7,3 +7,7 @@ class ExerciseNotFoundException extends BaseException {
 class ExerciseAlreadyExistsException extends BaseException {
   ExerciseAlreadyExistsException(super.message);
 }
+
+class ExerciseDatabaseException extends BaseException {
+  ExerciseDatabaseException(super.message);
+}

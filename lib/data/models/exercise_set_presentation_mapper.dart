@@ -15,4 +15,16 @@ class ExerciseSetPresentationMapper {
       exerciseTemplateId: set.exerciseTemplateId,
     );
   }
+
+  static ExerciseSetPresentation fromMap(Map<String, dynamic> map) {
+    return ExerciseSetPresentation(
+      setId: (map['id'] as int).toString(),
+      exerciseTemplateId: (map['exercise_template_id'] as int).toString(),
+      dateTime: DateTime.parse(map['date_time'] as String),
+      equipmentWeight: (map['equipment_weight'] as num).toDouble(),
+      platesWeight: (map['plates_weight'] as num).toDouble(),
+      repetitions: map['repetitions'] as int,
+      displayName: map['display_name'] as String,
+    );
+  }
 }

@@ -21,12 +21,12 @@ A design document for the exercise management app.
   - [x] Get Exercise Templates - Gets all exercise templates.
   - [x] Update Exercise Template - Updates an exercise template.
   - [x] Delete Exercise Template - Deletes an exercise template.
-- [ ] Exercise Set Repository - A repository for managing exercise sets. Contains:
-  - [ ] Create Exercise Set - Creates a new exercise set.
-  - [ ] Get Exercise Set - Gets an exercise set by id.
-  - [ ] Get Exercise Sets - Gets all exercise sets.
-  - [ ] Update Exercise Set - Updates an exercise set.
-  - [ ] Delete Exercise Set - Deletes an exercise set.
+- [x] Exercise Set Repository - A repository for managing exercise sets. Contains:
+  - [x] Create Exercise Set - Creates a new exercise set.
+  - [x] Get Exercise Set - Gets an exercise set by id.
+  - [x] Get Exercise Sets - Gets all exercise sets.
+  - [x] Update Exercise Set - Updates an exercise set.
+  - [x] Delete Exercise Set - Deletes an exercise set.
   - [ ] Get Exercise Sets By Exercise Template Id - Gets all exercise sets for an exercise template.
   - [ ] Get Exercise Sets By Date - Gets all exercise sets for a date.
   - [ ] Get Latest Exercise Set by Exercise Template Id - Gets the latest exercise set for an exercise template.

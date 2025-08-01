@@ -5,8 +5,8 @@ import 'package:exercise_management/data/repository/exercise_set_repository.dart
 import 'package:sqflite/sqflite.dart';
 
 class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
-  final database;
-  final String tableName = 'exercise_sets';
+  final Database database;
+  static String tableName = 'exercise_sets';
 
   SqfliteExerciseSetsRepository(this.database);
 

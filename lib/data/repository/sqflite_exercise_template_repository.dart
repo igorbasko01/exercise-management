@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   final Database database;
-  final String tableName = 'exercise_templates';
+  static String tableName = 'exercise_templates';
 
   SqfliteExerciseTemplateRepository(this.database);
 
