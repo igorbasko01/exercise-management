@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,10 @@ class ExerciseSetsPage extends StatelessWidget {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const AddExerciseSetPage()));
+              },
               child: const Icon(Icons.add),
             ))
       ],
@@ -44,7 +48,7 @@ class ExerciseSetsPage extends StatelessWidget {
               .value
               .isEmpty) {
         return const Center(
-          child: Text('No exercises found'),
+          child: Text('No exercise sets found'),
         );
       }
 
