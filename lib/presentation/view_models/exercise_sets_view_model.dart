@@ -2,17 +2,24 @@ import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
+import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:flutter/material.dart';
 
 class ExerciseSetsViewModel extends ChangeNotifier {
   ExerciseSetsViewModel(
       {required ExerciseSetRepository exerciseSetRepository,
       required ExerciseSetPresentationRepository
-          exerciseSetPresentationRepository})
+          exerciseSetPresentationRepository,
+      required ExerciseTemplateRepository exerciseTemplateRepository})
       : _exerciseSetRepository = exerciseSetRepository,
-        _exerciseSetPresentationRepository = exerciseSetPresentationRepository {
+        _exerciseSetPresentationRepository = exerciseSetPresentationRepository,
+        _exerciseTemplateRepository = exerciseTemplateRepository {
+    fetchExerciseTemplates =
+        Command0<List<ExerciseTemplate>>(_fetchExerciseTemplates)
+          ..addListener(_onCommandExecuted);
     fetchExerciseSets =
         Command0<List<ExerciseSetPresentation>>(_fetchExerciseSets)
           ..addListener(_onCommandExecuted);
@@ -26,11 +33,13 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
+  final ExerciseTemplateRepository _exerciseTemplateRepository;
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
   late final Command1<ExerciseSet, String> deleteExerciseSet;
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
+  late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
 
   void _onCommandExecuted() {
     notifyListeners();
@@ -51,6 +60,10 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   Future<Result<ExerciseSet>> _updateExerciseSet(
       ExerciseSet exerciseSet) async {
     return await _exerciseSetRepository.updateExercise(exerciseSet);
+  }
+
+  Future<Result<List<ExerciseTemplate>>> _fetchExerciseTemplates() async {
+    return await _exerciseTemplateRepository.getExercises();
   }
 
   @override

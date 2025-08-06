@@ -5,7 +5,6 @@ import 'package:exercise_management/data/repository/exercise_set_repository.dart
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
-import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
@@ -35,7 +34,7 @@ void main() async {
     providers: [
       Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
-          create: (_) => SqfliteExerciseTemplateRepository(database),
+        create: (_) => SqfliteExerciseTemplateRepository(database),
       ),
       Provider<ExerciseSetRepository>(
         create: (context) => InMemoryExerciseSetRepository(),
@@ -46,8 +45,8 @@ void main() async {
             InMemoryExerciseSetPresentationRepository(
                 exerciseSetRepository:
                     exerciseSetRepository as InMemoryExerciseSetRepository,
-                exerciseTemplateRepository:
-                    exerciseTemplateRepository as SqfliteExerciseTemplateRepository),
+                exerciseTemplateRepository: exerciseTemplateRepository
+                    as SqfliteExerciseTemplateRepository),
       ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
@@ -56,7 +55,8 @@ void main() async {
       ChangeNotifierProvider(
           create: (context) => ExerciseSetsViewModel(
               exerciseSetRepository: context.read(),
-              exerciseSetPresentationRepository: context.read())
+              exerciseSetPresentationRepository: context.read(),
+              exerciseTemplateRepository: context.read())
             ..fetchExerciseSets.execute())
     ],
     child: const MyApp(),

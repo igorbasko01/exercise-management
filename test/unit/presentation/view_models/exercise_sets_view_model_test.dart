@@ -26,7 +26,8 @@ void main() {
             exerciseTemplateRepository: exerciseTemplateRepository);
     viewModel = ExerciseSetsViewModel(
         exerciseSetRepository: exerciseSetRepository,
-        exerciseSetPresentationRepository: exerciseSetPresentationRepository);
+        exerciseSetPresentationRepository: exerciseSetPresentationRepository,
+        exerciseTemplateRepository: exerciseTemplateRepository);
   });
 
   test('fetchExerciseSets returns a list of ExerciseSetPresentation on success',
