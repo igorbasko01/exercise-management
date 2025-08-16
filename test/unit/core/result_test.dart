@@ -24,8 +24,6 @@ void main() {
         break;
       case Error():
         fail('should not go to error case');
-      default:
-        fail('should not go to default case');
     }
   });
 

@@ -7,7 +7,6 @@ import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
-import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 
 class InMemoryExerciseSetPresentationRepository
     extends ExerciseSetPresentationRepository {
