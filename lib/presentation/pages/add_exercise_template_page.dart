@@ -98,7 +98,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
                 value == null || value.isEmpty ? 'Please enter a name' : null,
           ),
           DropdownButtonFormField<MuscleGroup>(
-              value: _selectedMuscleGroup,
+              initialValue: _selectedMuscleGroup,
               decoration: const InputDecoration(labelText: 'Muscle Group'),
               items: MuscleGroup.values.map((muscleGroup) {
                 return DropdownMenuItem(
@@ -110,7 +110,7 @@ class _AddExerciseTemplatePageState extends State<AddExerciseTemplatePage> {
                 });
               }),
           DropdownButtonFormField(
-              value: _selectedRepetitionsRange,
+              initialValue: _selectedRepetitionsRange,
               decoration: const InputDecoration(labelText: 'Repetitions Range'),
               items: RepetitionsRange.values.map((repetitionsRange) {
                 return DropdownMenuItem(

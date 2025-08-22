@@ -57,7 +57,7 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
         key: _formKey,
         child: Column(children: [
           DropdownButtonFormField(
-              value: _selectedExerciseTemplate,
+              initialValue: _selectedExerciseTemplate,
               decoration: const InputDecoration(labelText: 'Exercise Template'),
               items: _viewModel.exerciseTemplates
                   .map((e) => DropdownMenuItem(
