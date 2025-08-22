@@ -1,5 +1,8 @@
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AddExerciseSetPage extends StatefulWidget {
   final ExerciseSetPresentation? exerciseSet;
@@ -12,10 +15,17 @@ class AddExerciseSetPage extends StatefulWidget {
 
 class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
   final _formKey = GlobalKey<FormState>();
+  late ExerciseTemplate? _selectedExerciseTemplate;
+
+  late ExerciseSetsViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = context.read<ExerciseSetsViewModel>();
+    _selectedExerciseTemplate = _viewModel.exerciseTemplates.isNotEmpty
+        ? _viewModel.exerciseTemplates.first
+        : null;
   }
 
   @override
@@ -45,12 +55,25 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
   Form _buildForm() {
     return Form(
         key: _formKey,
-        child: Column(
-            children: [
-              ElevatedButton(
-                  onPressed: _saveExerciseSet, child: const Text('Save')),
-            ]
-        )
-    );
+        child: Column(children: [
+          DropdownButtonFormField(
+              value: _selectedExerciseTemplate,
+              decoration: const InputDecoration(labelText: 'Exercise Template'),
+              items: _viewModel.exerciseTemplates
+                  .map((e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e.name),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedExerciseTemplate = value;
+                  });
+                }
+              }),
+          ElevatedButton(
+              onPressed: _saveExerciseSet, child: const Text('Save')),
+        ]));
   }
 }

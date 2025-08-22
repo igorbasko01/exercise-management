@@ -57,7 +57,7 @@ void main() async {
               exerciseSetRepository: context.read(),
               exerciseSetPresentationRepository: context.read(),
               exerciseTemplateRepository: context.read())
-            ..fetchExerciseSets.execute())
+            ..preloadExercises.execute())
     ],
     child: const MyApp(),
   ));

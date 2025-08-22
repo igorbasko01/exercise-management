@@ -29,6 +29,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     updateExerciseSet = Command1<ExerciseSet, ExerciseSet>(_updateExerciseSet)
       ..addListener(_onCommandExecuted);
+    preloadExercises = Command0<void>(_preloadExercises)
+      ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -40,13 +42,27 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, String> deleteExerciseSet;
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
+  late final Command0<void> preloadExercises;
+
+  List<ExerciseTemplate> _exerciseTemplates = [];
+  List<ExerciseTemplate> get exerciseTemplates => _exerciseTemplates;
+
+  List<ExerciseSetPresentation> _exerciseSets = [];
+  List<ExerciseSetPresentation> get exerciseSets => _exerciseSets;
 
   void _onCommandExecuted() {
     notifyListeners();
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets() async {
-    return await _exerciseSetPresentationRepository.getExerciseSets();
+    final result = await _exerciseSetPresentationRepository.getExerciseSets();
+    switch (result) {
+      case Ok<List<ExerciseSetPresentation>>():
+        _exerciseSets = result.value;
+        return Result.ok(_exerciseSets);
+      case Error():
+        return Result.error(result.error);
+    }
   }
 
   Future<Result<ExerciseSet>> _addExerciseSet(ExerciseSet exerciseSet) async {
@@ -63,20 +79,46 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   Future<Result<List<ExerciseTemplate>>> _fetchExerciseTemplates() async {
-    return await _exerciseTemplateRepository.getExercises();
+    final result = await _exerciseTemplateRepository.getExercises();
+    switch (result) {
+      case Ok<List<ExerciseTemplate>>():
+        _exerciseTemplates = result.value;
+        return Result.ok(_exerciseTemplates);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  Future<Result<void>> _preloadExercises() async {
+    final resultTemplates = await _fetchExerciseTemplates();
+    final resultSets = await _fetchExerciseSets();
+
+    if (resultTemplates is Error) {
+      return Result.error((resultTemplates as Error).error);
+    }
+
+    if (resultSets is Error) {
+      return Result.error((resultSets as Error).error);
+    }
+
+    return Result.ok(null);
   }
 
   @override
   void dispose() {
+    fetchExerciseTemplates.removeListener(_onCommandExecuted);
     fetchExerciseSets.removeListener(_onCommandExecuted);
     addExerciseSet.removeListener(_onCommandExecuted);
     deleteExerciseSet.removeListener(_onCommandExecuted);
     updateExerciseSet.removeListener(_onCommandExecuted);
+    preloadExercises.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
     deleteExerciseSet.dispose();
     updateExerciseSet.dispose();
+    fetchExerciseTemplates.dispose();
+    preloadExercises.dispose();
 
     super.dispose();
   }
