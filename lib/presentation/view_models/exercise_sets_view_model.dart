@@ -66,16 +66,37 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   Future<Result<ExerciseSet>> _addExerciseSet(ExerciseSet exerciseSet) async {
-    return await _exerciseSetRepository.addExercise(exerciseSet);
+    final result = await _exerciseSetRepository.addExercise(exerciseSet);
+    switch (result) {
+      case Ok<ExerciseSet>():
+        await _fetchExerciseSets();
+        return Result.ok(result.value);
+      case Error():
+        return Result.error(result.error);
+    }
   }
 
   Future<Result<ExerciseSet>> _deleteExerciseSet(String id) async {
-    return await _exerciseSetRepository.deleteExercise(id);
+    final result = await _exerciseSetRepository.deleteExercise(id);
+    switch (result) {
+      case Ok<ExerciseSet>():
+        await _fetchExerciseSets();
+        return Result.ok(result.value);
+      case Error():
+        return Result.error(result.error);
+    }
   }
 
   Future<Result<ExerciseSet>> _updateExerciseSet(
       ExerciseSet exerciseSet) async {
-    return await _exerciseSetRepository.updateExercise(exerciseSet);
+    final result = await _exerciseSetRepository.updateExercise(exerciseSet);
+    switch (result) {
+      case Ok<ExerciseSet>():
+        await _fetchExerciseSets();
+        return Result.ok(result.value);
+      case Error():
+        return Result.error(result.error);
+    }
   }
 
   Future<Result<List<ExerciseTemplate>>> _fetchExerciseTemplates() async {
