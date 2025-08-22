@@ -16,9 +16,20 @@ class ExerciseSetsPage extends StatelessWidget {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const AddExerciseSetPage()));
+              onPressed: () async {
+                final viewModel = context.read<ExerciseSetsViewModel>();
+
+                await viewModel.fetchExerciseTemplates.execute();
+
+                if (viewModel.exerciseTemplates.isEmpty && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'Please add an exercise template before adding an exercise set.')));
+                  return;
+                } else if (context.mounted) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const AddExerciseSetPage()));
+                }
               },
               child: const Icon(Icons.add),
             ))
