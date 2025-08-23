@@ -64,17 +64,25 @@ class ExerciseSetsPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final exercise = exercises[index];
             return ListTile(
-              title: Text(exercise.displayName),
-              subtitle: Text('Repetitions done: ${exercise.repetitions}, '
-                  'Plates Weight: ${exercise.platesWeight}'),
-              onTap: () {},
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () {
-                  viewModel.deleteExerciseSet.execute(exercise.setId!);
-                },)
-            );
+                title: Text(exercise.displayName),
+                subtitle: Text('${_formatDate(exercise.dateTime)}, '
+                    'Reps: ${exercise.repetitions}, '
+                    'Plates Weight: ${exercise.platesWeight}, '
+                    'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}'),
+                onTap: () {},
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () {
+                    viewModel.deleteExerciseSet.execute(exercise.setId!);
+                  },
+                ));
           });
     });
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 }
