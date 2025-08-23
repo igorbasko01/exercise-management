@@ -3,8 +3,8 @@ import 'package:exercise_management/data/database/exercise_database_migrations.d
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
-import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
-import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_sets_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
@@ -37,16 +37,10 @@ void main() async {
         create: (_) => SqfliteExerciseTemplateRepository(database),
       ),
       Provider<ExerciseSetRepository>(
-        create: (context) => InMemoryExerciseSetRepository(),
+        create: (context) => SqfliteExerciseSetsRepository(database),
       ),
-      ProxyProvider2<ExerciseSetRepository, ExerciseTemplateRepository,
-          ExerciseSetPresentationRepository>(
-        update: (_, exerciseSetRepository, exerciseTemplateRepository, __) =>
-            InMemoryExerciseSetPresentationRepository(
-                exerciseSetRepository:
-                    exerciseSetRepository as InMemoryExerciseSetRepository,
-                exerciseTemplateRepository: exerciseTemplateRepository
-                    as SqfliteExerciseTemplateRepository),
+      Provider<ExerciseSetPresentationRepository>(
+        create: (context) => SqfliteExerciseSetPresentationRepository(database),
       ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(

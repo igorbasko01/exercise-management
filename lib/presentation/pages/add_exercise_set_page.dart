@@ -1,3 +1,4 @@
+import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
@@ -66,6 +67,14 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
           const SnackBar(content: Text('Please select an exercise template.')));
       return;
     }
+    final exerciseSet = ExerciseSet(
+      exerciseTemplateId: _selectedExerciseTemplate!.id!,
+      dateTime: DateTime.now(),
+      equipmentWeight: double.parse(_equipmentWeightController.text),
+      platesWeight: double.parse(_platesWeightController.text),
+      repetitions: int.parse(_repetitionsController.text),
+    );
+    _viewModel.addExerciseSet.execute(exerciseSet);
     Navigator.pop(context);
   }
 
