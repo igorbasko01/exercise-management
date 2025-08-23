@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
@@ -74,11 +75,25 @@ class ExerciseSetsPage extends StatelessWidget {
                       builder: (context) =>
                           AddExerciseSetPage(exerciseSet: exercise)));
                 },
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    viewModel.deleteExerciseSet.execute(exercise.setId!);
-                  },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          final duplicatedSet =
+                              ExerciseSetPresentationMapper.toExerciseSet(
+                                      exercise)
+                                  .copyWithoutId(dateTime: DateTime.now());
+                          viewModel.addExerciseSet.execute(duplicatedSet);
+                        }),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        viewModel.deleteExerciseSet.execute(exercise.setId!);
+                      },
+                    )
+                  ],
                 ));
           });
     });

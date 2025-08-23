@@ -27,4 +27,15 @@ class ExerciseSetPresentationMapper {
       displayName: map['display_name'] as String,
     );
   }
+
+  static ExerciseSet toExerciseSet(ExerciseSetPresentation presentation) {
+    return ExerciseSet(
+      id: presentation.setId,
+      exerciseTemplateId: presentation.exerciseTemplateId,
+      dateTime: presentation.dateTime,
+      equipmentWeight: presentation.equipmentWeight,
+      platesWeight: presentation.platesWeight,
+      repetitions: presentation.repetitions,
+    );
+  }
 }
