@@ -68,6 +68,11 @@ class ExerciseSetsPage extends StatelessWidget {
               subtitle: Text('Repetitions done: ${exercise.repetitions}, '
                   'Plates Weight: ${exercise.platesWeight}'),
               onTap: () {},
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  viewModel.deleteExerciseSet.execute(exercise.setId!);
+                },)
             );
           });
     });
