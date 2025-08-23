@@ -27,9 +27,15 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
   void initState() {
     super.initState();
     _viewModel = context.read<ExerciseSetsViewModel>();
-    _selectedExerciseTemplate = _viewModel.exerciseTemplates.isNotEmpty
-        ? _viewModel.exerciseTemplates.first
-        : null;
+    if (widget.exerciseSet == null) {
+      _selectedExerciseTemplate = _viewModel.exerciseTemplates.isNotEmpty
+          ? _viewModel.exerciseTemplates.first
+          : null;
+    } else {
+      _selectedExerciseTemplate = _viewModel.exerciseTemplates.firstWhere(
+          (e) => e.id == widget.exerciseSet!.exerciseTemplateId
+      );
+    }
     _equipmentWeightController = TextEditingController(
         text: widget.exerciseSet?.equipmentWeight.toString() ?? '0');
     _platesWeightController = TextEditingController(
@@ -67,14 +73,26 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
           const SnackBar(content: Text('Please select an exercise template.')));
       return;
     }
-    final exerciseSet = ExerciseSet(
-      exerciseTemplateId: _selectedExerciseTemplate!.id!,
-      dateTime: DateTime.now(),
-      equipmentWeight: double.parse(_equipmentWeightController.text),
-      platesWeight: double.parse(_platesWeightController.text),
-      repetitions: int.parse(_repetitionsController.text),
-    );
-    _viewModel.addExerciseSet.execute(exerciseSet);
+    if (widget.exerciseSet == null) {
+      final exerciseSet = ExerciseSet(
+        exerciseTemplateId: _selectedExerciseTemplate!.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: double.parse(_equipmentWeightController.text),
+        platesWeight: double.parse(_platesWeightController.text),
+        repetitions: int.parse(_repetitionsController.text),
+      );
+      _viewModel.addExerciseSet.execute(exerciseSet);
+    } else {
+      final exerciseSet = ExerciseSet(
+        id: widget.exerciseSet!.setId,
+        exerciseTemplateId: _selectedExerciseTemplate!.id!,
+        dateTime: widget.exerciseSet!.dateTime,
+        equipmentWeight: double.parse(_equipmentWeightController.text),
+        platesWeight: double.parse(_platesWeightController.text),
+        repetitions: int.parse(_repetitionsController.text),
+      );
+      _viewModel.updateExerciseSet.execute(exerciseSet);
+    }
     Navigator.pop(context);
   }
 

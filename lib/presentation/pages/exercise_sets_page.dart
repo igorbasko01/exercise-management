@@ -69,7 +69,11 @@ class ExerciseSetsPage extends StatelessWidget {
                     'Reps: ${exercise.repetitions}, '
                     'Plates Weight: ${exercise.platesWeight}, '
                     'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}'),
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          AddExerciseSetPage(exerciseSet: exercise)));
+                },
                 trailing: IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: () {
