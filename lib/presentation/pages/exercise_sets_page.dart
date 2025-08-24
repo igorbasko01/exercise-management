@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
@@ -60,44 +61,99 @@ class ExerciseSetsPage extends StatelessWidget {
         );
       }
 
-      var exercises = viewModel.exerciseSets;
-      return ListView.builder(
-          itemCount: exercises.length,
-          itemBuilder: (context, index) {
-            final exercise = exercises[index];
-            return ListTile(
-                title: Text(exercise.displayName),
-                subtitle: Text('${_formatDate(exercise.dateTime)}, '
-                    'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
-                    'Plates Weight: ${exercise.platesWeight}, '
-                    'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}'),
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) =>
-                          AddExerciseSetPage(exerciseSet: exercise)));
-                },
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          final duplicatedSet =
-                              ExerciseSetPresentationMapper.toExerciseSet(
-                                      exercise)
-                                  .copyWithoutId(dateTime: DateTime.now());
-                          viewModel.addExerciseSet.execute(duplicatedSet);
-                        }),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        viewModel.deleteExerciseSet.execute(exercise.setId!);
-                      },
-                    )
-                  ],
-                ));
-          });
+      final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
+      final sortedDates = _getSortedDates(groupedExercises);
+
+      return _buildGroupedListView(context, groupedExercises, sortedDates, viewModel);
     });
+  }
+
+  Map<String, List<ExerciseSetPresentation>> _groupExercisesByDate(
+      List<ExerciseSetPresentation> exercises) {
+    final groupedExercises = <String, List<ExerciseSetPresentation>>{};
+    for (final exercise in exercises) {
+      final dateKey = _formatDate(exercise.dateTime);
+      groupedExercises.putIfAbsent(dateKey, () => []).add(exercise);
+    }
+    return groupedExercises;
+  }
+
+  List<String> _getSortedDates(
+      Map<String, List<ExerciseSetPresentation>> groupedExercises) {
+    return groupedExercises.keys.toList()..sort((a, b) => b.compareTo(a));
+  }
+
+  ListView _buildGroupedListView(
+      BuildContext context,
+      Map<String, List<ExerciseSetPresentation>> groupedExercises,
+      List<String> sortedDates,
+      ExerciseSetsViewModel viewModel) {
+    return ListView.builder(
+      itemCount: sortedDates.length,
+      itemBuilder: (context, index) {
+        final date = sortedDates[index];
+        final exercises = groupedExercises[date]!;
+        return _buildExpansionTile(context, date, exercises, viewModel);
+      },
+    );
+  }
+
+  ExpansionTile _buildExpansionTile(
+      BuildContext context,
+      String date,
+      List<ExerciseSetPresentation> exercises,
+      ExerciseSetsViewModel viewModel) {
+    return ExpansionTile(
+      title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(
+          '${exercises.length} set${exercises.length != 1 ? 's' : ''}'),
+      children: exercises
+          .map<ListTile>((exercise) =>
+              _buildExerciseListTile(context, exercise, viewModel))
+          .toList(),
+    );
+  }
+
+  ListTile _buildExerciseListTile(BuildContext context, ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    return ListTile(
+      title: Text(exercise.displayName),
+      subtitle: Text(_buildExerciseSubtitle(exercise)),
+      onTap: () => _navigateToEditExerciseSet(context, exercise),
+      trailing: _buildActionButtons(exercise, viewModel),
+    );
+  }
+
+  String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
+    return 'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
+        'Plates Weight: ${exercise.platesWeight}, '
+        'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}';
+  }
+
+  void _navigateToEditExerciseSet(BuildContext context, ExerciseSetPresentation exercise) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => AddExerciseSetPage(exerciseSet: exercise)));
+  }
+
+  Row _buildActionButtons(ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.copy),
+          onPressed: () => _duplicateExerciseSet(exercise, viewModel),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () => viewModel.deleteExerciseSet.execute(exercise.setId!),
+        )
+      ]
+    );
+  }
+
+  void _duplicateExerciseSet(ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
+        .copyWithoutId(dateTime: DateTime.now());
+    viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
   String _formatDate(DateTime dateTime) {
