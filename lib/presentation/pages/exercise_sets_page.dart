@@ -106,8 +106,7 @@ class ExerciseSetsPage extends StatelessWidget {
     return ExpansionTile(
       controlAffinity: ListTileControlAffinity.leading,
       title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(
-          '${exercises.length} set${exercises.length != 1 ? 's' : ''}'),
+      subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
       trailing: IconButton(
         icon: const Icon(Icons.copy),
         onPressed: () => _duplicateExerciseSets(exercises, viewModel),
@@ -117,6 +116,12 @@ class ExerciseSetsPage extends StatelessWidget {
               _buildExerciseListTile(context, exercise, viewModel))
           .toList(),
     );
+  }
+
+  String _buildExerciseGroupSubtitle(List<ExerciseSetPresentation> exercises) {
+    final exerciseNames = exercises.map((e) => e.displayName).toSet().toList();
+    return '${exercises.length} set${exercises.length != 1 ? 's' : ''}, '
+        '$exerciseNames';
   }
 
   ListTile _buildExerciseListTile(BuildContext context, ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
