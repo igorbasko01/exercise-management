@@ -179,4 +179,92 @@ void main() {
     expect(updateResult, isA<Error>());
     expect((updateResult as Error<ExerciseSet>).error, isA<ExerciseNotFoundException>());
   });
+
+  test('addExercises should add multiple exercises', () async {
+    final exerciseSet1 = ExerciseSet(
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final exerciseSet2 = ExerciseSet(
+      exerciseTemplateId: '2',
+      dateTime: DateTime.now(),
+      equipmentWeight: 15,
+      platesWeight: 25,
+      repetitions: 10
+    );
+
+    final addResult = await repository.addExercises([exerciseSet1, exerciseSet2]);
+    expect(addResult, isA<Ok>());
+
+    final getResult = await repository.getExercises();
+    expect(getResult, isA<Ok>());
+    expect((getResult as Ok<List<ExerciseSet>>).value.length, 2);
+  });
+
+  test('addExercises with existing ids should fail', () async {
+    final exerciseSet1 = ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final exerciseSet2 = ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '2',
+      dateTime: DateTime.now(),
+      equipmentWeight: 15,
+      platesWeight: 25,
+      repetitions: 10
+    );
+
+    final addResult = await repository.addExercises([exerciseSet1, exerciseSet2]);
+    expect(addResult, isA<Error>());
+    expect((addResult as Error<void>).error, isA<ExerciseAlreadyExistsException>());
+  });
+
+  test('addExercises with some existing ids should fail without adding any', () async {
+    final exerciseSet1 = ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: DateTime.now(),
+      equipmentWeight: 10,
+      platesWeight: 20,
+      repetitions: 7
+    );
+
+    final exerciseSet2 = ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '2',
+      dateTime: DateTime.now(),
+      equipmentWeight: 15,
+      platesWeight: 25,
+      repetitions: 10
+    );
+
+    await repository.addExercise(exerciseSet2);
+
+    final addResult = await repository.addExercises([exerciseSet1, exerciseSet2]);
+    expect(addResult, isA<Error>());
+    expect((addResult as Error<void>).error, isA<ExerciseAlreadyExistsException>());
+
+    final getResult = await repository.getExercises();
+    expect(getResult, isA<Ok>());
+    expect((getResult as Ok<List<ExerciseSet>>).value.length, 1);
+  });
+
+  test('addExercises with empty list should succeed without adding any', () async {
+    final addResult = await repository.addExercises([]);
+    expect(addResult, isA<Ok>());
+
+    final getResult = await repository.getExercises();
+    expect(getResult, isA<Ok>());
+    expect((getResult as Ok<List<ExerciseSet>>).value, isEmpty);
+  });
 }

@@ -104,9 +104,14 @@ class ExerciseSetsPage extends StatelessWidget {
       List<ExerciseSetPresentation> exercises,
       ExerciseSetsViewModel viewModel) {
     return ExpansionTile(
+      controlAffinity: ListTileControlAffinity.leading,
       title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(
           '${exercises.length} set${exercises.length != 1 ? 's' : ''}'),
+      trailing: IconButton(
+        icon: const Icon(Icons.copy),
+        onPressed: () => _duplicateExerciseSets(exercises, viewModel),
+      ),
       children: exercises
           .map<ListTile>((exercise) =>
               _buildExerciseListTile(context, exercise, viewModel))
@@ -154,6 +159,13 @@ class ExerciseSetsPage extends StatelessWidget {
     final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
         .copyWithoutId(dateTime: DateTime.now());
     viewModel.addExerciseSet.execute(duplicatedSet);
+  }
+
+  void _duplicateExerciseSets(List<ExerciseSetPresentation> exercises, ExerciseSetsViewModel viewModel) {
+    final duplicatedSets = exercises.map((exercise) =>
+        ExerciseSetPresentationMapper.toExerciseSet(exercise)
+            .copyWithoutId(dateTime: DateTime.now())).toList();
+    viewModel.addExerciseSets.execute(duplicatedSets);
   }
 
   String _formatDate(DateTime dateTime) {

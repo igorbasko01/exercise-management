@@ -81,4 +81,20 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
           ExerciseNotFoundException('Exercise ${exerciseSet.id} not found'));
     }
   }
+
+  @override
+  Future<Result<void>> addExercises(List<ExerciseSet> exerciseSets) async {
+    final batch = database.batch();
+    for (var exerciseSet in exerciseSets) {
+      batch.insert(tableName, exerciseSet.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.rollback);
+    }
+    try {
+      await batch.commit(noResult: true);
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(
+          ExerciseAlreadyExistsException("One or more exercises already exist"));
+    }
+  }
 }

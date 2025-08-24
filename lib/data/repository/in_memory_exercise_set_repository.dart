@@ -55,4 +55,20 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
     _exerciseSets[index] = exerciseSet;
     return Result.ok(exerciseSet);
   }
+
+  @override
+  Future<Result<void>> addExercises(List<ExerciseSet> exerciseSets) async {
+    for (var exerciseSet in exerciseSets) {
+      if (exerciseSet.id == null) {
+        exerciseSet = exerciseSet.copyWith(id: uniqueId());
+      }
+
+      if (_exerciseSets.contains(exerciseSet)) {
+        return Result.error(ExerciseAlreadyExistsException('Exercise set ${exerciseSet.id} already exists'));
+      }
+
+      _exerciseSets.add(exerciseSet);
+    }
+    return Result.ok(null);
+  }
 }

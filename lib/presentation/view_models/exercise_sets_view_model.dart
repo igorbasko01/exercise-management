@@ -25,6 +25,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           ..addListener(_onCommandExecuted);
     addExerciseSet = Command1<ExerciseSet, ExerciseSet>(_addExerciseSet)
       ..addListener(_onCommandExecuted);
+    addExerciseSets = Command1<void, List<ExerciseSet>>(_addExerciseSets)
+      ..addListener(_onCommandExecuted);
     deleteExerciseSet = Command1<ExerciseSet, String>(_deleteExerciseSet)
       ..addListener(_onCommandExecuted);
     updateExerciseSet = Command1<ExerciseSet, ExerciseSet>(_updateExerciseSet)
@@ -39,15 +41,18 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
+  late final Command1<void, List<ExerciseSet>> addExerciseSets;
   late final Command1<ExerciseSet, String> deleteExerciseSet;
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
+
   List<ExerciseTemplate> get exerciseTemplates => _exerciseTemplates;
 
   List<ExerciseSetPresentation> _exerciseSets = [];
+
   List<ExerciseSetPresentation> get exerciseSets => _exerciseSets;
 
   void _onCommandExecuted() {
@@ -71,6 +76,17 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       case Ok<ExerciseSet>():
         await _fetchExerciseSets();
         return Result.ok(result.value);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  Future<Result<void>> _addExerciseSets(List<ExerciseSet> exerciseSets) async {
+    final result = await _exerciseSetRepository.addExercises(exerciseSets);
+    switch (result) {
+      case Ok<void>():
+        await _fetchExerciseSets();
+        return Result.ok(null);
       case Error():
         return Result.error(result.error);
     }
