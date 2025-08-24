@@ -31,27 +31,27 @@ A design document for the exercise management app.
   - [ ] Get Exercise Sets By Date - Gets all exercise sets for a date.
   - [ ] Get Latest Exercise Set by Exercise Template Id - Gets the latest exercise set for an exercise template.
 ## Services
-- [ ] Exercise Template Service - A service for managing exercise templates. Contains:
+- [x] Exercise Template Service - A service for managing exercise templates. Contains:
   - [x] Create Exercise Template - Creates a new exercise template.
-  - [ ] Get Exercise Template - Gets an exercise template by id.
-  - [ ] Get Exercise Templates - Gets all exercise templates.
-  - [ ] Update Exercise Template - Updates an exercise template. Only allow update if no exercise sets are associated with the template.
-  - [ ] Delete Exercise Template - Deletes an exercise template. Only allow delete if no exercise sets are associated with the template.
+  - [x] Get Exercise Template - Gets an exercise template by id.
+  - [x] Get Exercise Templates - Gets all exercise templates.
+  - [x] Update Exercise Template - Updates an exercise template. Only allow update if no exercise sets are associated with the template.
+  - [x] Delete Exercise Template - Deletes an exercise template. Only allow delete if no exercise sets are associated with the template.
 ## Presentation Layer
 - [ ] Main Screen - The main screen of the app. Contains:
-  - [ ] Navigation Drawer - A drawer that allows the user to navigate to different screens:
-    - [ ] Exercise Templates Screen - A screen that displays a list of exercise templates.
-    - [ ] Exercise Sets Screen - A screen that displays a list of exercise sets.
+  - [x] Navigation Drawer - A drawer that allows the user to navigate to different screens:
+    - [x] Exercise Templates Screen - A screen that displays a list of exercise templates.
+    - [x] Exercise Sets Screen - A screen that displays a list of exercise sets.
   - [ ] Welcome Message - A message that welcomes the user to the app.
-- [ ] Exercise Template List Screen - A screen that displays a list of exercise templates. Should allow the user to:
-  - [ ] Create Exercise Template - Navigates to the create exercise template screen.
-  - [ ] View Exercise Template - Navigates to the exercise template detail screen.
-- [ ] Exercise Template Detail Screen - A screen that displays the details of an exercise template. Should allow the user to:
-  - [ ] Edit Exercise Template - Navigates to the edit exercise template screen. Only allow edit if no exercise sets are associated with the template.
-  - [ ] Delete Exercise Template - Deletes the exercise template. Only allow delete if no exercise sets are associated with the template.
-- [ ] Exercise Set List Screen - A screen that displays a list of exercise sets, sorted by date descending. Should allow the user to:
-  - [ ] Create Exercise Set - Navigates to the create exercise set screen.
-  - [ ] View Exercise Set - Navigates to the exercise set detail screen.
-- [ ] Exercise Set Detail Screen - A screen that displays the details of an exercise set. Should allow the user to:
-  - [ ] Edit Exercise Set - Navigates to the edit exercise set screen.
-  - [ ] Delete Exercise Set - Deletes the exercise set.
+- [x] Exercise Template List Screen - A screen that displays a list of exercise templates. Should allow the user to:
+  - [x] Create Exercise Template - Navigates to the create exercise template screen.
+  - [x] View Exercise Template - Navigates to the exercise template detail screen.
+- [x] Exercise Template Detail Screen - A screen that displays the details of an exercise template. Should allow the user to:
+  - [x] Edit Exercise Template - Navigates to the edit exercise template screen. Only allow edit if no exercise sets are associated with the template.
+  - [x] Delete Exercise Template - Deletes the exercise template. Only allow delete if no exercise sets are associated with the template.
+- [x] Exercise Set List Screen - A screen that displays a list of exercise sets, sorted by date descending. Should allow the user to:
+  - [x] Create Exercise Set - Navigates to the create exercise set screen.
+  - [x] View Exercise Set - Navigates to the exercise set detail screen.
+- [x] Exercise Set Detail Screen - A screen that displays the details of an exercise set. Should allow the user to:
+  - [x] Edit Exercise Set - Navigates to the edit exercise set screen.
+  - [x] Delete Exercise Set - Deletes the exercise set.
