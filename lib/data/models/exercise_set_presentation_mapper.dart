@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -13,6 +14,7 @@ class ExerciseSetPresentationMapper {
       equipmentWeight: set.equipmentWeight,
       dateTime: set.dateTime,
       exerciseTemplateId: set.exerciseTemplateId,
+      repetitionsRange: template.repetitionsRangeTarget,
     );
   }
 
@@ -25,6 +27,9 @@ class ExerciseSetPresentationMapper {
       platesWeight: (map['plates_weight'] as num).toDouble(),
       repetitions: map['repetitions'] as int,
       displayName: map['display_name'] as String,
+      repetitionsRange: RepetitionsRange.values.firstWhere(
+          (e) => e.index == map['repetitions_range'],
+          orElse: () => RepetitionsRange.medium),
     );
   }
 

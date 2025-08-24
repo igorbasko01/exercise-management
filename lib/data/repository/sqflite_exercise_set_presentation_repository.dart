@@ -24,10 +24,11 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
         es.equipment_weight AS equipment_weight,
         es.plates_weight AS plates_weight,
         es.repetitions AS repetitions,
-        et.name AS display_name
+        et.name AS display_name,
+        et.repetitions_range AS repetitions_range
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      ORDER BY es.id ASC
+      ORDER BY es.id DESC
       ''');
 
       final exerciseSetPresentations = maps.map((map) => ExerciseSetPresentationMapper.fromMap(map)).toList();
@@ -48,7 +49,8 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
         es.equipment_weight AS equipment_weight,
         es.plates_weight AS plates_weight,
         es.repetitions AS repetitions,
-        et.name AS display_name
+        et.name AS display_name,
+        et.repetitions_range AS repetitions_range
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
       WHERE es.id = ?

@@ -97,6 +97,7 @@ void main() {
         equipmentWeight: 0,
         platesWeight: 45,
         repetitions: 10,
+        repetitionsRange: RepetitionsRange.medium
       ),
       ExerciseSetPresentation(
         setId: '2',
@@ -106,6 +107,7 @@ void main() {
         equipmentWeight: 0,
         platesWeight: 45,
         repetitions: 10,
+        repetitionsRange: RepetitionsRange.medium
       ),
     ];
 
@@ -182,6 +184,7 @@ void main() {
         equipmentWeight: 0,
         platesWeight: 45,
         repetitions: 10,
+        repetitionsRange: RepetitionsRange.medium
       ),
       ExerciseSetPresentation(
         setId: '2',
@@ -191,6 +194,7 @@ void main() {
         equipmentWeight: 0,
         platesWeight: 45,
         repetitions: 10,
+        repetitionsRange: RepetitionsRange.medium
       ),
     ];
 
@@ -244,6 +248,7 @@ void main() {
         equipmentWeight: 0,
         platesWeight: 45,
         repetitions: 10,
+        repetitionsRange: RepetitionsRange.medium
       ),
     ];
 

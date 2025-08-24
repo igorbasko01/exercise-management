@@ -61,6 +61,7 @@ void main() {
         equipmentWeight: 0,
         dateTime: now,
         exerciseTemplateId: '1',
+        repetitionsRange: RepetitionsRange.medium,
       )
     ];
 
@@ -126,6 +127,7 @@ void main() {
         equipmentWeight: 0,
         dateTime: now,
         exerciseTemplateId: '1',
+        repetitionsRange: RepetitionsRange.medium,
       )
     ];
 

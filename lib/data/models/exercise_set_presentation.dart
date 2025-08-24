@@ -1,3 +1,5 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
+
 class ExerciseSetPresentation {
   final String? setId;
   final String exerciseTemplateId;
@@ -6,6 +8,7 @@ class ExerciseSetPresentation {
   final double platesWeight;
   final int repetitions;
   final String displayName;
+  final RepetitionsRange repetitionsRange;
 
   ExerciseSetPresentation({
     this.setId,
@@ -15,6 +18,7 @@ class ExerciseSetPresentation {
     required this.platesWeight,
     required this.repetitions,
     required this.displayName,
+    required this.repetitionsRange,
   });
 
   @override
@@ -28,7 +32,8 @@ class ExerciseSetPresentation {
         other.equipmentWeight == equipmentWeight &&
         other.platesWeight == platesWeight &&
         other.repetitions == repetitions &&
-        other.displayName == displayName;
+        other.displayName == displayName &&
+        other.repetitionsRange == repetitionsRange;
   }
 
   @override
@@ -39,6 +44,7 @@ class ExerciseSetPresentation {
         equipmentWeight.hashCode ^
         platesWeight.hashCode ^
         repetitions.hashCode ^
-        displayName.hashCode;
+        displayName.hashCode ^
+        repetitionsRange.hashCode;
   }
 }

@@ -115,6 +115,11 @@ void main() {
     // Assert
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
     expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 2);
+    for (var presentation in result.value) {
+      expect(presentation.displayName, exerciseTemplate.name);
+      expect(presentation.exerciseTemplateId, exerciseTemplate.id);
+      expect(presentation.repetitionsRange, exerciseTemplate.repetitionsRangeTarget);
+    }
   });
 
   test('getExerciseSets should return empty list if no sets exist', () async {

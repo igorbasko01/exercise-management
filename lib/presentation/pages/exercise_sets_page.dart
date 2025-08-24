@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
@@ -67,7 +68,7 @@ class ExerciseSetsPage extends StatelessWidget {
             return ListTile(
                 title: Text(exercise.displayName),
                 subtitle: Text('${_formatDate(exercise.dateTime)}, '
-                    'Reps: ${exercise.repetitions}, '
+                    'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
                     'Plates Weight: ${exercise.platesWeight}, '
                     'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}'),
                 onTap: () {
