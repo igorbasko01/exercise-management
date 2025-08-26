@@ -12,6 +12,8 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
           ..addListener(_onCommandExecuted);
   }
 
+  final int daysInWeek = 7;
+
   final ExerciseStatisticsRepository _statisticsRepository;
 
   late final Command0<List<bool>> fetchCurrentWeekExerciseDaysStatistic;
@@ -27,11 +29,12 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
       case Ok<List<bool>>():
         return result;
       case Error<List<bool>>():
-        return Result.ok(List.filled(7, false));
+        return Result.ok(List.filled(daysInWeek, false));
     }
   }
 
-  @override void dispose() {
+  @override
+  void dispose() {
     fetchCurrentWeekExerciseDaysStatistic.removeListener(_onCommandExecuted);
     fetchCurrentWeekExerciseDaysStatistic.dispose();
     super.dispose();
