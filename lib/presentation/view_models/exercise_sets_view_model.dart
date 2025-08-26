@@ -146,12 +146,14 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     fetchExerciseTemplates.removeListener(_onCommandExecuted);
     fetchExerciseSets.removeListener(_onCommandExecuted);
     addExerciseSet.removeListener(_onCommandExecuted);
+    addExerciseSets.removeListener(_onCommandExecuted);
     deleteExerciseSet.removeListener(_onCommandExecuted);
     updateExerciseSet.removeListener(_onCommandExecuted);
     preloadExercises.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
+    addExerciseSets.dispose();
     deleteExerciseSet.dispose();
     updateExerciseSet.dispose();
     fetchExerciseTemplates.dispose();
