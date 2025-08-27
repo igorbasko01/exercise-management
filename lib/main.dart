@@ -14,6 +14,7 @@ import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
+import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -60,7 +61,8 @@ void main() async {
             ..preloadExercises.execute()),
       ChangeNotifierProvider(
           create: (context) =>
-              ExerciseStatisticsViewModel(statisticsRepository: context.read()))
+              ExerciseStatisticsViewModel(statisticsRepository: context.read())),
+      ChangeNotifierProvider(create: (context) => TrainingSessionManager())
     ],
     child: const MyApp(),
   ));

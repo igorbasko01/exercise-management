@@ -4,6 +4,7 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -112,7 +113,7 @@ class ExerciseSetsPage extends StatelessWidget {
         onPressed: () => _duplicateExerciseSets(exercises, viewModel),
       ),
       children: exercises
-          .map<ListTile>((exercise) =>
+          .map<Widget>((exercise) =>
               _buildExerciseListTile(context, exercise, viewModel))
           .toList(),
     );
@@ -124,12 +125,19 @@ class ExerciseSetsPage extends StatelessWidget {
         '$exerciseNames';
   }
 
-  ListTile _buildExerciseListTile(BuildContext context, ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    return ListTile(
-      title: Text(exercise.displayName),
-      subtitle: Text(_buildExerciseSubtitle(exercise)),
-      onTap: () => _navigateToEditExerciseSet(context, exercise),
-      trailing: _buildActionButtons(exercise, viewModel),
+  Widget _buildExerciseListTile(BuildContext context, ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    return Consumer<TrainingSessionManager>(
+      builder: (context, trainingManager, child) {
+        final isCompleted = trainingManager.isSetCompleted(exercise.setId!);
+        return ListTile(
+          tileColor: isCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+          title: Text(exercise.displayName),
+          subtitle: Text(_buildExerciseSubtitle(exercise)),
+          onTap: () => _navigateToEditExerciseSet(context, exercise),
+          onLongPress: () => trainingManager.toggleSetCompletion(exercise.setId!),
+          trailing: _buildActionButtons(exercise, viewModel),
+        );
+      }
     );
   }
 
