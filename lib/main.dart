@@ -11,6 +11,7 @@ import 'package:exercise_management/data/repository/sqflite_exercise_template_re
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
+import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
@@ -101,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
     const HomePage(),
     const ExerciseSetsPage(),
     const ExerciseTemplatesPage(),
+    const SettingsPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -124,6 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: Icon(Icons.fitness_center), label: 'Sets'),
           BottomNavigationBarItem(
               icon: Icon(Icons.library_books), label: 'Exercises'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
