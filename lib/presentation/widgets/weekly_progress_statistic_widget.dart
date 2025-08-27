@@ -1,4 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class WeeklyProgressStatisticWidget extends StatelessWidget {
   static const List<String> _days = [
@@ -11,15 +14,37 @@ class WeeklyProgressStatisticWidget extends StatelessWidget {
     'Sat'
   ];
 
-  // TODO: Replace with data from view model
-  final List<bool> _daysExercised = const [
-    true, false, true, true, false, true, false
-  ];
-
   const WeeklyProgressStatisticWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return _exerciseStatistics();
+  }
+
+  Consumer<ExerciseStatisticsViewModel> _exerciseStatistics() {
+    return Consumer<ExerciseStatisticsViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.fetchCurrentWeekExerciseDaysStatistic.running) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (viewModel.fetchCurrentWeekExerciseDaysStatistic.error) {
+            return Center(
+              child: Text((viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Error).toString()),
+            );
+          }
+
+          final daysExercised = viewModel.fetchCurrentWeekExerciseDaysStatistic.result is Ok
+              ? (viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Ok).value
+              : List.filled(viewModel.daysInWeek, false);
+
+          return _buildUI(daysExercised);
+        });
+  }
+
+  Widget _buildUI(List<bool> daysExercised) {
     return Column(
       children: [
         const Text('Weekly Progress'),
@@ -31,9 +56,9 @@ class WeeklyProgressStatisticWidget extends StatelessWidget {
               .asMap()
               .entries
               .map((entry) => _DayIndicator(
-                    day: entry.value,
-                    exercised: _daysExercised[entry.key],
-                  ))
+            day: entry.value,
+            exercised: daysExercised[entry.key],
+          ))
               .toList(),
         ),
         Row(
@@ -43,13 +68,16 @@ class WeeklyProgressStatisticWidget extends StatelessWidget {
               .asMap()
               .entries
               .map((entry) => _DayIndicator(
-                    day: entry.value,
-                    exercised: _daysExercised[entry.key + 5],
-                  ))
+            day: entry.value,
+            exercised: daysExercised[entry.key + 5],
+          ))
               .toList(),
         ),
         const SizedBox(height: 15),
-        Text('${_daysExercised.where((e) => e).length}', style: const TextStyle(fontSize: 38),),
+        Text(
+          '${daysExercised.where((e) => e).length}',
+          style: const TextStyle(fontSize: 38),
+        ),
       ],
     );
   }
@@ -72,8 +100,8 @@ class _DayIndicator extends StatelessWidget {
           day,
           style: TextStyle(
             color: exercised
-                ? CupertinoColors.activeGreen
-                : CupertinoColors.systemGrey,
+                ? Colors.green
+                : Colors.grey,
           ),
         ),
       ],
