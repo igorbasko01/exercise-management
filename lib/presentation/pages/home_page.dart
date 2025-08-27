@@ -17,7 +17,6 @@ class HomePage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-              color: Colors.teal,
               border: Border.all()
           ),
           child: WeeklyProgressStatisticWidget(),
