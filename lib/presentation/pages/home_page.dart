@@ -23,32 +23,44 @@ class HomePage extends StatelessWidget {
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.blueGrey,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('Another Statistic')),
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.amber,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('More Stats')),
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.cyan,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('Even More Stats')),
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.deepOrange,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('Stats')),
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.indigo,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('Last Stats')),
         ),
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.lime,
+          decoration: BoxDecoration(
+              border: Border.all()
+          ),
           child: const Center(child: Text('Additional Stats')),
         )
       ],
