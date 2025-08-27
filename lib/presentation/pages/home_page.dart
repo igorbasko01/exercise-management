@@ -19,7 +19,7 @@ class HomePage extends StatelessWidget {
           decoration: BoxDecoration(
               border: Border.all()
           ),
-          child: WeeklyProgressStatisticWidget(),
+          child: const WeeklyProgressStatisticWidget(),
         ),
         Container(
           padding: const EdgeInsets.all(8),

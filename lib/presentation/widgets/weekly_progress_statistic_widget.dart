@@ -42,7 +42,6 @@ class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticW
         },
       child: _exerciseStatistics(),
     );
-    // return _exerciseStatistics();
   }
 
   Consumer<ExerciseStatisticsViewModel> _exerciseStatistics() {
