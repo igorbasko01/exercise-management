@@ -4,6 +4,7 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -64,7 +65,8 @@ class ExerciseSetsPage extends StatelessWidget {
       final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
       final sortedDates = _getSortedDates(groupedExercises);
 
-      return _buildGroupedListView(context, groupedExercises, sortedDates, viewModel);
+      return _buildGroupedListView(
+          context, groupedExercises, sortedDates, viewModel);
     });
   }
 
@@ -112,7 +114,7 @@ class ExerciseSetsPage extends StatelessWidget {
         onPressed: () => _duplicateExerciseSets(exercises, viewModel),
       ),
       children: exercises
-          .map<ListTile>((exercise) =>
+          .map<Widget>((exercise) =>
               _buildExerciseListTile(context, exercise, viewModel))
           .toList(),
     );
@@ -124,13 +126,25 @@ class ExerciseSetsPage extends StatelessWidget {
         '$exerciseNames';
   }
 
-  ListTile _buildExerciseListTile(BuildContext context, ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    return ListTile(
-      title: Text(exercise.displayName),
-      subtitle: Text(_buildExerciseSubtitle(exercise)),
-      onTap: () => _navigateToEditExerciseSet(context, exercise),
-      trailing: _buildActionButtons(exercise, viewModel),
-    );
+  Widget _buildExerciseListTile(BuildContext context,
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    return Consumer<TrainingSessionManager>(
+        builder: (context, trainingManager, child) {
+      final setId = exercise.setId;
+      final isCompleted = setId != null
+          ? trainingManager.isSetCompleted(exercise.setId!)
+          : false;
+      return ListTile(
+        tileColor: isCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+        title: Text(exercise.displayName),
+        subtitle: Text(_buildExerciseSubtitle(exercise)),
+        onTap: () => _navigateToEditExerciseSet(context, exercise),
+        onLongPress: () => setId != null
+            ? trainingManager.toggleSetCompletion(exercise.setId!)
+            : null,
+        trailing: _buildActionButtons(exercise, viewModel),
+      );
+    });
   }
 
   String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
@@ -139,37 +153,39 @@ class ExerciseSetsPage extends StatelessWidget {
         'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}';
   }
 
-  void _navigateToEditExerciseSet(BuildContext context, ExerciseSetPresentation exercise) {
+  void _navigateToEditExerciseSet(
+      BuildContext context, ExerciseSetPresentation exercise) {
     Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => AddExerciseSetPage(exerciseSet: exercise)));
   }
 
-  Row _buildActionButtons(ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.copy),
-          onPressed: () => _duplicateExerciseSet(exercise, viewModel),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => viewModel.deleteExerciseSet.execute(exercise.setId!),
-        )
-      ]
-    );
+  Row _buildActionButtons(
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      IconButton(
+        icon: const Icon(Icons.copy),
+        onPressed: () => _duplicateExerciseSet(exercise, viewModel),
+      ),
+      IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: () => viewModel.deleteExerciseSet.execute(exercise.setId!),
+      )
+    ]);
   }
 
-  void _duplicateExerciseSet(ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+  void _duplicateExerciseSet(
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
     final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
         .copyWithoutId(dateTime: DateTime.now());
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
-  void _duplicateExerciseSets(List<ExerciseSetPresentation> exercises, ExerciseSetsViewModel viewModel) {
-    final duplicatedSets = exercises.map((exercise) =>
-        ExerciseSetPresentationMapper.toExerciseSet(exercise)
-            .copyWithoutId(dateTime: DateTime.now())).toList();
+  void _duplicateExerciseSets(List<ExerciseSetPresentation> exercises,
+      ExerciseSetsViewModel viewModel) {
+    final duplicatedSets = exercises
+        .map((exercise) => ExerciseSetPresentationMapper.toExerciseSet(exercise)
+            .copyWithoutId(dateTime: DateTime.now()))
+        .toList();
     viewModel.addExerciseSets.execute(duplicatedSets);
   }
 
