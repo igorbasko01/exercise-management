@@ -3,7 +3,14 @@ import 'package:exercise_management/presentation/view_models/exercise_statistics
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class WeeklyProgressStatisticWidget extends StatelessWidget {
+class WeeklyProgressStatisticWidget extends StatefulWidget {
+  const WeeklyProgressStatisticWidget({super.key});
+
+  @override
+  State<WeeklyProgressStatisticWidget> createState() => _WeeklyProgressStatisticWidgetState();
+}
+
+class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticWidget> {
   static const List<String> _days = [
     'Sun',
     'Mon',
@@ -14,11 +21,28 @@ class WeeklyProgressStatisticWidget extends StatelessWidget {
     'Sat'
   ];
 
-  const WeeklyProgressStatisticWidget({super.key});
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  void _fetchData() {
+    final viewModel = context.read<ExerciseStatisticsViewModel>();
+    viewModel.fetchCurrentWeekExerciseDaysStatistic.execute();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return _exerciseStatistics();
+    return RefreshIndicator(
+        onRefresh: () async {
+          _fetchData();
+        },
+      child: _exerciseStatistics(),
+    );
+    // return _exerciseStatistics();
   }
 
   Consumer<ExerciseStatisticsViewModel> _exerciseStatistics() {
