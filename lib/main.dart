@@ -2,14 +2,17 @@ import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
+import 'package:exercise_management/data/repository/exercise_statistics_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_sets_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_statistics_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +45,9 @@ void main() async {
       Provider<ExerciseSetPresentationRepository>(
         create: (context) => SqfliteExerciseSetPresentationRepository(database),
       ),
+      Provider<ExerciseStatisticsRepository>(
+        create: (context) => SqfliteExerciseStatisticsRepository(database),
+      ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
@@ -51,7 +57,10 @@ void main() async {
               exerciseSetRepository: context.read(),
               exerciseSetPresentationRepository: context.read(),
               exerciseTemplateRepository: context.read())
-            ..preloadExercises.execute())
+            ..preloadExercises.execute()),
+      ChangeNotifierProvider(
+          create: (context) =>
+              ExerciseStatisticsViewModel(statisticsRepository: context.read()))
     ],
     child: const MyApp(),
   ));
