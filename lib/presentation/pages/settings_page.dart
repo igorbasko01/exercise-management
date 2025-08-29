@@ -53,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
         barrierDismissible: false,
         builder: (context) => AlertDialog(
                 content: Row(children: [
-              CircularProgressIndicator(),
+              CircularProgressIndicator(semanticsLabel: 'Exporting data',),
               SizedBox(width: 16),
               Text(message)
             ])));

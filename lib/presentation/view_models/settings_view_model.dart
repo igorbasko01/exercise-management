@@ -77,7 +77,7 @@ class SettingsViewModel extends ChangeNotifier {
 
     for (final template in templates) {
       rows.add([
-        template.id ?? '',
+        template.id ?? 'unknown',
         template.name,
         template.muscleGroup.index.toString(),
         template.repetitionsRangeTarget.index.toString(),
@@ -95,7 +95,7 @@ class SettingsViewModel extends ChangeNotifier {
 
     for (final set in sets) {
       rows.add([
-        set.id ?? '',
+        set.id ?? 'unknown',
         set.exerciseTemplateId,
         set.dateTime.toIso8601String(),
         set.equipmentWeight.toString(),
