@@ -80,7 +80,6 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await SharePlus.instance.share(ShareParams(
           files: [XFile(filePath)],
-          subject: 'Exercise Data Export',
           text: 'Here is my exercise data backup file.'));
     } catch (e) {
       if (mounted) {
