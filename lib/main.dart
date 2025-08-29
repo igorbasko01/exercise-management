@@ -15,6 +15,7 @@ import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
+import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -63,7 +64,11 @@ void main() async {
       ChangeNotifierProvider(
           create: (context) =>
               ExerciseStatisticsViewModel(statisticsRepository: context.read())),
-      ChangeNotifierProvider(create: (context) => TrainingSessionManager())
+      ChangeNotifierProvider(create: (context) => TrainingSessionManager()),
+      ChangeNotifierProvider(create: (context) => SettingsViewModel(
+            templatesRepository: context.read(),
+            setsRepository: context.read(),
+          )),
     ],
     child: const MyApp(),
   ));
