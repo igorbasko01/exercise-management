@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -152,7 +153,11 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
           ),
           TextFormField(
             controller: _repetitionsController,
-            decoration: const InputDecoration(labelText: 'Repetitions'),
+            decoration: InputDecoration(
+                labelText: _selectedExerciseTemplate?.repetitionsRangeTarget.range != null
+                    ? 'Repetitions ${_selectedExerciseTemplate!.repetitionsRangeTarget.range}'
+                    : 'Repetitions'
+            ),
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) {
