@@ -153,7 +153,11 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
           ),
           TextFormField(
             controller: _repetitionsController,
-            decoration: InputDecoration(labelText: 'Repetitions ${_selectedExerciseTemplate?.repetitionsRangeTarget.range.toString()}'),
+            decoration: InputDecoration(
+                labelText: _selectedExerciseTemplate?.repetitionsRangeTarget.range != null
+                    ? 'Repetitions ${_selectedExerciseTemplate!.repetitionsRangeTarget.range}'
+                    : 'Repetitions'
+            ),
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.isEmpty) {
