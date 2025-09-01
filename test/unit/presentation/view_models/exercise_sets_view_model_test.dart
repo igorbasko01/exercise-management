@@ -4,20 +4,79 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_set_repository.dart';
+import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
+class MockExerciseTemplateRepository extends Mock implements ExerciseTemplateRepository {}
+class MockExerciseSetPresentationRepository extends Mock implements ExerciseSetPresentationRepository {}
 
 void main() {
-  late InMemoryExerciseRepository exerciseTemplateRepository;
-  late InMemoryExerciseSetRepository exerciseSetRepository;
-  late InMemoryExerciseSetPresentationRepository
-      exerciseSetPresentationRepository;
-  late ExerciseSetsViewModel viewModel;
+  group('ExerciseSetsViewModel Progressive Sets', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    setUpAll(() {
+      // Register fallback values for the mock methods so we don't get errors when using any()
+      registerFallbackValue(ExerciseSet(
+        id: 'fallback',
+        exerciseTemplateId: 'fallback',
+        repetitions: 0,
+        platesWeight: 0,
+        equipmentWeight: 0,
+        dateTime: DateTime.now(),
+      ));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository = MockExerciseSetPresentationRepository();
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository: mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
+    });
+
+    test('returns cloned set if provided only single set', () async {
+      final chestSet1 = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: DateTime.now(),
+      );
+
+      when(() => mockExerciseSetRepository.addExercise(any())).thenAnswer((invocation) async {
+        final exerciseSet = invocation.positionalArguments[0] as ExerciseSet;
+        return Result.ok(exerciseSet.copyWith(id: '2'));
+      });
+
+      await viewModel.progressSets.execute([chestSet1]);
+
+      final chestSet1New = chestSet1.copyWithoutId();
+
+      verify(() => mockExerciseSetRepository.addExercise(chestSet1New)).called(1);
+    });
+  });
 
   group('ExerciseSetsViewModel CRUD Operations', () {
+    late InMemoryExerciseRepository exerciseTemplateRepository;
+    late InMemoryExerciseSetRepository exerciseSetRepository;
+    late InMemoryExerciseSetPresentationRepository
+    exerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
     setUp(() {
       exerciseTemplateRepository = InMemoryExerciseRepository();
       exerciseSetRepository = InMemoryExerciseSetRepository();

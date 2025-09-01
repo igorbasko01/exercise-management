@@ -33,6 +33,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
+    progressSets = Command1<void, List<ExerciseSet>>(_progressSets)
+      ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -46,6 +48,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
+  late final Command1<void, List<ExerciseSet>> progressSets;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -141,6 +144,19 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return Result.ok(null);
   }
 
+  Future<Result<void>> _progressSets(List<ExerciseSet> sets) async {
+    if (sets.length == 1) {
+      final set = sets.first;
+      final newSet = set.copyWithoutId();
+      final addResult = await _exerciseSetRepository.addExercise(newSet);
+      if (addResult is Error) {
+        return Result.error((addResult as Error).error);
+      }
+      return Result.ok(null);
+    }
+    return Result.ok(null);
+  }
+
   @override
   void dispose() {
     fetchExerciseTemplates.removeListener(_onCommandExecuted);
@@ -150,6 +166,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     deleteExerciseSet.removeListener(_onCommandExecuted);
     updateExerciseSet.removeListener(_onCommandExecuted);
     preloadExercises.removeListener(_onCommandExecuted);
+    progressSets.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -158,6 +175,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     updateExerciseSet.dispose();
     fetchExerciseTemplates.dispose();
     preloadExercises.dispose();
+    progressSets.dispose();
 
     super.dispose();
   }
