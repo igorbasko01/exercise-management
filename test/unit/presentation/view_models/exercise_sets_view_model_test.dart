@@ -25,6 +25,33 @@ void main() {
     late MockExerciseSetPresentationRepository mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
 
+    final chestSet1 = ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: DateTime.now(),
+    );
+
+    final chestSet2 = ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: DateTime.now(),
+    );
+
+    final chestSet3 = ExerciseSet(
+      id: '3',
+      exerciseTemplateId: '1',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: DateTime.now(),
+    );
+
     setUpAll(() {
       // Register fallback values for the mock methods so we don't get errors when using any()
       registerFallbackValue(ExerciseSet(
@@ -45,28 +72,37 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository: mockExerciseSetPresentationRepository,
           exerciseTemplateRepository: mockExerciseTemplateRepository);
+
+      when(() => mockExerciseSetRepository.addExercises(any())).thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
     });
 
     test('returns cloned set if provided only single set', () async {
-      final chestSet1 = ExerciseSet(
-        id: '1',
-        exerciseTemplateId: '1',
-        repetitions: 10,
-        platesWeight: 20,
-        equipmentWeight: 0,
-        dateTime: DateTime.now(),
-      );
-
-      when(() => mockExerciseSetRepository.addExercise(any())).thenAnswer((invocation) async {
-        final exerciseSet = invocation.positionalArguments[0] as ExerciseSet;
-        return Result.ok(exerciseSet.copyWith(id: '2'));
-      });
-
       await viewModel.progressSets.execute([chestSet1]);
 
       final chestSet1New = chestSet1.copyWithoutId();
 
-      verify(() => mockExerciseSetRepository.addExercise(chestSet1New)).called(1);
+      verify(() => mockExerciseSetRepository.addExercises([chestSet1New])).called(1);
+    });
+
+    test('returns cloned sets if provided 2 sets of same exercise', () async {
+      await viewModel.progressSets.execute([chestSet1, chestSet2]);
+
+      final chestSet2New = chestSet2.copyWithoutId();
+      final chestSet1New = chestSet1.copyWithoutId();
+
+      verify(() => mockExerciseSetRepository.addExercises([chestSet1New, chestSet2New])).called(1);
+    });
+
+    test('returns progressed repetition sets when provided 3 sets of same exercise', () async {
+      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3]);
+
+      final chestSet3New = chestSet3.copyWithoutId(repetitions: 8);
+      final chestSet2New = chestSet2.copyWithoutId(repetitions: 8);
+      final chestSet1New = chestSet1.copyWithoutId(repetitions: 8);
+
+      verify(() => mockExerciseSetRepository.addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
     });
   });
 

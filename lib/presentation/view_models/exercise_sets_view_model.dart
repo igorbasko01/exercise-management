@@ -145,16 +145,21 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   Future<Result<void>> _progressSets(List<ExerciseSet> sets) async {
-    if (sets.length == 1) {
-      final set = sets.first;
-      final newSet = set.copyWithoutId();
-      final addResult = await _exerciseSetRepository.addExercise(newSet);
-      if (addResult is Error) {
-        return Result.error((addResult as Error).error);
-      }
-      return Result.ok(null);
+    List<ExerciseSet> newSets = [];
+    if (sets.length < 3) {
+      newSets = sets.map((set) => set.copyWithoutId()).toList();
+    } else {
+      newSets = sets
+          .map((set) => set.copyWithoutId(repetitions: set.repetitions + 1))
+          .toList();
     }
-    return Result.ok(null);
+    final addResult = await _exerciseSetRepository.addExercises(newSets);
+    switch (addResult) {
+      case Ok<void>():
+        return Result.ok(null);
+      case Error():
+        return Result.error(addResult.error);
+    }
   }
 
   @override
