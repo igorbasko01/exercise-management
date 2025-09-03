@@ -149,10 +149,40 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     if (sets.length < 3) {
       newSets = sets.map((set) => set.copyWithoutId()).toList();
     } else {
-      newSets = sets
-          .map((set) => set.copyWithoutId(repetitions: set.repetitions + 1))
-          .toList();
+      final groupedSets = _groupSetsByRepetitions(sets);
+      // find a group with at least 3 sets
+      final group = groupedSets.entries.firstWhere(
+          (entry) => entry.value.length >= 3,
+          orElse: () => MapEntry(0, []));
+      // find highest repetitions in all sets
+      final maxRepetitions =
+          sets.map((set) => set.repetitions).reduce((a, b) => a > b ? a : b);
+      if (group.key == 0) {
+        // no group with at least 3 sets with same repetitions found
+        // reduce load
+        newSets = sets
+            .map((set) => set.copyWithoutId(
+                repetitions: set.repetitions > 1 ? maxRepetitions - 1 : 1))
+            .toList();
+      } else {
+        // found a group with at least 3 sets with same repetitions
+        final groupHighestRepetitions = group.key;
+        if (groupHighestRepetitions < maxRepetitions) {
+          // reduce load
+          newSets = sets
+              .map((set) => set.copyWithoutId(
+                  repetitions:
+                      set.repetitions > 1 ? maxRepetitions - 1 : 1))
+              .toList();
+        } else {
+          // increase load
+          newSets = sets
+              .map((set) => set.copyWithoutId(repetitions: maxRepetitions + 1))
+              .toList();
+        }
+      }
     }
+
     final addResult = await _exerciseSetRepository.addExercises(newSets);
     switch (addResult) {
       case Ok<void>():
@@ -160,6 +190,14 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       case Error():
         return Result.error(addResult.error);
     }
+  }
+
+  Map<int, List<ExerciseSet>> _groupSetsByRepetitions(List<ExerciseSet> sets) {
+    final Map<int, List<ExerciseSet>> groupedSets = {};
+    for (var set in sets) {
+      groupedSets.putIfAbsent(set.repetitions, () => []).add(set);
+    }
+    return groupedSets;
   }
 
   @override

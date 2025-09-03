@@ -15,14 +15,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
-class MockExerciseTemplateRepository extends Mock implements ExerciseTemplateRepository {}
-class MockExerciseSetPresentationRepository extends Mock implements ExerciseSetPresentationRepository {}
+
+class MockExerciseTemplateRepository extends Mock
+    implements ExerciseTemplateRepository {}
+
+class MockExerciseSetPresentationRepository extends Mock
+    implements ExerciseSetPresentationRepository {}
 
 void main() {
   group('ExerciseSetsViewModel Progressive Sets', () {
     late MockExerciseSetRepository mockExerciseSetRepository;
     late MockExerciseTemplateRepository mockExerciseTemplateRepository;
-    late MockExerciseSetPresentationRepository mockExerciseSetPresentationRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
 
     final chestSet1 = ExerciseSet(
@@ -67,13 +72,16 @@ void main() {
     setUp(() {
       mockExerciseSetRepository = MockExerciseSetRepository();
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
-      mockExerciseSetPresentationRepository = MockExerciseSetPresentationRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
-          exerciseSetPresentationRepository: mockExerciseSetPresentationRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
           exerciseTemplateRepository: mockExerciseTemplateRepository);
 
-      when(() => mockExerciseSetRepository.addExercises(any())).thenAnswer((invocation) async {
+      when(() => mockExerciseSetRepository.addExercises(any()))
+          .thenAnswer((invocation) async {
         return Result.ok(null);
       });
     });
@@ -83,7 +91,8 @@ void main() {
 
       final chestSet1New = chestSet1.copyWithoutId();
 
-      verify(() => mockExerciseSetRepository.addExercises([chestSet1New])).called(1);
+      verify(() => mockExerciseSetRepository.addExercises([chestSet1New]))
+          .called(1);
     });
 
     test('returns cloned sets if provided 2 sets of same exercise', () async {
@@ -92,17 +101,59 @@ void main() {
       final chestSet2New = chestSet2.copyWithoutId();
       final chestSet1New = chestSet1.copyWithoutId();
 
-      verify(() => mockExerciseSetRepository.addExercises([chestSet1New, chestSet2New])).called(1);
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New])).called(1);
     });
 
-    test('returns progressed repetition sets when provided 3 sets of same exercise', () async {
+    test(
+        'returns progressed repetition sets when provided 3 sets of same exercise',
+        () async {
       await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3]);
 
       final chestSet3New = chestSet3.copyWithoutId(repetitions: 8);
       final chestSet2New = chestSet2.copyWithoutId(repetitions: 8);
       final chestSet1New = chestSet1.copyWithoutId(repetitions: 8);
 
-      verify(() => mockExerciseSetRepository.addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
+    });
+
+    test('returns regressed repetition sets when provided 3 sets of different repetitions', () async {
+      final chestSet3DifferentReps = chestSet3.copyWith(repetitions: 4);
+      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3DifferentReps]);
+
+      final chestSet3New = chestSet3DifferentReps.copyWithoutId(repetitions: 6);
+      final chestSet2New = chestSet2.copyWithoutId(repetitions: 6);
+      final chestSet1New = chestSet1.copyWithoutId(repetitions: 6);
+
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
+    });
+
+    test('returns progressed sets when provided 4 sets but at least 3 of same highest repetitions', () async {
+      final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 6);
+      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+
+      final chestSet4New = chestSet4.copyWithoutId(repetitions: 8);
+      final chestSet3New = chestSet3.copyWithoutId(repetitions: 8);
+      final chestSet2New = chestSet2.copyWithoutId(repetitions: 8);
+      final chestSet1New = chestSet1.copyWithoutId(repetitions: 8);
+
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+    });
+
+    test('returns regressed sets when provided 4 sets but no 3 of same highest repetitions', () async {
+      final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 8);
+      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+
+      final chestSet4New = chestSet4.copyWithoutId(repetitions: 7);
+      final chestSet3New = chestSet3.copyWithoutId(repetitions: 7);
+      final chestSet2New = chestSet2.copyWithoutId(repetitions: 7);
+      final chestSet1New = chestSet1.copyWithoutId(repetitions: 7);
+
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
     });
   });
 
@@ -110,7 +161,7 @@ void main() {
     late InMemoryExerciseRepository exerciseTemplateRepository;
     late InMemoryExerciseSetRepository exerciseSetRepository;
     late InMemoryExerciseSetPresentationRepository
-    exerciseSetPresentationRepository;
+        exerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
 
     setUp(() {
@@ -126,140 +177,141 @@ void main() {
           exerciseTemplateRepository: exerciseTemplateRepository);
     });
 
-    test('fetchExerciseSets returns a list of ExerciseSetPresentation on success',
-            () async {
-          final exerciseTemplate = ExerciseTemplate(
-            id: '1',
-            name: 'Bench Press',
-            muscleGroup: MuscleGroup.chest,
-            repetitionsRangeTarget: RepetitionsRange.medium,
-          );
+    test(
+        'fetchExerciseSets returns a list of ExerciseSetPresentation on success',
+        () async {
+      final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium,
+      );
 
-          final now = DateTime.now();
+      final now = DateTime.now();
 
-          final exerciseSet = ExerciseSet(
-            id: '1',
-            exerciseTemplateId: '1',
-            repetitions: 10,
-            platesWeight: 20,
-            equipmentWeight: 0,
-            dateTime: now,
-          );
-          exerciseTemplateRepository.addExercise(exerciseTemplate);
-          exerciseSetRepository.addExercise(exerciseSet);
+      final exerciseSet = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: now,
+      );
+      exerciseTemplateRepository.addExercise(exerciseTemplate);
+      exerciseSetRepository.addExercise(exerciseSet);
 
-          final expectedValue = [
-            ExerciseSetPresentation(
-              setId: '1',
-              displayName: 'Bench Press',
-              repetitions: 10,
-              platesWeight: 20,
-              equipmentWeight: 0,
-              dateTime: now,
-              exerciseTemplateId: '1',
-              repetitionsRange: RepetitionsRange.medium,
-            )
-          ];
+      final expectedValue = [
+        ExerciseSetPresentation(
+          setId: '1',
+          displayName: 'Bench Press',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: now,
+          exerciseTemplateId: '1',
+          repetitionsRange: RepetitionsRange.medium,
+        )
+      ];
 
-          await viewModel.fetchExerciseSets.execute();
-          final result = viewModel.fetchExerciseSets.result;
+      await viewModel.fetchExerciseSets.execute();
+      final result = viewModel.fetchExerciseSets.result;
 
-          final value = (result as Ok<List<ExerciseSetPresentation>>).value;
+      final value = (result as Ok<List<ExerciseSetPresentation>>).value;
 
-          expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-          expect(value.length, 1);
-          expect(value, equals(expectedValue));
-        });
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect(value.length, 1);
+      expect(value, equals(expectedValue));
+    });
 
     test('fetchExerciseSets returns an empty list if no sets are available',
-            () async {
-          await viewModel.fetchExerciseSets.execute();
-          final result = viewModel.fetchExerciseSets.result;
+        () async {
+      await viewModel.fetchExerciseSets.execute();
+      final result = viewModel.fetchExerciseSets.result;
 
-          final value = (result as Ok<List<ExerciseSetPresentation>>).value;
+      final value = (result as Ok<List<ExerciseSetPresentation>>).value;
 
-          expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-          expect(value.length, 0);
-        });
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect(value.length, 0);
+    });
 
     test('fetchExerciseSets returns all valid sets if some are invalid',
-            () async {
-          final exerciseTemplate = ExerciseTemplate(
-              id: '1',
-              name: 'Bench Press',
-              muscleGroup: MuscleGroup.chest,
-              repetitionsRangeTarget: RepetitionsRange.medium);
+        () async {
+      final exerciseTemplate = ExerciseTemplate(
+          id: '1',
+          name: 'Bench Press',
+          muscleGroup: MuscleGroup.chest,
+          repetitionsRangeTarget: RepetitionsRange.medium);
 
-          final now = DateTime.now();
+      final now = DateTime.now();
 
-          final exerciseSet = ExerciseSet(
-            id: '1',
-            exerciseTemplateId: '1',
-            repetitions: 10,
-            platesWeight: 20,
-            equipmentWeight: 0,
-            dateTime: now,
-          );
+      final exerciseSet = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: now,
+      );
 
-          final invalidExerciseSet = ExerciseSet(
-            id: '2',
-            exerciseTemplateId: '2',
-            repetitions: 10,
-            platesWeight: 20,
-            equipmentWeight: 0,
-            dateTime: now,
-          );
+      final invalidExerciseSet = ExerciseSet(
+        id: '2',
+        exerciseTemplateId: '2',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: now,
+      );
 
-          exerciseTemplateRepository.addExercise(exerciseTemplate);
-          exerciseSetRepository.addExercise(exerciseSet);
-          exerciseSetRepository.addExercise(invalidExerciseSet);
+      exerciseTemplateRepository.addExercise(exerciseTemplate);
+      exerciseSetRepository.addExercise(exerciseSet);
+      exerciseSetRepository.addExercise(invalidExerciseSet);
 
-          final expectedValue = [
-            ExerciseSetPresentation(
-              setId: '1',
-              displayName: 'Bench Press',
-              repetitions: 10,
-              platesWeight: 20,
-              equipmentWeight: 0,
-              dateTime: now,
-              exerciseTemplateId: '1',
-              repetitionsRange: RepetitionsRange.medium,
-            )
-          ];
+      final expectedValue = [
+        ExerciseSetPresentation(
+          setId: '1',
+          displayName: 'Bench Press',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: now,
+          exerciseTemplateId: '1',
+          repetitionsRange: RepetitionsRange.medium,
+        )
+      ];
 
-          await viewModel.fetchExerciseSets.execute();
-          final result = viewModel.fetchExerciseSets.result;
+      await viewModel.fetchExerciseSets.execute();
+      final result = viewModel.fetchExerciseSets.result;
 
-          final value = (result as Ok<List<ExerciseSetPresentation>>).value;
+      final value = (result as Ok<List<ExerciseSetPresentation>>).value;
 
-          expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-          expect(value.length, 1);
-          expect(value, equals(expectedValue));
-        });
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect(value.length, 1);
+      expect(value, equals(expectedValue));
+    });
 
     test('fetchExerciseSets returns empty list if all sets are invalid',
-            () async {
-          final now = DateTime.now();
+        () async {
+      final now = DateTime.now();
 
-          final invalidExerciseSet = ExerciseSet(
-            id: '2',
-            exerciseTemplateId: '2',
-            repetitions: 10,
-            platesWeight: 20,
-            equipmentWeight: 0,
-            dateTime: now,
-          );
+      final invalidExerciseSet = ExerciseSet(
+        id: '2',
+        exerciseTemplateId: '2',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: now,
+      );
 
-          exerciseSetRepository.addExercise(invalidExerciseSet);
+      exerciseSetRepository.addExercise(invalidExerciseSet);
 
-          await viewModel.fetchExerciseSets.execute();
-          final result = viewModel.fetchExerciseSets.result;
+      await viewModel.fetchExerciseSets.execute();
+      final result = viewModel.fetchExerciseSets.result;
 
-          final value = (result as Ok<List<ExerciseSetPresentation>>).value;
+      final value = (result as Ok<List<ExerciseSetPresentation>>).value;
 
-          expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-          expect(value.length, 0);
-        });
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect(value.length, 0);
+    });
 
     test('addExerciseSet adds exercise set to the repository', () async {
       final exerciseTemplate = ExerciseTemplate(
@@ -294,7 +346,8 @@ void main() {
       expect(exerciseSets.length, 1);
     });
 
-    test('deleteExerciseSet deletes exercise set from the repository', () async {
+    test('deleteExerciseSet deletes exercise set from the repository',
+        () async {
       final exerciseTemplate = ExerciseTemplate(
           id: '1',
           name: 'Bench Press',
