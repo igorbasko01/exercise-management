@@ -230,6 +230,31 @@ void main() {
           verify(() => mockExerciseSetRepository.addExercises(
               [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
         });
+
+    test('returns regressed sets with lower plates weight (10%) when provided with 3 same reps that are lower than one set of target reps', () async {
+      final chestSet1max =
+      chestSet1.copyWith(repetitions: 6, platesWeight: 25);
+      final chestSet2max =
+      chestSet2.copyWith(repetitions: 4, platesWeight: 25);
+      final chestSet3max =
+      chestSet3.copyWith(repetitions: 4, platesWeight: 25);
+      final chestSet4 =
+      chestSet3.copyWith(id: '4', repetitions: 4, platesWeight: 25);
+      await viewModel.progressSets
+          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+
+      final chestSet4New =
+      chestSet4.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+      final chestSet3New =
+      chestSet3.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+      final chestSet2New =
+      chestSet2.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+      final chestSet1New =
+      chestSet1.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+
+      verify(() => mockExerciseSetRepository.addExercises(
+          [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+    });
   });
 
   group('ExerciseSetsViewModel CRUD Operations', () {

@@ -182,10 +182,17 @@ class ExerciseSetsViewModel extends ChangeNotifier {
         // found a group with at least 3 sets with same repetitions
         final groupHighestRepetitions = group.key;
         if (groupHighestRepetitions < maxRepetitions) {
-          // reduce load
+          // reduce load, those sets are failed ones,
+          // the max reps set is assumed to be the first set. The failed ones
+          // are later sets with lower reps. e.g. 8, 6, 6, 6
+          final setWithMaxReps =
+              sets.firstWhere((set) => set.repetitions == maxRepetitions);
+          final (newRepetitions, newWeight) = _decreaseLoad(
+              setWithMaxReps.repetitions, setWithMaxReps.totalWeight, repRange);
           newSets = sets
               .map((set) => set.copyWithoutId(
-                  repetitions: set.repetitions > 1 ? maxRepetitions - 1 : 1))
+                  repetitions: newRepetitions,
+                  platesWeight: newWeight - set.equipmentWeight))
               .toList();
         } else {
           // increase load
@@ -243,9 +250,10 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     List<double> allowedIncrements = [1.25, 2.5, 5];
     // find closest allowed increment to the adjustment
     // adjustment can be negative or positive
-    double closestIncrement = allowedIncrements.reduce(
-        (a, b) => (adjustment.abs() - a).abs() < (adjustment.abs() - b).abs() ? a : b);
-    return (currentWeight + (closestIncrement * adjustment.sign)).clamp(0, double.infinity);
+    double closestIncrement = allowedIncrements.reduce((a, b) =>
+        (adjustment.abs() - a).abs() < (adjustment.abs() - b).abs() ? a : b);
+    return (currentWeight + (closestIncrement * adjustment.sign))
+        .clamp(0, double.infinity);
   }
 
   Map<int, List<ExerciseSet>> _groupSetsByRepetitions(List<ExerciseSet> sets) {
