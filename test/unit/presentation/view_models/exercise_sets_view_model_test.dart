@@ -130,9 +130,12 @@ void main() {
           .addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
     });
 
-    test('returns regressed repetition sets when provided 3 sets of different repetitions', () async {
+    test(
+        'returns regressed repetition sets when provided 3 sets of different repetitions',
+        () async {
       final chestSet3DifferentReps = chestSet3.copyWith(repetitions: 4);
-      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3DifferentReps]);
+      await viewModel.progressSets
+          .execute([chestSet1, chestSet2, chestSet3DifferentReps]);
 
       final chestSet3New = chestSet3DifferentReps.copyWithoutId(repetitions: 6);
       final chestSet2New = chestSet2.copyWithoutId(repetitions: 6);
@@ -142,47 +145,91 @@ void main() {
           .addExercises([chestSet1New, chestSet2New, chestSet3New])).called(1);
     });
 
-    test('returns progressed sets when provided 4 sets but at least 3 of same highest repetitions', () async {
+    test(
+        'returns progressed sets when provided 4 sets but at least 3 of same highest repetitions',
+        () async {
       final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 6);
-      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+      await viewModel.progressSets
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4]);
 
       final chestSet4New = chestSet4.copyWithoutId(repetitions: 8);
       final chestSet3New = chestSet3.copyWithoutId(repetitions: 8);
       final chestSet2New = chestSet2.copyWithoutId(repetitions: 8);
       final chestSet1New = chestSet1.copyWithoutId(repetitions: 8);
 
-      verify(() => mockExerciseSetRepository
-          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+      verify(() => mockExerciseSetRepository.addExercises(
+          [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
     });
 
-    test('returns regressed sets when provided 4 sets but no 3 of same highest repetitions', () async {
+    test(
+        'returns regressed sets when provided 4 sets but no 3 of same highest repetitions',
+        () async {
       final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 8);
-      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+      await viewModel.progressSets
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4]);
 
       final chestSet4New = chestSet4.copyWithoutId(repetitions: 7);
       final chestSet3New = chestSet3.copyWithoutId(repetitions: 7);
       final chestSet2New = chestSet2.copyWithoutId(repetitions: 7);
       final chestSet1New = chestSet1.copyWithoutId(repetitions: 7);
 
-      verify(() => mockExerciseSetRepository
-          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+      verify(() => mockExerciseSetRepository.addExercises(
+          [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
     });
 
-    test('returns progressed sets with higher plates weight (10%) when provided 3 sets of highest repetitions for exercise', () async {
-      final chestSet1max = chestSet1.copyWith(repetitions: 10, platesWeight: 25);
-      final chestSet2max = chestSet2.copyWith(repetitions: 10, platesWeight: 25);
-      final chestSet3max = chestSet3.copyWith(repetitions: 10, platesWeight: 25);
-      final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 4, platesWeight: 25);
-      await viewModel.progressSets.execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+    test(
+        'returns progressed sets with higher plates weight (10%) when provided 3 sets of highest repetitions for exercise',
+        () async {
+      final chestSet1max =
+          chestSet1.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet2max =
+          chestSet2.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet3max =
+          chestSet3.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet4 =
+          chestSet3.copyWith(id: '4', repetitions: 4, platesWeight: 25);
+      await viewModel.progressSets
+          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
 
-      final chestSet4New = chestSet4.copyWithoutId(repetitions: 6, platesWeight: 27.5);
-      final chestSet3New = chestSet3.copyWithoutId(repetitions: 6, platesWeight: 27.5);
-      final chestSet2New = chestSet2.copyWithoutId(repetitions: 6, platesWeight: 27.5);
-      final chestSet1New = chestSet1.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet4New =
+          chestSet4.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet3New =
+          chestSet3.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet2New =
+          chestSet2.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet1New =
+          chestSet1.copyWithoutId(repetitions: 6, platesWeight: 27.5);
 
-      verify(() => mockExerciseSetRepository
-          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+      verify(() => mockExerciseSetRepository.addExercises(
+          [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
     });
+
+    test(
+        'returns regressed sets with lower plates weight (10%) when provided with 3 of different reps with highest rep is lowest possible for target range',
+        () async {
+          final chestSet1max =
+          chestSet1.copyWith(repetitions: 6, platesWeight: 25);
+          final chestSet2max =
+          chestSet2.copyWith(repetitions: 5, platesWeight: 25);
+          final chestSet3max =
+          chestSet3.copyWith(repetitions: 5, platesWeight: 25);
+          final chestSet4 =
+          chestSet3.copyWith(id: '4', repetitions: 4, platesWeight: 25);
+          await viewModel.progressSets
+              .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+
+          final chestSet4New =
+          chestSet4.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+          final chestSet3New =
+          chestSet3.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+          final chestSet2New =
+          chestSet2.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+          final chestSet1New =
+          chestSet1.copyWithoutId(repetitions: 10, platesWeight: 22.5);
+
+          verify(() => mockExerciseSetRepository.addExercises(
+              [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+        });
   });
 
   group('ExerciseSetsViewModel CRUD Operations', () {

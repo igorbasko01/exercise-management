@@ -169,9 +169,14 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       if (group.key == 0) {
         // no group with at least 3 sets with same repetitions found
         // reduce load
+        final setWithMaxReps =
+            sets.firstWhere((set) => set.repetitions == maxRepetitions);
+        final (newRepetitions, newWeight) = _decreaseLoad(
+            setWithMaxReps.repetitions, setWithMaxReps.totalWeight, repRange);
         newSets = sets
             .map((set) => set.copyWithoutId(
-                repetitions: set.repetitions > 1 ? maxRepetitions - 1 : 1))
+                repetitions: newRepetitions,
+                platesWeight: newWeight - set.equipmentWeight))
             .toList();
       } else {
         // found a group with at least 3 sets with same repetitions
@@ -180,17 +185,19 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           // reduce load
           newSets = sets
               .map((set) => set.copyWithoutId(
-                  repetitions:
-                      set.repetitions > 1 ? maxRepetitions - 1 : 1))
+                  repetitions: set.repetitions > 1 ? maxRepetitions - 1 : 1))
               .toList();
         } else {
           // increase load
           final sampleSet = group.value.first;
           final currentRepetitions = sampleSet.repetitions;
           final currentTotalWeight = sampleSet.totalWeight;
-          final (newRepetitions, newWeight) = _increaseLoad(currentRepetitions, currentTotalWeight, repRange);
+          final (newRepetitions, newWeight) =
+              _increaseLoad(currentRepetitions, currentTotalWeight, repRange);
           newSets = sets
-              .map((set) => set.copyWithoutId(repetitions: newRepetitions, platesWeight: newWeight - set.equipmentWeight))
+              .map((set) => set.copyWithoutId(
+                  repetitions: newRepetitions,
+                  platesWeight: newWeight - set.equipmentWeight))
               .toList();
         }
       }
@@ -205,7 +212,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     }
   }
 
-  (int, double) _increaseLoad(int currentRepetitions, double currentTotalWeight, RepetitionsRange repRange) {
+  (int, double) _increaseLoad(int currentRepetitions, double currentTotalWeight,
+      RepetitionsRange repRange) {
     int newRepetitions = currentRepetitions + 1;
     double newWeight = currentTotalWeight;
 
@@ -217,13 +225,27 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return (newRepetitions, newWeight);
   }
 
+  (int, double) _decreaseLoad(int currentRepetitions, double currentTotalWeight,
+      RepetitionsRange repRange) {
+    int newRepetitions = currentRepetitions - 1;
+    double newWeight = currentTotalWeight;
+
+    if (newRepetitions < repRange.range.min) {
+      newRepetitions = repRange.range.max;
+      newWeight =
+          _adjustedWeight(currentTotalWeight, -currentTotalWeight * 0.1);
+    }
+
+    return (newRepetitions, newWeight);
+  }
+
   double _adjustedWeight(double currentWeight, double adjustment) {
     List<double> allowedIncrements = [1.25, 2.5, 5];
     // find closest allowed increment to the adjustment
     // adjustment can be negative or positive
-    double closestIncrement = allowedIncrements.reduce((a, b) =>
-        (adjustment - a).abs() < (adjustment - b).abs() ? a : b);
-    return (currentWeight + closestIncrement).clamp(0, double.infinity);
+    double closestIncrement = allowedIncrements.reduce(
+        (a, b) => (adjustment.abs() - a).abs() < (adjustment.abs() - b).abs() ? a : b);
+    return (currentWeight + (closestIncrement * adjustment.sign)).clamp(0, double.infinity);
   }
 
   Map<int, List<ExerciseSet>> _groupSetsByRepetitions(List<ExerciseSet> sets) {
