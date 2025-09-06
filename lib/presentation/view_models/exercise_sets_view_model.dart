@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/command.dart';
+import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
@@ -157,6 +158,14 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       // find highest repetitions in all sets
       final maxRepetitions =
           sets.map((set) => set.repetitions).reduce((a, b) => a > b ? a : b);
+      final exerciseTemplateResult = await _exerciseTemplateRepository
+          .getExercise(sets.first.exerciseTemplateId);
+      if (exerciseTemplateResult is Error) {
+        return Result.error((exerciseTemplateResult as Error).error);
+      }
+      final exerciseTemplate =
+          (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+      final repRange = exerciseTemplate.repetitionsRangeTarget;
       if (group.key == 0) {
         // no group with at least 3 sets with same repetitions found
         // reduce load
@@ -176,8 +185,12 @@ class ExerciseSetsViewModel extends ChangeNotifier {
               .toList();
         } else {
           // increase load
+          final sampleSet = group.value.first;
+          final currentRepetitions = sampleSet.repetitions;
+          final currentTotalWeight = sampleSet.totalWeight;
+          final (newRepetitions, newWeight) = _increaseLoad(currentRepetitions, currentTotalWeight, repRange);
           newSets = sets
-              .map((set) => set.copyWithoutId(repetitions: maxRepetitions + 1))
+              .map((set) => set.copyWithoutId(repetitions: newRepetitions, platesWeight: newWeight - set.equipmentWeight))
               .toList();
         }
       }
@@ -190,6 +203,27 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       case Error():
         return Result.error(addResult.error);
     }
+  }
+
+  (int, double) _increaseLoad(int currentRepetitions, double currentTotalWeight, RepetitionsRange repRange) {
+    int newRepetitions = currentRepetitions + 1;
+    double newWeight = currentTotalWeight;
+
+    if (newRepetitions > repRange.range.max) {
+      newRepetitions = repRange.range.min;
+      newWeight = _adjustedWeight(currentTotalWeight, currentTotalWeight * 0.1);
+    }
+
+    return (newRepetitions, newWeight);
+  }
+
+  double _adjustedWeight(double currentWeight, double adjustment) {
+    List<double> allowedIncrements = [1.25, 2.5, 5];
+    // find closest allowed increment to the adjustment
+    // adjustment can be negative or positive
+    double closestIncrement = allowedIncrements.reduce((a, b) =>
+        (adjustment - a).abs() < (adjustment - b).abs() ? a : b);
+    return (currentWeight + closestIncrement).clamp(0, double.infinity);
   }
 
   Map<int, List<ExerciseSet>> _groupSetsByRepetitions(List<ExerciseSet> sets) {

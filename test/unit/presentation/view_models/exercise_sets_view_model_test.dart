@@ -30,6 +30,13 @@ void main() {
         mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
 
+    final chestTemplate = ExerciseTemplate(
+      id: '1',
+      name: 'Bench Press',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+    );
+
     final chestSet1 = ExerciseSet(
       id: '1',
       exerciseTemplateId: '1',
@@ -83,6 +90,11 @@ void main() {
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
         return Result.ok(null);
+      });
+
+      when(() => mockExerciseTemplateRepository.getExercise(chestTemplate.id!))
+          .thenAnswer((invocation) async {
+        return Result.ok(chestTemplate);
       });
     });
 
@@ -151,6 +163,22 @@ void main() {
       final chestSet3New = chestSet3.copyWithoutId(repetitions: 7);
       final chestSet2New = chestSet2.copyWithoutId(repetitions: 7);
       final chestSet1New = chestSet1.copyWithoutId(repetitions: 7);
+
+      verify(() => mockExerciseSetRepository
+          .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+    });
+
+    test('returns progressed sets with higher plates weight (10%) when provided 3 sets of highest repetitions for exercise', () async {
+      final chestSet1max = chestSet1.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet2max = chestSet2.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet3max = chestSet3.copyWith(repetitions: 10, platesWeight: 25);
+      final chestSet4 = chestSet3.copyWith(id: '4', repetitions: 4, platesWeight: 25);
+      await viewModel.progressSets.execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+
+      final chestSet4New = chestSet4.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet3New = chestSet3.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet2New = chestSet2.copyWithoutId(repetitions: 6, platesWeight: 27.5);
+      final chestSet1New = chestSet1.copyWithoutId(repetitions: 6, platesWeight: 27.5);
 
       verify(() => mockExerciseSetRepository
           .addExercises([chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
