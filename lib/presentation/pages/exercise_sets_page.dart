@@ -110,8 +110,8 @@ class ExerciseSetsPage extends StatelessWidget {
       title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
       trailing: IconButton(
-        icon: const Icon(Icons.copy),
-        onPressed: () => _duplicateExerciseSets(exercises, viewModel),
+        icon: const Icon(Icons.copy_all),
+        onPressed: () => _progressSets(exercises, viewModel),
       ),
       children: exercises
           .map<Widget>((exercise) =>
@@ -180,13 +180,8 @@ class ExerciseSetsPage extends StatelessWidget {
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
-  void _duplicateExerciseSets(List<ExerciseSetPresentation> exercises,
-      ExerciseSetsViewModel viewModel) {
-    final duplicatedSets = exercises
-        .map((exercise) => ExerciseSetPresentationMapper.toExerciseSet(exercise)
-            .copyWithoutId(dateTime: DateTime.now()))
-        .toList();
-    viewModel.addExerciseSets.execute(duplicatedSets);
+  void _progressSets(List<ExerciseSetPresentation> sets, ExerciseSetsViewModel viewModel) {
+    viewModel.progressSets.execute(sets, DateTime.now());
   }
 
   String _formatDate(DateTime dateTime) {

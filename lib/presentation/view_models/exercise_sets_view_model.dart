@@ -161,6 +161,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     final addResult = await _exerciseSetRepository.addExercises(newSets);
     switch (addResult) {
       case Ok<void>():
+        await _fetchExerciseSets();
         return Result.ok(null);
       case Error():
         return Result.error(addResult.error);

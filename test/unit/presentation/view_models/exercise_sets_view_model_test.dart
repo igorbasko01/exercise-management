@@ -65,6 +65,39 @@ void main() {
       repetitionsRange: RepetitionsRange.medium,
     );
 
+    final backSet1 = ExerciseSetPresentation(
+      setId: '4',
+      exerciseTemplateId: '2',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: fixedDate,
+      displayName: 'Pull Ups',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    final backSet2 = ExerciseSetPresentation(
+      setId: '5',
+      exerciseTemplateId: '2',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: fixedDate,
+      displayName: 'Pull Ups',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    final backSet3 = ExerciseSetPresentation(
+      setId: '6',
+      exerciseTemplateId: '2',
+      repetitions: 7,
+      platesWeight: 20,
+      equipmentWeight: 0,
+      dateTime: fixedDate,
+      displayName: 'Pull Ups',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
     setUpAll(() {
       // Register fallback values for the mock methods so we don't get errors when using any()
       registerFallbackValue(<ExerciseSet>[]);
@@ -93,6 +126,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(null);
       });
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
     });
 
     test('returns cloned set if provided only single set', () async {
@@ -116,7 +153,8 @@ void main() {
     test(
         'returns progressed repetition sets when provided 3 sets of same exercise',
         () async {
-      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3], fixedDate);
+      await viewModel.progressSets
+          .execute([chestSet1, chestSet2, chestSet3], fixedDate);
 
       final chestSet3New =
           chestSet3.copyWithoutId(repetitions: 8).toExerciseSet();
@@ -198,8 +236,8 @@ void main() {
           chestSet3.copyWith(repetitions: 10, platesWeight: 25);
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
-      await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+      await viewModel.progressSets.execute(
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 6, platesWeight: 27.5)
@@ -226,8 +264,8 @@ void main() {
       final chestSet3max = chestSet3.copyWith(repetitions: 5, platesWeight: 25);
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
-      await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+      await viewModel.progressSets.execute(
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 10, platesWeight: 22.5)
@@ -254,8 +292,8 @@ void main() {
       final chestSet3max = chestSet3.copyWith(repetitions: 4, platesWeight: 25);
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
-      await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+      await viewModel.progressSets.execute(
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 10, platesWeight: 22.5)
@@ -272,6 +310,37 @@ void main() {
 
       verify(() => mockExerciseSetRepository.addExercises(
           [chestSet1New, chestSet2New, chestSet3New, chestSet4New])).called(1);
+    });
+
+    test(
+        'returns progressed sets for multiple exercises when provided 3 sets of each exercise',
+        () async {
+      await viewModel.progressSets.execute(
+          [chestSet1, chestSet2, chestSet3, backSet1, backSet2, backSet3],
+          fixedDate);
+
+      final chestSet3New =
+          chestSet3.copyWithoutId(repetitions: 8).toExerciseSet();
+      final chestSet2New =
+          chestSet2.copyWithoutId(repetitions: 8).toExerciseSet();
+      final chestSet1New =
+          chestSet1.copyWithoutId(repetitions: 8).toExerciseSet();
+
+      final backSet3New =
+          backSet3.copyWithoutId(repetitions: 8).toExerciseSet();
+      final backSet2New =
+          backSet2.copyWithoutId(repetitions: 8).toExerciseSet();
+      final backSet1New =
+          backSet1.copyWithoutId(repetitions: 8).toExerciseSet();
+
+      verify(() => mockExerciseSetRepository.addExercises([
+            chestSet1New,
+            chestSet2New,
+            chestSet3New,
+            backSet1New,
+            backSet2New,
+            backSet3New
+          ])).called(1);
     });
   });
 
