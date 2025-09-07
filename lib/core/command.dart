@@ -1,10 +1,11 @@
 import 'package:exercise_management/core/result.dart';
 import 'package:flutter/material.dart';
 
-typedef CommandAction0<T> = Future<Result<T>> Function();
-typedef CommandAction1<T, A> = Future<Result<T>> Function(A);
+typedef CommandAction0<R> = Future<Result<R>> Function();
+typedef CommandAction1<R, A> = Future<Result<R>> Function(A);
+typedef CommandAction2<R, A1, A2> = Future<Result<R>> Function(A1, A2);
 
-abstract class Command<T> extends ChangeNotifier {
+abstract class Command<R> extends ChangeNotifier {
   Command();
 
   bool _running = false;
@@ -12,7 +13,7 @@ abstract class Command<T> extends ChangeNotifier {
   // True when the action is running.
   bool get running => _running;
 
-  Result<T>? _result;
+  Result<R>? _result;
 
   // True if action completed with error
   bool get error => _result is Error;
@@ -29,7 +30,7 @@ abstract class Command<T> extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _execute(CommandAction0<T> action) async {
+  Future<void> _execute(CommandAction0<R> action) async {
     // Ensure the action can't launch multiple times.
     // e.g. avoid multiple taps on button
     if (_running) return;
@@ -51,10 +52,10 @@ abstract class Command<T> extends ChangeNotifier {
 
 /// [Command] without arguments
 /// Takes a [CommandAction0] as action.
-class Command0<T> extends Command<T> {
+class Command0<R> extends Command<R> {
   Command0(this._action);
 
-  final CommandAction0<T> _action;
+  final CommandAction0<R> _action;
 
   Future<void> execute() async {
     await _execute(_action);
@@ -63,12 +64,22 @@ class Command0<T> extends Command<T> {
 
 /// [Command] with 1 argument
 /// Takes a [CommandAction1] as action.
-class Command1<T, A> extends Command<T> {
+class Command1<R, A> extends Command<R> {
   Command1(this._action);
 
-  final CommandAction1<T, A> _action;
+  final CommandAction1<R, A> _action;
 
   Future<void> execute(A arg) async {
     await _execute(() => _action(arg));
+  }
+}
+
+class Command2<R, A1, A2> extends Command<R> {
+  Command2(this._action);
+
+  final CommandAction2<R, A1, A2> _action;
+
+  Future<void> execute(A1 arg1, A2 arg2) async {
+    await _execute(() => _action(arg1, arg2));
   }
 }

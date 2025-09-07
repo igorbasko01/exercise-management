@@ -35,7 +35,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
-    progressSets = Command1<void, List<ExerciseSetPresentation>>(_progressSets)
+    progressSets = Command2<void, List<ExerciseSetPresentation>, DateTime>(_progressSets)
       ..addListener(_onCommandExecuted);
   }
 
@@ -50,7 +50,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
-  late final Command1<void, List<ExerciseSetPresentation>> progressSets;
+  late final Command2<void, List<ExerciseSetPresentation>, DateTime> progressSets;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -146,7 +146,28 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return Result.ok(null);
   }
 
-  Future<Result<void>> _progressSets(List<ExerciseSetPresentation> sets) async {
+  Future<Result<void>> _progressSets(
+      List<ExerciseSetPresentation> sets, DateTime newDate) async {
+    final groupedSets = _groupSetsByTemplate(sets);
+
+    List<ExerciseSet> newSets = [];
+    for (var entry in groupedSets.entries) {
+      final progressedSets = _progressSetsGroup(entry.value)
+          .map((set) => set.copyWith(dateTime: newDate))
+          .toList();
+      newSets.addAll(progressedSets);
+    }
+
+    final addResult = await _exerciseSetRepository.addExercises(newSets);
+    switch (addResult) {
+      case Ok<void>():
+        return Result.ok(null);
+      case Error():
+        return Result.error(addResult.error);
+    }
+  }
+
+  List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets) {
     List<ExerciseSet> newSets = [];
     if (sets.length < 3) {
       newSets = sets
@@ -213,13 +234,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       }
     }
 
-    final addResult = await _exerciseSetRepository.addExercises(newSets);
-    switch (addResult) {
-      case Ok<void>():
-        return Result.ok(null);
-      case Error():
-        return Result.error(addResult.error);
-    }
+    return newSets;
   }
 
   (int, double) _increaseLoad(int currentRepetitions, double currentTotalWeight,
@@ -264,6 +279,15 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     final Map<int, List<ExerciseSetPresentation>> groupedSets = {};
     for (var set in sets) {
       groupedSets.putIfAbsent(set.repetitions, () => []).add(set);
+    }
+    return groupedSets;
+  }
+
+  Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(
+      List<ExerciseSetPresentation> sets) {
+    final Map<String, List<ExerciseSetPresentation>> groupedSets = {};
+    for (var set in sets) {
+      groupedSets.putIfAbsent(set.exerciseTemplateId, () => []).add(set);
     }
     return groupedSets;
   }

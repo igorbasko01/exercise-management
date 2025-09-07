@@ -96,7 +96,7 @@ void main() {
     });
 
     test('returns cloned set if provided only single set', () async {
-      await viewModel.progressSets.execute([chestSet1]);
+      await viewModel.progressSets.execute([chestSet1], fixedDate);
 
       final chestSet1New = chestSet1.copyWithoutId().toExerciseSet();
 
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('returns cloned sets if provided 2 sets of same exercise', () async {
-      await viewModel.progressSets.execute([chestSet1, chestSet2]);
+      await viewModel.progressSets.execute([chestSet1, chestSet2], fixedDate);
 
       final chestSet2New = chestSet2.copyWithoutId().toExerciseSet();
       final chestSet1New = chestSet1.copyWithoutId().toExerciseSet();
@@ -116,7 +116,7 @@ void main() {
     test(
         'returns progressed repetition sets when provided 3 sets of same exercise',
         () async {
-      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3]);
+      await viewModel.progressSets.execute([chestSet1, chestSet2, chestSet3], fixedDate);
 
       final chestSet3New =
           chestSet3.copyWithoutId(repetitions: 8).toExerciseSet();
@@ -134,7 +134,7 @@ void main() {
         () async {
       final chestSet3DifferentReps = chestSet3.copyWith(repetitions: 4);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3DifferentReps]);
+          .execute([chestSet1, chestSet2, chestSet3DifferentReps], fixedDate);
 
       final chestSet3New =
           chestSet3DifferentReps.copyWithoutId(repetitions: 6).toExerciseSet();
@@ -152,7 +152,7 @@ void main() {
         () async {
       final chestSet4 = chestSet3.copyWith(setId: '4', repetitions: 6);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
 
       final chestSet4New =
           chestSet4.copyWithoutId(repetitions: 8).toExerciseSet();
@@ -172,7 +172,7 @@ void main() {
         () async {
       final chestSet4 = chestSet3.copyWith(setId: '4', repetitions: 8);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3, chestSet4]);
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
 
       final chestSet4New =
           chestSet4.copyWithoutId(repetitions: 7).toExerciseSet();
@@ -199,7 +199,7 @@ void main() {
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
       await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 6, platesWeight: 27.5)
@@ -227,7 +227,7 @@ void main() {
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
       await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 10, platesWeight: 22.5)
@@ -255,7 +255,7 @@ void main() {
       final chestSet4 =
           chestSet3.copyWith(setId: '4', repetitions: 4, platesWeight: 25);
       await viewModel.progressSets
-          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4]);
+          .execute([chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
           .copyWithoutId(repetitions: 10, platesWeight: 22.5)
