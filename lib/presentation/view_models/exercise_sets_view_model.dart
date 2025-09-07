@@ -3,6 +3,7 @@ import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
@@ -34,7 +35,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
-    progressSets = Command1<void, List<ExerciseSet>>(_progressSets)
+    progressSets = Command1<void, List<ExerciseSetPresentation>>(_progressSets)
       ..addListener(_onCommandExecuted);
   }
 
@@ -49,7 +50,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
-  late final Command1<void, List<ExerciseSet>> progressSets;
+  late final Command1<void, List<ExerciseSetPresentation>> progressSets;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -145,10 +146,13 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return Result.ok(null);
   }
 
-  Future<Result<void>> _progressSets(List<ExerciseSet> sets) async {
+  Future<Result<void>> _progressSets(List<ExerciseSetPresentation> sets) async {
     List<ExerciseSet> newSets = [];
     if (sets.length < 3) {
-      newSets = sets.map((set) => set.copyWithoutId()).toList();
+      newSets = sets
+          .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
+          .map((set) => set.copyWithoutId())
+          .toList();
     } else {
       final groupedSets = _groupSetsByRepetitions(sets);
       // find a group with at least 3 sets
@@ -158,22 +162,17 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       // find highest repetitions in all sets
       final maxRepetitions =
           sets.map((set) => set.repetitions).reduce((a, b) => a > b ? a : b);
-      final exerciseTemplateResult = await _exerciseTemplateRepository
-          .getExercise(sets.first.exerciseTemplateId);
-      if (exerciseTemplateResult is Error) {
-        return Result.error((exerciseTemplateResult as Error).error);
-      }
-      final exerciseTemplate =
-          (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
-      final repRange = exerciseTemplate.repetitionsRangeTarget;
       if (group.key == 0) {
         // no group with at least 3 sets with same repetitions found
         // reduce load
         final setWithMaxReps =
             sets.firstWhere((set) => set.repetitions == maxRepetitions);
         final (newRepetitions, newWeight) = _decreaseLoad(
-            setWithMaxReps.repetitions, setWithMaxReps.totalWeight, repRange);
+            setWithMaxReps.repetitions,
+            setWithMaxReps.totalWeight,
+            setWithMaxReps.repetitionsRange);
         newSets = sets
+            .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
             .map((set) => set.copyWithoutId(
                 repetitions: newRepetitions,
                 platesWeight: newWeight - set.equipmentWeight))
@@ -188,8 +187,11 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           final setWithMaxReps =
               sets.firstWhere((set) => set.repetitions == maxRepetitions);
           final (newRepetitions, newWeight) = _decreaseLoad(
-              setWithMaxReps.repetitions, setWithMaxReps.totalWeight, repRange);
+              setWithMaxReps.repetitions,
+              setWithMaxReps.totalWeight,
+              setWithMaxReps.repetitionsRange);
           newSets = sets
+              .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
               .map((set) => set.copyWithoutId(
                   repetitions: newRepetitions,
                   platesWeight: newWeight - set.equipmentWeight))
@@ -199,9 +201,10 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           final sampleSet = group.value.first;
           final currentRepetitions = sampleSet.repetitions;
           final currentTotalWeight = sampleSet.totalWeight;
-          final (newRepetitions, newWeight) =
-              _increaseLoad(currentRepetitions, currentTotalWeight, repRange);
+          final (newRepetitions, newWeight) = _increaseLoad(currentRepetitions,
+              currentTotalWeight, sampleSet.repetitionsRange);
           newSets = sets
+              .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
               .map((set) => set.copyWithoutId(
                   repetitions: newRepetitions,
                   platesWeight: newWeight - set.equipmentWeight))
@@ -256,8 +259,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
         .clamp(0, double.infinity);
   }
 
-  Map<int, List<ExerciseSet>> _groupSetsByRepetitions(List<ExerciseSet> sets) {
-    final Map<int, List<ExerciseSet>> groupedSets = {};
+  Map<int, List<ExerciseSetPresentation>> _groupSetsByRepetitions(
+      List<ExerciseSetPresentation> sets) {
+    final Map<int, List<ExerciseSetPresentation>> groupedSets = {};
     for (var set in sets) {
       groupedSets.putIfAbsent(set.repetitions, () => []).add(set);
     }
