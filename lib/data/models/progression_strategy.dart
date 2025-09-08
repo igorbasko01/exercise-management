@@ -16,11 +16,61 @@ sealed class ProgressionStrategy {
           {required ExerciseSetPresentation targetSet}) =>
       IncreaseLoadStrategy(targetSet: targetSet);
 
-  factory ProgressionStrategy.determineFrom(List<ExerciseSetPresentation> sets) {
-    throw UnimplementedError();
+  factory ProgressionStrategy.determineFrom(
+      List<ExerciseSetPresentation> sets) {
+    if (sets.length < 3) {
+      return const NoProgressionStrategy();
+    }
+
+    // now we handle groups of sets that have at least 3 sets
+    final groupedSetsByReps = _groupSetsByRepetitions(sets);
+    // Find a group that has at least 3 sets with same repetitions.
+    final groupWithAtLeast3Sets = groupedSetsByReps.entries.firstWhere(
+        (entry) => entry.value.length >= 3,
+        orElse: () => MapEntry(0, []));
+    // Find max repetitions from all sets
+    final maxRepetitions =
+        sets.map((set) => set.repetitions).reduce((a, b) => a > b ? a : b);
+    if (groupWithAtLeast3Sets.key == 0) {
+      // No group with at least 3 sets with same repetitions found
+      // it might be something like 5,4,3 or 5,5,4,3
+      // it mainly means that user is struggling to complete the sets
+      // so we decrease the load
+      final setWithMaxReps =
+          sets.firstWhere((set) => set.repetitions == maxRepetitions);
+      return DecreaseLoadStrategy(targetSet: setWithMaxReps);
+    } else {
+      // We have a group with at least 3 sets with same repetitions
+      // it might be something like 8,5,5,5 or 8,8,8,6
+      // each one of them should be handled differently
+      final groupReps = groupWithAtLeast3Sets.key;
+      if (groupReps < maxRepetitions) {
+        // This means that the 3 sets are lower than the max repetitions
+        // it might be something like 8,5,5,5 which means user is struggling
+        // so we decrease the load
+        final setWithMaxReps =
+            sets.firstWhere((set) => set.repetitions == maxRepetitions);
+        return DecreaseLoadStrategy(targetSet: setWithMaxReps);
+      } else {
+        // This means that the 3 sets are the max repetitions
+        // it might be something like 8,8,8,6 which means user is doing well
+        // so we increase the load
+        return IncreaseLoadStrategy(
+            targetSet: groupWithAtLeast3Sets.value.first);
+      }
+    }
   }
 
   List<ExerciseSet> apply(List<ExerciseSetPresentation> sets);
+
+  static Map<int, List<ExerciseSetPresentation>> _groupSetsByRepetitions(
+      List<ExerciseSetPresentation> sets) {
+    final Map<int, List<ExerciseSetPresentation>> groupedSets = {};
+    for (var set in sets) {
+      groupedSets.putIfAbsent(set.repetitions, () => []).add(set);
+    }
+    return groupedSets;
+  }
 
   List<ExerciseSet> _copyAllSetsWithoutProgression(
       List<ExerciseSetPresentation> sets) {
@@ -108,8 +158,7 @@ final class IncreaseLoadStrategy extends ProgressionStrategy {
 
     if (newRepetitions > repRange.range.max) {
       newRepetitions = repRange.range.min;
-      newWeight =
-          _adjustedWeight(currentTotalWeight, currentTotalWeight * 0.1);
+      newWeight = _adjustedWeight(currentTotalWeight, currentTotalWeight * 0.1);
     }
 
     return (newRepetitions, newWeight);

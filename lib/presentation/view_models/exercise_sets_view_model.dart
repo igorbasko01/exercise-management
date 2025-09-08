@@ -1,10 +1,9 @@
 import 'package:exercise_management/core/command.dart';
-import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
-import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/models/progression_strategy.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -169,119 +168,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets) {
-    List<ExerciseSet> newSets = [];
-    if (sets.length < 3) {
-      newSets = sets
-          .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
-          .map((set) => set.copyWithoutId())
-          .toList();
-    } else {
-      final groupedSets = _groupSetsByRepetitions(sets);
-      // find a group with at least 3 sets
-      final group = groupedSets.entries.firstWhere(
-          (entry) => entry.value.length >= 3,
-          orElse: () => MapEntry(0, []));
-      // find highest repetitions in all sets
-      final maxRepetitions =
-          sets.map((set) => set.repetitions).reduce((a, b) => a > b ? a : b);
-      if (group.key == 0) {
-        // no group with at least 3 sets with same repetitions found
-        // reduce load
-        final setWithMaxReps =
-            sets.firstWhere((set) => set.repetitions == maxRepetitions);
-        final (newRepetitions, newWeight) = _decreaseLoad(
-            setWithMaxReps.repetitions,
-            setWithMaxReps.totalWeight,
-            setWithMaxReps.repetitionsRange);
-        newSets = sets
-            .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
-            .map((set) => set.copyWithoutId(
-                repetitions: newRepetitions,
-                platesWeight: newWeight - set.equipmentWeight))
-            .toList();
-      } else {
-        // found a group with at least 3 sets with same repetitions
-        final groupHighestRepetitions = group.key;
-        if (groupHighestRepetitions < maxRepetitions) {
-          // reduce load, those sets are failed ones,
-          // the max reps set is assumed to be the first set. The failed ones
-          // are later sets with lower reps. e.g. 8, 6, 6, 6
-          final setWithMaxReps =
-              sets.firstWhere((set) => set.repetitions == maxRepetitions);
-          final (newRepetitions, newWeight) = _decreaseLoad(
-              setWithMaxReps.repetitions,
-              setWithMaxReps.totalWeight,
-              setWithMaxReps.repetitionsRange);
-          newSets = sets
-              .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
-              .map((set) => set.copyWithoutId(
-                  repetitions: newRepetitions,
-                  platesWeight: newWeight - set.equipmentWeight))
-              .toList();
-        } else {
-          // increase load
-          final sampleSet = group.value.first;
-          final currentRepetitions = sampleSet.repetitions;
-          final currentTotalWeight = sampleSet.totalWeight;
-          final (newRepetitions, newWeight) = _increaseLoad(currentRepetitions,
-              currentTotalWeight, sampleSet.repetitionsRange);
-          newSets = sets
-              .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set))
-              .map((set) => set.copyWithoutId(
-                  repetitions: newRepetitions,
-                  platesWeight: newWeight - set.equipmentWeight))
-              .toList();
-        }
-      }
-    }
-
-    return newSets;
-  }
-
-  (int, double) _increaseLoad(int currentRepetitions, double currentTotalWeight,
-      RepetitionsRange repRange) {
-    int newRepetitions = currentRepetitions + 1;
-    double newWeight = currentTotalWeight;
-
-    if (newRepetitions > repRange.range.max) {
-      newRepetitions = repRange.range.min;
-      newWeight = _adjustedWeight(currentTotalWeight, currentTotalWeight * 0.1);
-    }
-
-    return (newRepetitions, newWeight);
-  }
-
-  (int, double) _decreaseLoad(int currentRepetitions, double currentTotalWeight,
-      RepetitionsRange repRange) {
-    int newRepetitions = currentRepetitions - 1;
-    double newWeight = currentTotalWeight;
-
-    if (newRepetitions < repRange.range.min) {
-      newRepetitions = repRange.range.max;
-      newWeight =
-          _adjustedWeight(currentTotalWeight, -currentTotalWeight * 0.1);
-    }
-
-    return (newRepetitions, newWeight);
-  }
-
-  double _adjustedWeight(double currentWeight, double adjustment) {
-    List<double> allowedIncrements = [1.25, 2.5, 5];
-    // find closest allowed increment to the adjustment
-    // adjustment can be negative or positive
-    double closestIncrement = allowedIncrements.reduce((a, b) =>
-        (adjustment.abs() - a).abs() < (adjustment.abs() - b).abs() ? a : b);
-    return (currentWeight + (closestIncrement * adjustment.sign))
-        .clamp(0, double.infinity);
-  }
-
-  Map<int, List<ExerciseSetPresentation>> _groupSetsByRepetitions(
-      List<ExerciseSetPresentation> sets) {
-    final Map<int, List<ExerciseSetPresentation>> groupedSets = {};
-    for (var set in sets) {
-      groupedSets.putIfAbsent(set.repetitions, () => []).add(set);
-    }
-    return groupedSets;
+    return ProgressionStrategy.determineFrom(sets).apply(sets);
   }
 
   Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(
