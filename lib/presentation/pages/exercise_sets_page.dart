@@ -152,8 +152,9 @@ class ExerciseSetsPage extends StatelessWidget {
       controlAffinity: ListTileControlAffinity.leading,
       title: Text(templateName,
           style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle:
-          Text("${exercises.length} set${exercises.length != 1 ? 's' : ''}"),
+      subtitle: Text(
+          "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+              "reps: ${exercises.map((set) => set.repetitions)}"),
       trailing: IconButton(
         icon: const Icon(Icons.copy_all),
         onPressed: () => _progressSets(exercises, viewModel),
