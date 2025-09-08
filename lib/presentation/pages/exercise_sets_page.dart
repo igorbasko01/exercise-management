@@ -95,12 +95,12 @@ class ExerciseSetsPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final date = sortedDates[index];
         final exercises = groupedExercises[date]!;
-        return _buildExpansionTile(context, date, exercises, viewModel);
+        return _buildDateExpansionTile(context, date, exercises, viewModel);
       },
     );
   }
 
-  ExpansionTile _buildExpansionTile(
+  ExpansionTile _buildDateExpansionTile(
       BuildContext context,
       String date,
       List<ExerciseSetPresentation> exercises,
@@ -113,17 +113,57 @@ class ExerciseSetsPage extends StatelessWidget {
         icon: const Icon(Icons.copy_all),
         onPressed: () => _progressSets(exercises, viewModel),
       ),
-      children: exercises
-          .map<Widget>((exercise) =>
-              _buildExerciseListTile(context, exercise, viewModel))
-          .toList(),
+      children:
+          _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
     );
+  }
+
+  List<ExpansionTile> _buildExerciseTemplateExpansionTiles(
+      List<ExerciseSetPresentation> exercises,
+      BuildContext context,
+      ExerciseSetsViewModel viewModel) {
+    final setsByTemplate = <String, List<ExerciseSetPresentation>>{};
+    for (var exercise in exercises) {
+      setsByTemplate
+          .putIfAbsent(exercise.exerciseTemplateId, () => [])
+          .add(exercise);
+    }
+    final widgets = <ExpansionTile>[];
+    for (var entry in setsByTemplate.entries) {
+      final templateName = entry.value.first.displayName;
+      widgets.add(_buildExerciseTemplateExpansionTile(
+          templateName, entry.value, context, viewModel));
+    }
+    return widgets;
   }
 
   String _buildExerciseGroupSubtitle(List<ExerciseSetPresentation> exercises) {
     final exerciseNames = exercises.map((e) => e.displayName).toSet().toList();
     return '${exercises.length} set${exercises.length != 1 ? 's' : ''}, '
         '$exerciseNames';
+  }
+
+  ExpansionTile _buildExerciseTemplateExpansionTile(
+      String templateName,
+      List<ExerciseSetPresentation> exercises,
+      BuildContext context,
+      ExerciseSetsViewModel viewModel) {
+    return ExpansionTile(
+      controlAffinity: ListTileControlAffinity.leading,
+      title: Text(templateName,
+          style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(
+          "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+              "reps: ${exercises.map((set) => set.repetitions)}"),
+      trailing: IconButton(
+        icon: const Icon(Icons.copy_all),
+        onPressed: () => _progressSets(exercises, viewModel),
+      ),
+      children: exercises
+          .map<Widget>((exercise) =>
+              _buildExerciseListTile(context, exercise, viewModel))
+          .toList(),
+    );
   }
 
   Widget _buildExerciseListTile(BuildContext context,
@@ -180,7 +220,8 @@ class ExerciseSetsPage extends StatelessWidget {
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
-  void _progressSets(List<ExerciseSetPresentation> sets, ExerciseSetsViewModel viewModel) {
+  void _progressSets(
+      List<ExerciseSetPresentation> sets, ExerciseSetsViewModel viewModel) {
     viewModel.progressSets.execute(sets, DateTime.now());
   }
 
