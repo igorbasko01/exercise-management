@@ -1,4 +1,6 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 
 class ExerciseSetPresentation {
   final String? setId;
@@ -20,6 +22,55 @@ class ExerciseSetPresentation {
     required this.displayName,
     required this.repetitionsRange,
   });
+
+  double get totalWeight => equipmentWeight + platesWeight;
+
+  ExerciseSetPresentation copyWith({
+    String? setId,
+    String? exerciseTemplateId,
+    DateTime? dateTime,
+    double? equipmentWeight,
+    double? platesWeight,
+    int? repetitions,
+    String? displayName,
+    RepetitionsRange? repetitionsRange,
+  }) {
+    return ExerciseSetPresentation(
+      setId: setId ?? this.setId,
+      exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
+      dateTime: dateTime ?? this.dateTime,
+      equipmentWeight: equipmentWeight ?? this.equipmentWeight,
+      platesWeight: platesWeight ?? this.platesWeight,
+      repetitions: repetitions ?? this.repetitions,
+      displayName: displayName ?? this.displayName,
+      repetitionsRange: repetitionsRange ?? this.repetitionsRange,
+    );
+  }
+
+  ExerciseSetPresentation copyWithoutId({
+    String? exerciseTemplateId,
+    DateTime? dateTime,
+    double? equipmentWeight,
+    double? platesWeight,
+    int? repetitions,
+    String? displayName,
+    RepetitionsRange? repetitionsRange,
+  }) {
+    return ExerciseSetPresentation(
+      setId: null,
+      exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
+      dateTime: dateTime ?? this.dateTime,
+      equipmentWeight: equipmentWeight ?? this.equipmentWeight,
+      platesWeight: platesWeight ?? this.platesWeight,
+      repetitions: repetitions ?? this.repetitions,
+      displayName: displayName ?? this.displayName,
+      repetitionsRange: repetitionsRange ?? this.repetitionsRange,
+    );
+  }
+
+  ExerciseSet toExerciseSet() {
+    return ExerciseSetPresentationMapper.toExerciseSet(this);
+  }
 
   @override
   bool operator ==(Object other) {

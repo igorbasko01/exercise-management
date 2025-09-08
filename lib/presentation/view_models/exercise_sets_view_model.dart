@@ -3,6 +3,7 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/models/progression_strategy.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -33,6 +34,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
+    progressSets = Command2<void, List<ExerciseSetPresentation>, DateTime>(_progressSets)
+      ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -46,6 +49,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
+  late final Command2<void, List<ExerciseSetPresentation>, DateTime> progressSets;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -141,6 +145,41 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return Result.ok(null);
   }
 
+  Future<Result<void>> _progressSets(
+      List<ExerciseSetPresentation> sets, DateTime newDate) async {
+    final groupedSets = _groupSetsByTemplate(sets);
+
+    List<ExerciseSet> newSets = [];
+    for (var entry in groupedSets.entries) {
+      final progressedSets = _progressSetsGroup(entry.value)
+          .map((set) => set.copyWith(dateTime: newDate))
+          .toList();
+      newSets.addAll(progressedSets);
+    }
+
+    final addResult = await _exerciseSetRepository.addExercises(newSets);
+    switch (addResult) {
+      case Ok<void>():
+        await _fetchExerciseSets();
+        return Result.ok(null);
+      case Error():
+        return Result.error(addResult.error);
+    }
+  }
+
+  List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets) {
+    return ProgressionStrategy.determineFrom(sets).apply(sets);
+  }
+
+  Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(
+      List<ExerciseSetPresentation> sets) {
+    final Map<String, List<ExerciseSetPresentation>> groupedSets = {};
+    for (var set in sets) {
+      groupedSets.putIfAbsent(set.exerciseTemplateId, () => []).add(set);
+    }
+    return groupedSets;
+  }
+
   @override
   void dispose() {
     fetchExerciseTemplates.removeListener(_onCommandExecuted);
@@ -150,6 +189,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     deleteExerciseSet.removeListener(_onCommandExecuted);
     updateExerciseSet.removeListener(_onCommandExecuted);
     preloadExercises.removeListener(_onCommandExecuted);
+    progressSets.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -158,6 +198,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     updateExerciseSet.dispose();
     fetchExerciseTemplates.dispose();
     preloadExercises.dispose();
+    progressSets.dispose();
 
     super.dispose();
   }

@@ -16,6 +16,8 @@ class ExerciseSet {
     required this.repetitions,
   });
 
+  double get totalWeight => equipmentWeight + platesWeight;
+
   ExerciseSet copyWith({
     String? id,
     String? exerciseTemplateId,
