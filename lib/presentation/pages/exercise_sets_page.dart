@@ -154,6 +154,10 @@ class ExerciseSetsPage extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle:
           Text("${exercises.length} set${exercises.length != 1 ? 's' : ''}"),
+      trailing: IconButton(
+        icon: const Icon(Icons.copy_all),
+        onPressed: () => _progressSets(exercises, viewModel),
+      ),
       children: exercises
           .map<Widget>((exercise) =>
               _buildExerciseListTile(context, exercise, viewModel))
