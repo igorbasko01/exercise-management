@@ -9,6 +9,7 @@ import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 class SettingsViewModel extends ChangeNotifier {
@@ -49,7 +50,7 @@ class SettingsViewModel extends ChangeNotifier {
     final setsCSV = _createSetsCSV(sets);
 
     final tempDir = await getTemporaryDirectory();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
 
     final templatesFile = File('${tempDir.path}/exercise_templates_$timestamp.csv');
     final setsFile = File('${tempDir.path}/exercise_sets_$timestamp.csv');
