@@ -39,6 +39,7 @@ dependencies:
   archive: ^4.0.7
   share_plus: ^11.1.0
   intl: ^0.20.2
+  file_picker: ^10.3.2
 
 
   # The following adds the Cupertino Icons font to your application.

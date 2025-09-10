@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -53,7 +54,9 @@ class _SettingsPageState extends State<SettingsPage> {
         barrierDismissible: false,
         builder: (context) => AlertDialog(
                 content: Row(children: [
-              CircularProgressIndicator(semanticsLabel: 'Exporting data',),
+              CircularProgressIndicator(
+                semanticsLabel: 'Exporting data',
+              ),
               SizedBox(width: 16),
               Text(message)
             ])));
@@ -89,6 +92,26 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _importData() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        print('Importing data from $filePath');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<SettingsViewModel>(builder: (context, viewModel, child) {
@@ -101,7 +124,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: const Icon(Icons.save_alt),
                 label: const Text('Export Data')),
             ElevatedButton.icon(
-                onPressed: null,
+                onPressed: _importData,
                 icon: const Icon(Icons.upload),
                 label: const Text('Import Data')),
           ]));
