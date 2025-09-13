@@ -1,4 +1,6 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,10 @@ class _SettingsPageState extends State<SettingsPage> {
           .read<SettingsViewModel>()
           .exportDataCommand
           .addListener(_onExportCommandChanged);
+      context
+          .read<SettingsViewModel>()
+          .importDataCommand
+          .addListener(_onImportCommandChanged);
     });
   }
 
@@ -33,6 +39,10 @@ class _SettingsPageState extends State<SettingsPage> {
         .read<SettingsViewModel>()
         .exportDataCommand
         .removeListener(_onExportCommandChanged);
+    context
+        .read<SettingsViewModel>()
+        .importDataCommand
+        .removeListener(_onImportCommandChanged);
     super.dispose();
   }
 
@@ -46,6 +56,29 @@ class _SettingsPageState extends State<SettingsPage> {
       _isExportDialogShowing = false;
       Navigator.of(context).pop();
       _handleExportResult(command.result as Result<String>?);
+    }
+  }
+
+  void _onImportCommandChanged() {
+    final command = context.read<SettingsViewModel>().importDataCommand;
+
+    if (command.running) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Importing data...')));
+    } else if (command.error) {
+      final result = command.result as Result<String>?;
+      if (result is Error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error importing data: ${(result as Error).error}')));
+      }
+    } else if (command.result is Ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data imported successfully.')));
+      context
+          .read<ExerciseTemplatesViewModel>()
+          .fetchExerciseTemplates
+          .execute();
+      context.read<ExerciseSetsViewModel>().fetchExerciseSets.execute();
     }
   }
 
@@ -107,6 +140,10 @@ class _SettingsPageState extends State<SettingsPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Importing data from $filePath')));
+          await context
+              .read<SettingsViewModel>()
+              .importDataCommand
+              .execute(filePath);
         }
       }
     } catch (e) {

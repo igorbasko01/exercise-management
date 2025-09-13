@@ -22,8 +22,8 @@ class SettingsViewModel extends ChangeNotifier {
     required ExerciseSetRepository setsRepository,
   })  : _templatesRepository = templatesRepository,
         _setsRepository = setsRepository {
-
-    exportDataCommand = Command0(_exportAndStoreData)..addListener(_onCommandExecuted);
+    exportDataCommand = Command0(_exportAndStoreData)
+      ..addListener(_onCommandExecuted);
     importDataCommand = Command1(_importData)..addListener(_onCommandExecuted);
   }
 
@@ -77,15 +77,19 @@ class SettingsViewModel extends ChangeNotifier {
     final tempDir = await getTemporaryDirectory();
     final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
 
-    final templatesFile = File('${tempDir.path}/${_templatesFileNamePrefix}_$timestamp.csv');
-    final setsFile = File('${tempDir.path}/${_setsFileNamePrefix}_$timestamp.csv');
+    final templatesFile =
+        File('${tempDir.path}/${_templatesFileNamePrefix}_$timestamp.csv');
+    final setsFile =
+        File('${tempDir.path}/${_setsFileNamePrefix}_$timestamp.csv');
 
     await templatesFile.writeAsString(templatesCSV);
     await setsFile.writeAsString(setsCSV);
 
     final archive = Archive();
-    archive.addFile(ArchiveFile('$_templatesFileNamePrefix.csv', templatesFile.lengthSync(), templatesFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_setsFileNamePrefix.csv', setsFile.lengthSync(), setsFile.readAsBytesSync()));
+    archive.addFile(ArchiveFile('$_templatesFileNamePrefix.csv',
+        templatesFile.lengthSync(), templatesFile.readAsBytesSync()));
+    archive.addFile(ArchiveFile('$_setsFileNamePrefix.csv',
+        setsFile.lengthSync(), setsFile.readAsBytesSync()));
 
     final zipFile = File('${tempDir.path}/exercise_data_export_$timestamp.zip');
     await zipFile.writeAsBytes(ZipEncoder().encode(archive));
@@ -147,14 +151,19 @@ class SettingsViewModel extends ChangeNotifier {
         }
       }
 
-      // Clear existing data
-      final clearTemplatesResult = await _templatesRepository.clearAll();
-      if (clearTemplatesResult is Error) {
-        return clearTemplatesResult;
+      if (templates.isEmpty) {
+        return Result.error(
+            ImportException('No templates found in the zip file.'));
       }
+
+      // Clear existing data
       final clearSetsResult = await _setsRepository.clearAll();
       if (clearSetsResult is Error) {
         return clearSetsResult;
+      }
+      final clearTemplatesResult = await _templatesRepository.clearAll();
+      if (clearTemplatesResult is Error) {
+        return clearTemplatesResult;
       }
 
       for (final template in templates) {
@@ -180,7 +189,8 @@ class SettingsViewModel extends ChangeNotifier {
   String _createTemplatesCSV(List<ExerciseTemplate> templates) {
     final rows = <List<String>>[];
 
-    rows.add(['id', 'name', 'muscle_group', 'repetitions_range', 'description']);
+    rows.add(
+        ['id', 'name', 'muscle_group', 'repetitions_range', 'description']);
 
     for (final template in templates) {
       rows.add([
@@ -198,7 +208,14 @@ class SettingsViewModel extends ChangeNotifier {
   String _createSetsCSV(List<ExerciseSet> sets) {
     final rows = <List<String>>[];
 
-    rows.add(['id', 'exercise_template_id', 'date_time', 'equipment_weight', 'plates_weight', 'repetitions']);
+    rows.add([
+      'id',
+      'exercise_template_id',
+      'date_time',
+      'equipment_weight',
+      'plates_weight',
+      'repetitions'
+    ]);
 
     for (final set in sets) {
       rows.add([
@@ -224,8 +241,9 @@ class SettingsViewModel extends ChangeNotifier {
         id: row[0].toString(),
         name: row[1].toString(),
         muscleGroup: MuscleGroup.values[int.parse(row[2].toString())],
-        repetitionsRangeTarget: RepetitionsRange.values[int.parse(row[3].toString())],
-        description: row[4].toString().isEmpty ? null : row[4].toString(),
+        repetitionsRangeTarget:
+            RepetitionsRange.values[int.parse(row[3].toString())],
+        description: row[4].toString().trim().isEmpty ? null : row[4].toString(),
       ));
     }
 
