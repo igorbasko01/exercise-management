@@ -94,4 +94,15 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
       return Result.error(ExerciseNotFoundException('Exercise $id not found'));
     }
   }
+
+  @override
+  Future<Result<void>> clearAll() async {
+    try {
+      await database.delete(tableName);
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(
+          ExerciseNotFoundException('Error clearing exercise templates: $e'));
+    }
+  }
 }

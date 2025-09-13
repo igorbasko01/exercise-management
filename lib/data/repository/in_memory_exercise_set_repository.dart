@@ -71,4 +71,10 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
     }
     return Result.ok(null);
   }
+
+  @override
+  Future<Result<void>> clearAll() {
+    _exerciseSets.clear();
+    return Future.value(Result.ok(null));
+  }
 }

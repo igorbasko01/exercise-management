@@ -56,4 +56,10 @@ class InMemoryExerciseRepository extends ExerciseTemplateRepository {
     _exercises[exerciseIndex] = exercise.copyWith(id: storedExercise.id);
     return Result.ok(exercise);
   }
+
+  @override
+  Future<Result<void>> clearAll() {
+    _exercises.clear();
+    return Future.value(Result.ok(null));
+  }
 }

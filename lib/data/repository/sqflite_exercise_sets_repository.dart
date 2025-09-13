@@ -97,4 +97,15 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
           ExerciseAlreadyExistsException("One or more exercises already exist"));
     }
   }
+
+  @override
+  Future<Result<void>> clearAll() async {
+    try {
+      await database.delete(tableName);
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(
+          ExerciseNotFoundException('Error clearing exercises: $e'));
+    }
+  }
 }

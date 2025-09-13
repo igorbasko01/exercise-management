@@ -1,6 +1,10 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -22,6 +26,10 @@ class _SettingsPageState extends State<SettingsPage> {
           .read<SettingsViewModel>()
           .exportDataCommand
           .addListener(_onExportCommandChanged);
+      context
+          .read<SettingsViewModel>()
+          .importDataCommand
+          .addListener(_onImportCommandChanged);
     });
   }
 
@@ -31,6 +39,10 @@ class _SettingsPageState extends State<SettingsPage> {
         .read<SettingsViewModel>()
         .exportDataCommand
         .removeListener(_onExportCommandChanged);
+    context
+        .read<SettingsViewModel>()
+        .importDataCommand
+        .removeListener(_onImportCommandChanged);
     super.dispose();
   }
 
@@ -47,13 +59,38 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  void _onImportCommandChanged() {
+    final command = context.read<SettingsViewModel>().importDataCommand;
+
+    if (command.running) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Importing data...')));
+    } else if (command.error) {
+      final result = command.result;
+      if (result is Error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error importing data: ${result.error}')));
+      }
+    } else if (command.result is Ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data imported successfully.')));
+      context
+          .read<ExerciseTemplatesViewModel>()
+          .fetchExerciseTemplates
+          .execute();
+      context.read<ExerciseSetsViewModel>().fetchExerciseSets.execute();
+    }
+  }
+
   void _showInProgressDialog(String message) {
     showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
                 content: Row(children: [
-              CircularProgressIndicator(semanticsLabel: 'Exporting data',),
+              CircularProgressIndicator(
+                semanticsLabel: 'Exporting data',
+              ),
               SizedBox(width: 16),
               Text(message)
             ])));
@@ -64,8 +101,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (result is Ok<String>) {
       final filePath = (result as Ok).value;
+      final folder = path.dirname(filePath);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Data exported successfully.'),
+          content: Text('Data exported successfully to $folder folder.'),
           action: SnackBarAction(
             label: 'Share',
             onPressed: () => _shareFile(filePath),
@@ -89,6 +127,33 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _importData() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Importing data from $filePath')));
+          await context
+              .read<SettingsViewModel>()
+              .importDataCommand
+              .execute(filePath);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<SettingsViewModel>(builder: (context, viewModel, child) {
@@ -101,7 +166,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: const Icon(Icons.save_alt),
                 label: const Text('Export Data')),
             ElevatedButton.icon(
-                onPressed: null,
+                onPressed: _importData,
                 icon: const Icon(Icons.upload),
                 label: const Text('Import Data')),
           ]));
