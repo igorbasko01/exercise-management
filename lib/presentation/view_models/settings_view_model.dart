@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:csv/csv.dart';
+import 'package:path/path.dart' as path;
+import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
@@ -19,7 +21,7 @@ class SettingsViewModel extends ChangeNotifier {
   })  : _templatesRepository = templatesRepository,
         _setsRepository = setsRepository {
 
-    exportDataCommand = Command0(_exportData)..addListener(_onCommandExecuted);
+    exportDataCommand = Command0(_exportAndStoreData)..addListener(_onCommandExecuted);
   }
 
   final ExerciseTemplateRepository _templatesRepository;
@@ -29,6 +31,22 @@ class SettingsViewModel extends ChangeNotifier {
 
   void _onCommandExecuted() {
     notifyListeners();
+  }
+
+  Future<Result<String>> _exportAndStoreData() async {
+    try {
+      final exportResult = await _exportData();
+      if (exportResult is Error) {
+        return exportResult;
+      }
+
+      final tempFilePath = (exportResult as Ok).value;
+
+      final storeResult = await _storeInDownloads(tempFilePath);
+      return storeResult;
+    } catch (e) {
+      return Result.error(ExportException(e.toString()));
+    }
   }
 
   Future<Result<String>> _exportData() async {
@@ -71,6 +89,32 @@ class SettingsViewModel extends ChangeNotifier {
     return Result.ok(zipFile.path);
   }
 
+  Future<Result<String>> _storeInDownloads(String filePath) async {
+    try {
+      final downloadsDir = await _getDownloadsDirectory();
+      final fileName = path.basename(filePath);
+      final downloadPath = path.join(downloadsDir.path, fileName);
+
+      final originalFile = File(filePath);
+      await originalFile.copy(downloadPath);
+
+      return Result.ok(downloadPath);
+    } catch (e) {
+      return Result.error(ExportException('Error saving file: $e'));
+    }
+  }
+
+  Future<Directory> _getDownloadsDirectory() async {
+    if (Platform.isAndroid) {
+      return Directory('/storage/emulated/0/Download');
+    } else if (Platform.isIOS) {
+      return await getApplicationDocumentsDirectory();
+    } else {
+      return await getDownloadsDirectory() ??
+          await getApplicationDocumentsDirectory();
+    }
+  }
+
   String _createTemplatesCSV(List<ExerciseTemplate> templates) {
     final rows = <List<String>>[];
 
@@ -107,4 +151,14 @@ class SettingsViewModel extends ChangeNotifier {
 
     return const ListToCsvConverter().convert(rows);
   }
+}
+
+class ExportException implements BaseException {
+  @override
+  final String message;
+
+  ExportException(this.message);
+
+  @override
+  String toString() => 'ExportException: $message';
 }

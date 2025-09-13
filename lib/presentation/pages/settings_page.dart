@@ -2,6 +2,7 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -67,8 +68,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (result is Ok<String>) {
       final filePath = (result as Ok).value;
+      final folder = path.dirname(filePath);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Data exported successfully.'),
+          content: Text('Data exported successfully to $folder folder.'),
           action: SnackBarAction(
             label: 'Share',
             onPressed: () => _shareFile(filePath),
@@ -102,7 +104,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (result != null && result.files.single.path != null) {
         final filePath = result.files.single.path!;
-        print('Importing data from $filePath');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Importing data from $filePath')));
+        }
       }
     } catch (e) {
       if (mounted) {
