@@ -9,4 +9,5 @@ abstract class ExerciseSetRepository {
   Future<Result<ExerciseSet>> getExercise(String id);
   Future<Result<ExerciseSet>> updateExercise(ExerciseSet exerciseSet);
   Future<Result<ExerciseSet>> deleteExercise(String id);
+  Future<Result<void>> clearAll();
 }
