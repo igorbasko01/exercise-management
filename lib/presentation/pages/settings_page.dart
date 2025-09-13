@@ -66,10 +66,10 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Importing data...')));
     } else if (command.error) {
-      final result = command.result as Result<String>?;
+      final result = command.result;
       if (result is Error) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error importing data: ${(result as Error).error}')));
+            content: Text('Error importing data: ${result.error}')));
       }
     } else if (command.result is Ok) {
       ScaffoldMessenger.of(context).showSnackBar(

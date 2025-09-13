@@ -96,8 +96,13 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   }
 
   @override
-  Future<Result<void>> clearAll() {
-    database.delete(tableName);
-    return Future.value(Result.ok(null));
+  Future<Result<void>> clearAll() async {
+    try {
+      await database.delete(tableName);
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(
+          ExerciseNotFoundException('Error clearing exercise templates: $e'));
+    }
   }
 }

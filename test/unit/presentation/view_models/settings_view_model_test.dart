@@ -158,6 +158,18 @@ void main() {
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
     });
+
+    test('should return error when template has invalid enum value', () async {
+      final zipFile = await _createInvalidEnumZipFile(tempDir);
+
+      await viewModel.importDataCommand.execute(zipFile.path);
+
+      expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verifyNever(() => mockTemplateRepository.clearAll());
+      verifyNever(() => mockSetRepository.clearAll());
+      verifyNever(() => mockTemplateRepository.addExercise(any()));
+      verifyNever(() => mockSetRepository.addExercise(any()));
+    });
   });
 }
 
@@ -190,6 +202,22 @@ Future<File> _createValidZipFile(Directory tempDir) async {
       ArchiveFile('exercise_sets.csv', setsCSV.length, setsCSV.codeUnits));
 
   final zipFile = File(path.join(tempDir.path, 'test_data.zip'));
+  await zipFile.writeAsBytes(ZipEncoder().encode(archive));
+  return zipFile;
+}
+
+Future<File> _createInvalidEnumZipFile(Directory tempDir) async {
+  final archive = Archive();
+
+  final templatesRows = [
+    ['id', 'name', 'muscle_group', 'repetitions_range', 'description'],
+    ['1', 'Push-up', '99999', '1', 'Basic push-up exercise'],
+  ];
+  final templatesCSV = const ListToCsvConverter().convert(templatesRows);
+  archive.addFile(ArchiveFile(
+      'exercise_templates.csv', templatesCSV.length, templatesCSV.codeUnits));
+
+  final zipFile = File(path.join(tempDir.path, 'invalid_enum_data.zip'));
   await zipFile.writeAsBytes(ZipEncoder().encode(archive));
   return zipFile;
 }
