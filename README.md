@@ -15,10 +15,10 @@ A Flutter application for managing exercises, workouts, and routines. This proje
 
 Below are some example screenshots of the app.
 
-![Screenshot 1](images/exercise_definition.png)
-![Screenshot 2](images/sets_management.png)
-![Screenshot 3](images/marked_sets.png)
-![Screenshot 4](images/sets_progression.png)
+![Exercise Definition Screen](images/exercise_definition.png)
+![Sets Management Screen](images/sets_management.png)
+![Marked Sets Screen](images/marked_sets.png)
+![Sets Progression Screen](images/sets_progression.png)
 _The copy icon in the blue square means "copy with progression" in the sets progression screen. The copy icon in the purple square is a "simple" copy._
 
 ## Getting Started
