@@ -29,7 +29,7 @@ _The copy icon in the blue square means "copy with progression" in the sets prog
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone <repository-url>
+   git clone https://github.com/username/exercise_management.git
    cd exercise_management
    ```
 2. Install dependencies:
