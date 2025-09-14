@@ -1,6 +1,6 @@
 # Exercise Management
 
-A Flutter application for managing exercises, workouts, and routines. This project provides tools to track, organize, and analyze exercise data, supporting both personal fitness and coaching scenarios.
+A Flutter application for managing exercises, workouts, and routines. This project provides tools to track, organize, and analyze exercise data.
 
 ## Features
 - Create, edit, and delete exercises
@@ -13,7 +13,7 @@ A Flutter application for managing exercises, workouts, and routines. This proje
 
 ## App Screenshots
 
-Below are some example screenshots of the app. Replace these placeholders with actual screenshots as needed.
+Below are some example screenshots of the app.
 
 ![Screenshot 1](images/exercise_definition.png)
 ![Screenshot 2](images/sets_management.png)
