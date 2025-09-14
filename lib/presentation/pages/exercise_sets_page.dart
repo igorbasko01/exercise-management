@@ -160,9 +160,7 @@ class ExerciseSetsPage extends StatelessWidget {
             allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
         title: Text(templateName,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle:
-            Text("${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
-                "reps: ${exercises.map((set) => set.repetitions)}"),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises)),
         trailing: IconButton(
           icon: const Icon(Icons.copy_all),
           onPressed: () => _progressSets(exercises, viewModel),
@@ -173,6 +171,15 @@ class ExerciseSetsPage extends StatelessWidget {
             .toList(),
       );
     });
+  }
+
+  String _buildExerciseTemplateSubtitle(
+      List<ExerciseSetPresentation> exercises) {
+    final maxPlatesWeight = exercises
+        .map((set) => set.platesWeight)
+        .reduce((value, element) => value > element ? value : element);
+    return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+        "reps: ${exercises.map((set) => set.repetitions)}, plates weight: $maxPlatesWeight";
   }
 
   Widget _buildExerciseListTile(BuildContext context,
