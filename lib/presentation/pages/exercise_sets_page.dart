@@ -177,7 +177,7 @@ class ExerciseSetsPage extends StatelessWidget {
       List<ExerciseSetPresentation> exercises) {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
-        .reduce((value, element) => value > element ? value : element);
+        .fold(0.0, (value, element) => value > element ? value : element);
     return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, plates weight: $maxPlatesWeight";
   }
