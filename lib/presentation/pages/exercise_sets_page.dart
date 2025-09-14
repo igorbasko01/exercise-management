@@ -118,7 +118,7 @@ class ExerciseSetsPage extends StatelessWidget {
     );
   }
 
-  List<ExpansionTile> _buildExerciseTemplateExpansionTiles(
+  List<Widget> _buildExerciseTemplateExpansionTiles(
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
       ExerciseSetsViewModel viewModel) {
@@ -128,7 +128,7 @@ class ExerciseSetsPage extends StatelessWidget {
           .putIfAbsent(exercise.exerciseTemplateId, () => [])
           .add(exercise);
     }
-    final widgets = <ExpansionTile>[];
+    final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
       widgets.add(_buildExerciseTemplateExpansionTile(
@@ -143,27 +143,43 @@ class ExerciseSetsPage extends StatelessWidget {
         '$exerciseNames';
   }
 
-  ExpansionTile _buildExerciseTemplateExpansionTile(
+  Widget _buildExerciseTemplateExpansionTile(
       String templateName,
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
       ExerciseSetsViewModel viewModel) {
-    return ExpansionTile(
-      controlAffinity: ListTileControlAffinity.leading,
-      title: Text(templateName,
-          style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(
-          "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
-              "reps: ${exercises.map((set) => set.repetitions)}"),
-      trailing: IconButton(
-        icon: const Icon(Icons.copy_all),
-        onPressed: () => _progressSets(exercises, viewModel),
-      ),
-      children: exercises
-          .map<Widget>((exercise) =>
-              _buildExerciseListTile(context, exercise, viewModel))
-          .toList(),
-    );
+    return Consumer<TrainingSessionManager>(
+        builder: (context, trainingManager, child) {
+      final allCompleted = exercises.every((set) =>
+          set.setId != null && trainingManager.isSetCompleted(set.setId!));
+      return ExpansionTile(
+        controlAffinity: ListTileControlAffinity.leading,
+        collapsedBackgroundColor:
+            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+        backgroundColor:
+            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+        title: Text(templateName,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises)),
+        trailing: IconButton(
+          icon: const Icon(Icons.copy_all),
+          onPressed: () => _progressSets(exercises, viewModel),
+        ),
+        children: exercises
+            .map<Widget>((exercise) =>
+                _buildExerciseListTile(context, exercise, viewModel))
+            .toList(),
+      );
+    });
+  }
+
+  String _buildExerciseTemplateSubtitle(
+      List<ExerciseSetPresentation> exercises) {
+    final maxPlatesWeight = exercises
+        .map((set) => set.platesWeight)
+        .fold(0.0, (value, element) => value > element ? value : element);
+    return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+        "reps: ${exercises.map((set) => set.repetitions)}, plates weight: $maxPlatesWeight";
   }
 
   Widget _buildExerciseListTile(BuildContext context,
