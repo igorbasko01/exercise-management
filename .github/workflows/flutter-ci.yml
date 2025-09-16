@@ -40,6 +40,10 @@ jobs:
       - name: Run flutter analyze
         run: flutter analyze
 
+      # just to verify build works, remove when verified
+      - name: Build APK (Debug)
+        run: flutter build apk --debug
+
   main-build:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
