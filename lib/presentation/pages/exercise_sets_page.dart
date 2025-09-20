@@ -183,7 +183,8 @@ class ExerciseSetsPage extends StatelessWidget {
         .fold(0.0, (value, element) => value + element);
     return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
-        "plates weight: $maxPlatesWeight, total load: $totalLoad";
+        "plates weight: $maxPlatesWeight, "
+        "total load: ${totalLoad.toStringAsFixed(1)}";
   }
 
   Widget _buildExerciseListTile(BuildContext context,
