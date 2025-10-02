@@ -11,4 +11,9 @@ abstract class ExerciseStatisticsRepository {
   /// The first element represents Sunday or Monday based on the
   /// [startFromSunday] parameter.
   Future<Result<List<bool>>> getCurrentWeekExerciseDays({bool startFromSunday});
+
+  /// Returns the average number of exercise days per week for the specified number of days
+  /// looking back from today. For example, if [daysLookback] is 30, it will calculate
+  /// the average weekly exercise days for the last 30 days.
+  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookback);
 }

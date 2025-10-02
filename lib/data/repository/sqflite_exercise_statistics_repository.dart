@@ -41,6 +41,43 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
     }
   }
 
+  @override
+  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookback) async {
+    try {
+      final now = DateTime.now();
+      final startDate = now.subtract(Duration(days: daysLookback));
+      final tableName = SqfliteExerciseSetsRepository.tableName;
+
+      final result = await database.rawQuery('''
+        SELECT DISTINCT DATE(date_time) as exercise_date
+        FROM $tableName
+        WHERE DATE(date_time) BETWEEN ? AND ?
+        ORDER BY exercise_date
+        ''', [
+        startDate.toIso8601String().substring(0, 10),
+        now.toIso8601String().substring(0, 10)
+      ]);
+
+      final exerciseDates = result
+          .map((row) => DateTime.parse(row['exercise_date'] as String))
+          .toSet();
+
+      // Calculate total exercise days
+      final totalExerciseDays = exerciseDates.length;
+
+      // Calculate number of weeks in the period
+      final totalWeeks = daysLookback / 7.0;
+
+      // Calculate average exercise days per week
+      final averagePerWeek = totalExerciseDays / totalWeeks;
+
+      return Result.ok(averagePerWeek);
+    } catch (e) {
+      return Result.error(
+          ExerciseDatabaseException('Failed to fetch average weekly exercise statistics: $e'));
+    }
+  }
+
   DateTime _getStartOfWeek(DateTime date, bool startFromSunday) {
     final int weekday = date.weekday; // 1 (Mon) - 7 (Sun)
     final int daysToSubtract = startFromSunday
