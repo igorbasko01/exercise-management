@@ -62,17 +62,17 @@ class _AverageWeeklyStatisticsWidgetState extends State<AverageWeeklyStatisticsW
           );
         }
 
-        final avg30Days = _getAverageValue(viewModel.fetchAverageWeekly30Days.result as Result<double>?);
-        final avg90Days = _getAverageValue(viewModel.fetchAverageWeekly90Days.result as Result<double>?);
-        final avgHalfYear = _getAverageValue(viewModel.fetchAverageWeeklyHalfYear.result as Result<double>?);
-        final avgYear = _getAverageValue(viewModel.fetchAverageWeeklyYear.result as Result<double>?);
+        final avg30Days = _getAverageValue(viewModel.fetchAverageWeekly30Days.result);
+        final avg90Days = _getAverageValue(viewModel.fetchAverageWeekly90Days.result);
+        final avgHalfYear = _getAverageValue(viewModel.fetchAverageWeeklyHalfYear.result);
+        final avgYear = _getAverageValue(viewModel.fetchAverageWeeklyYear.result);
 
         return _buildUI(avg30Days, avg90Days, avgHalfYear, avgYear);
       },
     );
   }
 
-  double _getAverageValue(Result<double>? result) {
+  double _getAverageValue(Result<dynamic>? result) {
     if (result is Ok<double>) {
       return result.value;
     }
