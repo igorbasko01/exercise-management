@@ -131,7 +131,7 @@ void main() {
     expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
   });
 
-  test('getExerciseSets should filter sets older than lastNDays', () async {
+  test('getExerciseSets should return sets from last N distinct logged days', () async {
     // Arrange
     final exerciseTemplateResult = await templatesRepository.addExercise(
       ExerciseTemplate(name: 'Deadlift', muscleGroup: MuscleGroup.back, repetitionsRangeTarget: RepetitionsRange.low)
@@ -139,29 +139,30 @@ void main() {
 
     final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
 
-    // Add a set from 10 days ago (should be filtered out with default lastNDays=7)
+    // Add sets on 3 different dates (even if they're far apart)
+    // Day 1: 100 days ago
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 10)),
+        dateTime: DateTime.now().subtract(Duration(days: 100)),
         equipmentWeight: 100,
         platesWeight: 50,
         repetitions: 5
       )
     );
 
-    // Add a set from 5 days ago (should be included with default lastNDays=7)
+    // Day 2: 50 days ago
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 5)),
+        dateTime: DateTime.now().subtract(Duration(days: 50)),
         equipmentWeight: 110,
         platesWeight: 55,
         repetitions: 5
       )
     );
 
-    // Add a set from today (should be included with default lastNDays=7)
+    // Day 3: today (2 sets on the same day)
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
@@ -171,16 +172,25 @@ void main() {
         repetitions: 5
       )
     );
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 125,
+        platesWeight: 65,
+        repetitions: 5
+      )
+    );
 
-    // Act
-    final result = await presentationRepository.getExerciseSets();
+    // Act - request last 2 distinct days
+    final result = await presentationRepository.getExerciseSets(lastNDays: 2);
 
-    // Assert
+    // Assert - should get 3 sets (1 from 50 days ago and 2 from today)
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 2);
+    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 3);
   });
 
-  test('getExerciseSets should respect custom lastNDays parameter', () async {
+  test('getExerciseSets should respect custom lastNDays parameter for distinct days', () async {
     // Arrange
     final exerciseTemplateResult = await templatesRepository.addExercise(
       ExerciseTemplate(name: 'Push-up', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.high)
@@ -188,44 +198,56 @@ void main() {
 
     final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
 
-    // Add a set from 15 days ago
+    // Add sets on 4 different dates
+    // Day 1: 60 days ago
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 15)),
+        dateTime: DateTime.now().subtract(Duration(days: 60)),
         equipmentWeight: 0,
         platesWeight: 0,
         repetitions: 20
       )
     );
 
-    // Add a set from 12 days ago
+    // Day 2: 40 days ago
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 12)),
+        dateTime: DateTime.now().subtract(Duration(days: 40)),
         equipmentWeight: 0,
         platesWeight: 0,
         repetitions: 22
       )
     );
 
-    // Add a set from 5 days ago
+    // Day 3: 20 days ago
     await setsRepository.addExercise(
       ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 5)),
+        dateTime: DateTime.now().subtract(Duration(days: 20)),
         equipmentWeight: 0,
         platesWeight: 0,
         repetitions: 25
       )
     );
 
-    // Act - request last 14 days
-    final result = await presentationRepository.getExerciseSets(lastNDays: 14);
+    // Day 4: today
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 0,
+        repetitions: 30
+      )
+    );
 
-    // Assert - should get 2 sets (12 days ago and 5 days ago)
+    // Act - request last 3 distinct days
+    final result = await presentationRepository.getExerciseSets(lastNDays: 3);
+
+    // Assert - should get 3 sets (from 40, 20 days ago and today, excluding 60 days ago)
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 2);
+    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 3);
   });
 }

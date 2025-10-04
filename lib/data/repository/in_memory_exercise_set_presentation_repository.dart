@@ -25,13 +25,28 @@ class InMemoryExerciseSetPresentationRepository
 
     switch (result) {
       case Ok<List<ExerciseSet>>():
-        final now = DateTime.now();
-        final startDate = now.subtract(Duration(days: lastNDays));
-        
-        // Filter exercise sets by date
-        final filteredSets = result.value.where((set) {
-          return set.dateTime.isAfter(startDate) || 
-                 set.dateTime.isAtSameMomentAs(startDate);
+        if (result.value.isEmpty) {
+          return Result.ok([]);
+        }
+
+        // Get all exercise sets sorted by date descending
+        final sortedSets = List<ExerciseSet>.from(result.value)
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+        // Get distinct dates
+        final distinctDates = <DateTime>{};
+        for (var set in sortedSets) {
+          final dateOnly = DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day);
+          distinctDates.add(dateOnly);
+        }
+
+        // Take the last N distinct dates
+        final lastNDistinctDates = distinctDates.take(lastNDays).toSet();
+
+        // Filter exercise sets to only include those from the last N distinct dates
+        final filteredSets = sortedSets.where((set) {
+          final dateOnly = DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day);
+          return lastNDistinctDates.contains(dateOnly);
         }).toList();
         
         final exerciseSetsPresentation =

@@ -16,9 +16,22 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
   @override
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
     try {
-      final now = DateTime.now();
-      final startDate = now.subtract(Duration(days: lastNDays));
+      // First, get the last N distinct dates that have exercises
+      final List<Map<String, dynamic>> distinctDates = await database.rawQuery('''
+      SELECT DISTINCT DATE(date_time) as exercise_date
+      FROM ${SqfliteExerciseSetsRepository.tableName}
+      ORDER BY DATE(date_time) DESC
+      LIMIT ?
+      ''', [lastNDays]);
+
+      if (distinctDates.isEmpty) {
+        return Result.ok([]);
+      }
+
+      // Get the oldest date from the last N days
+      final oldestDate = distinctDates.last['exercise_date'] as String;
       
+      // Fetch all exercise sets from those N days
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
       SELECT 
         es.id AS id,
@@ -33,7 +46,7 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
       WHERE DATE(es.date_time) >= ?
       ORDER BY es.id DESC
-      ''', [startDate.toIso8601String().substring(0, 10)]);
+      ''', [oldestDate]);
 
       final exerciseSetPresentations = maps.map((map) => ExerciseSetPresentationMapper.fromMap(map)).toList();
       return Result.ok(exerciseSetPresentations);

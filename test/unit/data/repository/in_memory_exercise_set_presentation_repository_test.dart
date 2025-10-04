@@ -307,10 +307,10 @@ void main() {
     expect(error, isA<ExerciseNotFoundException>());
   });
 
-  test('getExerciseSets should filter sets older than lastNDays', () async {
+  test('getExerciseSets should return sets from last N distinct logged days', () async {
     final now = DateTime.now();
-    final old = now.subtract(const Duration(days: 10));
-    final recent = now.subtract(const Duration(days: 5));
+    final old = now.subtract(const Duration(days: 100));
+    final midOld = now.subtract(const Duration(days: 50));
     
     final exerciseTemplate = ExerciseTemplate(
         id: '1',
@@ -320,7 +320,7 @@ void main() {
 
     await inMemoryExerciseRepository.addExercise(exerciseTemplate);
 
-    // Add set from 10 days ago
+    // Add set from 100 days ago
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '1',
       exerciseTemplateId: '1',
@@ -330,17 +330,17 @@ void main() {
       repetitions: 10,
     ));
 
-    // Add set from 5 days ago
+    // Add set from 50 days ago
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '2',
       exerciseTemplateId: '1',
-      dateTime: recent,
+      dateTime: midOld,
       equipmentWeight: 0,
       platesWeight: 50,
       repetitions: 10,
     ));
 
-    // Add set from today
+    // Add 2 sets from today (same day)
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '3',
       exerciseTemplateId: '1',
@@ -349,25 +349,35 @@ void main() {
       platesWeight: 55,
       repetitions: 10,
     ));
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '4',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 60,
+      repetitions: 10,
+    ));
 
+    // Request last 2 distinct days
     final result =
-        await inMemoryExerciseSetPresentationRepository.getExerciseSets();
+        await inMemoryExerciseSetPresentationRepository.getExerciseSets(lastNDays: 2);
 
     final exerciseSetPresentation =
         (result as Ok<List<ExerciseSetPresentation>>).value;
 
-    // Should only include sets from last 7 days (2 sets)
-    expect(exerciseSetPresentation.length, 2);
+    // Should include 3 sets (1 from 50 days ago and 2 from today, excluding 100 days ago)
+    expect(exerciseSetPresentation.length, 3);
     expect(exerciseSetPresentation.any((s) => s.setId == '1'), false);
     expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
     expect(exerciseSetPresentation.any((s) => s.setId == '3'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '4'), true);
   });
 
-  test('getExerciseSets should respect custom lastNDays parameter', () async {
+  test('getExerciseSets should respect custom lastNDays parameter for distinct days', () async {
     final now = DateTime.now();
-    final old = now.subtract(const Duration(days: 15));
-    final midOld = now.subtract(const Duration(days: 12));
-    final recent = now.subtract(const Duration(days: 5));
+    final old = now.subtract(const Duration(days: 60));
+    final midOld1 = now.subtract(const Duration(days: 40));
+    final midOld2 = now.subtract(const Duration(days: 20));
     
     final exerciseTemplate = ExerciseTemplate(
         id: '1',
@@ -377,7 +387,7 @@ void main() {
 
     await inMemoryExerciseRepository.addExercise(exerciseTemplate);
 
-    // Add set from 15 days ago
+    // Add set from 60 days ago
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '1',
       exerciseTemplateId: '1',
@@ -387,37 +397,48 @@ void main() {
       repetitions: 12,
     ));
 
-    // Add set from 12 days ago
+    // Add set from 40 days ago
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '2',
       exerciseTemplateId: '1',
-      dateTime: midOld,
+      dateTime: midOld1,
       equipmentWeight: 0,
       platesWeight: 110,
       repetitions: 12,
     ));
 
-    // Add set from 5 days ago
+    // Add set from 20 days ago
     await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
       id: '3',
       exerciseTemplateId: '1',
-      dateTime: recent,
+      dateTime: midOld2,
       equipmentWeight: 0,
       platesWeight: 120,
       repetitions: 12,
     ));
 
-    // Request last 14 days
+    // Add set from today
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '4',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 130,
+      repetitions: 12,
+    ));
+
+    // Request last 3 distinct days
     final result =
-        await inMemoryExerciseSetPresentationRepository.getExerciseSets(lastNDays: 14);
+        await inMemoryExerciseSetPresentationRepository.getExerciseSets(lastNDays: 3);
 
     final exerciseSetPresentation =
         (result as Ok<List<ExerciseSetPresentation>>).value;
 
-    // Should include 2 sets (from 12 days ago and 5 days ago)
-    expect(exerciseSetPresentation.length, 2);
+    // Should include 3 sets (from 40, 20 days ago and today, excluding 60 days ago)
+    expect(exerciseSetPresentation.length, 3);
     expect(exerciseSetPresentation.any((s) => s.setId == '1'), false);
     expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
     expect(exerciseSetPresentation.any((s) => s.setId == '3'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '4'), true);
   });
 }
