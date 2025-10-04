@@ -14,8 +14,11 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
   SqfliteExerciseSetPresentationRepository(this.database);
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets() async {
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
     try {
+      final now = DateTime.now();
+      final startDate = now.subtract(Duration(days: lastNDays));
+      
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
       SELECT 
         es.id AS id,
@@ -28,8 +31,9 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
         et.repetitions_range AS repetitions_range
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      WHERE DATE(es.date_time) >= ?
       ORDER BY es.id DESC
-      ''');
+      ''', [startDate.toIso8601String().substring(0, 10)]);
 
       final exerciseSetPresentations = maps.map((map) => ExerciseSetPresentationMapper.fromMap(map)).toList();
       return Result.ok(exerciseSetPresentations);

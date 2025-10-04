@@ -20,13 +20,22 @@ class InMemoryExerciseSetPresentationRepository
         _exerciseTemplateRepository = exerciseTemplateRepository;
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets() async {
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
     final result = await _exerciseSetRepository.getExercises();
 
     switch (result) {
       case Ok<List<ExerciseSet>>():
+        final now = DateTime.now();
+        final startDate = now.subtract(Duration(days: lastNDays));
+        
+        // Filter exercise sets by date
+        final filteredSets = result.value.where((set) {
+          return set.dateTime.isAfter(startDate) || 
+                 set.dateTime.isAtSameMomentAs(startDate);
+        }).toList();
+        
         final exerciseSetsPresentation =
-            await _processExerciseSets(result.value);
+            await _processExerciseSets(filteredSets);
         return Result.ok(exerciseSetsPresentation);
       case Error():
         return Result.error(result.error);

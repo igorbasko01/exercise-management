@@ -306,4 +306,118 @@ void main() {
     expect(result, isA<Error>());
     expect(error, isA<ExerciseNotFoundException>());
   });
+
+  test('getExerciseSets should filter sets older than lastNDays', () async {
+    final now = DateTime.now();
+    final old = now.subtract(const Duration(days: 10));
+    final recent = now.subtract(const Duration(days: 5));
+    
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+    // Add set from 10 days ago
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: old,
+      equipmentWeight: 0,
+      platesWeight: 45,
+      repetitions: 10,
+    ));
+
+    // Add set from 5 days ago
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      dateTime: recent,
+      equipmentWeight: 0,
+      platesWeight: 50,
+      repetitions: 10,
+    ));
+
+    // Add set from today
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '3',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 55,
+      repetitions: 10,
+    ));
+
+    final result =
+        await inMemoryExerciseSetPresentationRepository.getExerciseSets();
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    // Should only include sets from last 7 days (2 sets)
+    expect(exerciseSetPresentation.length, 2);
+    expect(exerciseSetPresentation.any((s) => s.setId == '1'), false);
+    expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '3'), true);
+  });
+
+  test('getExerciseSets should respect custom lastNDays parameter', () async {
+    final now = DateTime.now();
+    final old = now.subtract(const Duration(days: 15));
+    final midOld = now.subtract(const Duration(days: 12));
+    final recent = now.subtract(const Duration(days: 5));
+    
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Squat',
+        muscleGroup: MuscleGroup.quadriceps,
+        repetitionsRangeTarget: RepetitionsRange.high);
+
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+    // Add set from 15 days ago
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: old,
+      equipmentWeight: 0,
+      platesWeight: 100,
+      repetitions: 12,
+    ));
+
+    // Add set from 12 days ago
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      dateTime: midOld,
+      equipmentWeight: 0,
+      platesWeight: 110,
+      repetitions: 12,
+    ));
+
+    // Add set from 5 days ago
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '3',
+      exerciseTemplateId: '1',
+      dateTime: recent,
+      equipmentWeight: 0,
+      platesWeight: 120,
+      repetitions: 12,
+    ));
+
+    // Request last 14 days
+    final result =
+        await inMemoryExerciseSetPresentationRepository.getExerciseSets(lastNDays: 14);
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    // Should include 2 sets (from 12 days ago and 5 days ago)
+    expect(exerciseSetPresentation.length, 2);
+    expect(exerciseSetPresentation.any((s) => s.setId == '1'), false);
+    expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '3'), true);
+  });
 }
