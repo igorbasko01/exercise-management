@@ -134,7 +134,7 @@ void main() {
   test('getExerciseSets should return sets from last N distinct logged days', () async {
     // Arrange
     final exerciseTemplateResult = await templatesRepository.addExercise(
-      ExerciseTemplate(name: 'Deadlift', muscleGroup: MuscleGroup.back, repetitionsRangeTarget: RepetitionsRange.low)
+      ExerciseTemplate(name: 'Deadlift', muscleGroup: MuscleGroup.hamstrings, repetitionsRangeTarget: RepetitionsRange.low)
     );
 
     final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
