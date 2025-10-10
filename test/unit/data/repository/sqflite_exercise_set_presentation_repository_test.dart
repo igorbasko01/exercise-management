@@ -130,4 +130,124 @@ void main() {
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
     expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
   });
+
+  test('getExerciseSets should return sets from last N distinct logged days', () async {
+    // Arrange
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Deadlift', muscleGroup: MuscleGroup.hamstrings, repetitionsRangeTarget: RepetitionsRange.low)
+    );
+
+    final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    // Add sets on 3 different dates (even if they're far apart)
+    // Day 1: 100 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 100)),
+        equipmentWeight: 100,
+        platesWeight: 50,
+        repetitions: 5
+      )
+    );
+
+    // Day 2: 50 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 50)),
+        equipmentWeight: 110,
+        platesWeight: 55,
+        repetitions: 5
+      )
+    );
+
+    // Day 3: today (2 sets on the same day)
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 120,
+        platesWeight: 60,
+        repetitions: 5
+      )
+    );
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 125,
+        platesWeight: 65,
+        repetitions: 5
+      )
+    );
+
+    // Act - request last 2 distinct days
+    final result = await presentationRepository.getExerciseSets(lastNDays: 2);
+
+    // Assert - should get 3 sets (1 from 50 days ago and 2 from today)
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 3);
+  });
+
+  test('getExerciseSets should respect custom lastNDays parameter for distinct days', () async {
+    // Arrange
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Push-up', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.high)
+    );
+
+    final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    // Add sets on 4 different dates
+    // Day 1: 60 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 60)),
+        equipmentWeight: 0,
+        platesWeight: 0,
+        repetitions: 20
+      )
+    );
+
+    // Day 2: 40 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 40)),
+        equipmentWeight: 0,
+        platesWeight: 0,
+        repetitions: 22
+      )
+    );
+
+    // Day 3: 20 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 20)),
+        equipmentWeight: 0,
+        platesWeight: 0,
+        repetitions: 25
+      )
+    );
+
+    // Day 4: today
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 0,
+        repetitions: 30
+      )
+    );
+
+    // Act - request last 3 distinct days
+    final result = await presentationRepository.getExerciseSets(lastNDays: 3);
+
+    // Assert - should get 3 sets (from 40, 20 days ago and today, excluding 60 days ago)
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 3);
+  });
 }

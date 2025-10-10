@@ -20,13 +20,37 @@ class InMemoryExerciseSetPresentationRepository
         _exerciseTemplateRepository = exerciseTemplateRepository;
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets() async {
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
     final result = await _exerciseSetRepository.getExercises();
 
     switch (result) {
       case Ok<List<ExerciseSet>>():
+        if (result.value.isEmpty) {
+          return Result.ok([]);
+        }
+
+        // Get all exercise sets sorted by date descending
+        final sortedSets = List<ExerciseSet>.from(result.value)
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+        // Get distinct dates
+        final distinctDates = <DateTime>{};
+        for (var set in sortedSets) {
+          final dateOnly = DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day);
+          distinctDates.add(dateOnly);
+        }
+
+        // Take the last N distinct dates
+        final lastNDistinctDates = distinctDates.take(lastNDays).toSet();
+
+        // Filter exercise sets to only include those from the last N distinct dates
+        final filteredSets = sortedSets.where((set) {
+          final dateOnly = DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day);
+          return lastNDistinctDates.contains(dateOnly);
+        }).toList();
+        
         final exerciseSetsPresentation =
-            await _processExerciseSets(result.value);
+            await _processExerciseSets(filteredSets);
         return Result.ok(exerciseSetsPresentation);
       case Error():
         return Result.error(result.error);
