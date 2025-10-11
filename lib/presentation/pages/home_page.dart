@@ -1,4 +1,5 @@
 import 'package:exercise_management/presentation/widgets/average_weekly_statistics_widget.dart';
+import 'package:exercise_management/presentation/widgets/exercise_volume_statistic_widget.dart';
 import 'package:exercise_management/presentation/widgets/weekly_progress_statistic_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +35,7 @@ class HomePage extends StatelessWidget {
           decoration: BoxDecoration(
               border: Border.all()
           ),
-          child: const Center(child: Text('More Stats')),
+          child: const ExerciseVolumeStatisticWidget(),
         ),
         Container(
           padding: const EdgeInsets.all(8),
