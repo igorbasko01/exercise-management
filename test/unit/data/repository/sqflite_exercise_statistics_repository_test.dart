@@ -109,7 +109,8 @@ void main() {
       'getExerciseVolumeStatistics should return correct statistics for multiple days, multiple exercises',
       () async {
     final now = DateTime.now();
-    for (int day = 0; day < 3; day++) {
+    final days = 3;
+    for (int day = 0; day < days; day++) {
       final date = now.subtract(Duration(days: day));
       for (int i = 0; i < 4; i++) {
         await setsRepository.addExercise(ExerciseSet(
@@ -117,13 +118,13 @@ void main() {
             dateTime: date,
             equipmentWeight: 20,
             platesWeight: 10,
-            repetitions: 6 + day));
+            repetitions: 6 + (days - day)));
         await setsRepository.addExercise(ExerciseSet(
             exerciseTemplateId: '2',
             dateTime: date,
             equipmentWeight: 20,
             platesWeight: 10,
-            repetitions: 6 + day));
+            repetitions: 6 + (days - day)));
       }
     }
 
@@ -134,7 +135,7 @@ void main() {
     for (var stat in stats) {
       expect(stat.volumePerDay.length, 3);
       expect(stat.volumePerDay.reduce((a, b) => a + b),
-          4 * (20 + 10) * (6 + 7 + 8));
+          4 * (20 + 10) * (9 + 8 + 7));
     }
   });
 

@@ -75,22 +75,26 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
 
       return Result.ok(averagePerWeek);
     } catch (e) {
-      return Result.error(
-          ExerciseDatabaseException('Failed to fetch average weekly exercise statistics: $e'));
+      return Result.error(ExerciseDatabaseException(
+          'Failed to fetch average weekly exercise statistics: $e'));
     }
   }
 
   @override
-  Future<Result<List<ExerciseVolumeStatistics>>> getExerciseVolumeStatistics({int numberOfExercises = 5}) async {
-
+  Future<Result<List<ExerciseVolumeStatistics>>> getExerciseVolumeStatistics(
+      {int numberOfExercises = 5}) async {
     try {
       final result = await database.rawQuery('''
-    select date(s.date_time), s.exercise_template_id, t.name, sum((s.equipment_weight + s.plates_weight) * s.repetitions) as total_volume
+    select 
+      date(s.date_time), 
+      s.exercise_template_id, 
+      t.name, 
+      sum((s.equipment_weight + s.plates_weight) * s.repetitions) as total_volume
     from ${SqfliteExerciseSetsRepository.tableName} s
     left join ${SqfliteExerciseTemplateRepository.tableName} t on t.id = s.exercise_template_id
     group by date(s.date_time), s.exercise_template_id, t.name
     having date(s.date_time) >= date('now', '-30 days')
-    order by s.date_time desc
+    order by s.date_time asc
     ''');
 
       final exerciseVolumeStats = <int, ExerciseVolumeStatistics>{};
@@ -114,8 +118,8 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       return Result.ok(
           exerciseVolumeStats.values.take(numberOfExercises).toList());
     } catch (e) {
-      return Result.error(
-          ExerciseDatabaseException('Failed to fetch exercise volume statistics: $e'));
+      return Result.error(ExerciseDatabaseException(
+          'Failed to fetch exercise volume statistics: $e'));
     }
   }
 
