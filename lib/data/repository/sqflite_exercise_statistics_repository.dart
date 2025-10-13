@@ -93,7 +93,7 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
     from ${SqfliteExerciseSetsRepository.tableName} s
     left join ${SqfliteExerciseTemplateRepository.tableName} t on t.id = s.exercise_template_id
     group by date(s.date_time), s.exercise_template_id, t.name
-    having date(s.date_time) >= date('now', '-30 days')
+    having date(s.date_time) >= date('now', '-180 days')
     order by s.date_time asc
     ''');
 

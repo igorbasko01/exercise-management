@@ -1,4 +1,8 @@
+import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
+import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ExerciseVolumeStatisticWidget extends StatefulWidget {
   const ExerciseVolumeStatisticWidget({super.key});
@@ -10,14 +14,50 @@ class ExerciseVolumeStatisticWidget extends StatefulWidget {
 
 class _ExerciseVolumeStatisticWidgetState
     extends State<ExerciseVolumeStatisticWidget> {
-  final List<ExerciseData> exercises = [
-    ExerciseData('Bench Press', [960, 1000, 1600, 500, 600, 700, 2000, 300, 400, 500]),
-    ExerciseData('Squat', [10, 20, 30, 40, 50, 60, 70]),
-    ExerciseData('Seated Row Very Long Name', [70, 50, 30, 20, 10, 40, 60, 80, 70, 20]),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  void _fetchData() {
+    final viewModel = context.read<ExerciseStatisticsViewModel>();
+    viewModel.fetchExerciseVolumeStatistics.execute();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<ExerciseStatisticsViewModel>(
+      builder: (context, viewModel, child) {
+        if (viewModel.fetchExerciseVolumeStatistics.running) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (viewModel.fetchExerciseVolumeStatistics.error) {
+          return const Center(
+            child: Text('Error loading data'),
+          );
+        }
+
+        final exercises = viewModel.fetchExerciseVolumeStatistics.result
+            as Ok<List<ExerciseVolumeStatistics>>?;
+
+        if (exercises == null) {
+          return const Center(
+            child: Text('No data available'),
+          );
+        }
+
+        return _buildUI(exercises.value);
+      },
+    );
+  }
+
+  Widget _buildUI(List<ExerciseVolumeStatistics> exercises) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -36,12 +76,17 @@ class _ExerciseVolumeStatisticWidgetState
               children: [
                 Expanded(
                     child: Text(
-                  exercises[index].name,
+                  exercises[index].exerciseName,
                   style: const TextStyle(fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 )),
-                _buildSimpleBarChart(exercises[index].volumes)
+                // Take last 20 days
+                _buildSimpleBarChart(exercises[index].volumePerDay
+                    .sublist(
+                        exercises[index].volumePerDay.length > 20
+                            ? exercises[index].volumePerDay.length - 20
+                            : 0)),
               ],
             );
           },
