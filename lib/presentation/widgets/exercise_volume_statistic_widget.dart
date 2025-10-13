@@ -104,7 +104,7 @@ class _ExerciseVolumeStatisticWidgetState
         return Container(
           width: 5,
           height: (volume / maxVolume) * 12,
-          color: Colors.blue,
+          color: volume == maxVolume ? Colors.green : Colors.blue,
         );
       }).toList(),
     );
