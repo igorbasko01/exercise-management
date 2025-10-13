@@ -1,7 +1,9 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_statistics_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_sets_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_template_repository.dart';
 import 'package:sqflite/sqflite.dart';
 
 class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
@@ -42,10 +44,10 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
   }
 
   @override
-  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookback) async {
+  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookBack) async {
     try {
       final now = DateTime.now();
-      final startDate = now.subtract(Duration(days: daysLookback));
+      final startDate = now.subtract(Duration(days: daysLookBack));
       final tableName = SqfliteExerciseSetsRepository.tableName;
 
       final result = await database.rawQuery('''
@@ -66,15 +68,58 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       final totalExerciseDays = exerciseDates.length;
 
       // Calculate number of weeks in the period
-      final totalWeeks = daysLookback / 7.0;
+      final totalWeeks = daysLookBack / 7.0;
 
       // Calculate average exercise days per week
       final averagePerWeek = totalExerciseDays / totalWeeks;
 
       return Result.ok(averagePerWeek);
     } catch (e) {
-      return Result.error(
-          ExerciseDatabaseException('Failed to fetch average weekly exercise statistics: $e'));
+      return Result.error(ExerciseDatabaseException(
+          'Failed to fetch average weekly exercise statistics: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<ExerciseVolumeStatistics>>> getExerciseVolumeStatistics(
+      {int numberOfExercises = 5}) async {
+    try {
+      final result = await database.rawQuery('''
+    select 
+      date(s.date_time), 
+      s.exercise_template_id, 
+      t.name, 
+      sum((s.equipment_weight + s.plates_weight) * s.repetitions) as total_volume
+    from ${SqfliteExerciseSetsRepository.tableName} s
+    left join ${SqfliteExerciseTemplateRepository.tableName} t on t.id = s.exercise_template_id
+    group by date(s.date_time), s.exercise_template_id, t.name
+    having date(s.date_time) >= date('now', '-180 days')
+    order by s.date_time asc
+    ''');
+
+      final exerciseVolumeStats = <int, ExerciseVolumeStatistics>{};
+
+      for (var row in result) {
+        final exerciseTemplateId = row['exercise_template_id'] as int;
+        final exerciseName = row['name'] as String? ?? 'Unknown';
+        final totalVolume = (row['total_volume'] as num).toInt();
+
+        if (!exerciseVolumeStats.containsKey(exerciseTemplateId)) {
+          exerciseVolumeStats[exerciseTemplateId] = ExerciseVolumeStatistics(
+            exerciseName: exerciseName,
+            volumePerDay: [],
+          );
+        }
+
+        final stat = exerciseVolumeStats[exerciseTemplateId]!;
+        stat.volumePerDay.add(totalVolume);
+      }
+
+      return Result.ok(
+          exerciseVolumeStats.values.take(numberOfExercises).toList());
+    } catch (e) {
+      return Result.error(ExerciseDatabaseException(
+          'Failed to fetch exercise volume statistics: $e'));
     }
   }
 

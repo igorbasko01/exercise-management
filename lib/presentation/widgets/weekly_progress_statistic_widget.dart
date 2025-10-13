@@ -7,10 +7,12 @@ class WeeklyProgressStatisticWidget extends StatefulWidget {
   const WeeklyProgressStatisticWidget({super.key});
 
   @override
-  State<WeeklyProgressStatisticWidget> createState() => _WeeklyProgressStatisticWidgetState();
+  State<WeeklyProgressStatisticWidget> createState() =>
+      _WeeklyProgressStatisticWidgetState();
 }
 
-class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticWidget> {
+class _WeeklyProgressStatisticWidgetState
+    extends State<WeeklyProgressStatisticWidget> {
   static const List<String> _days = [
     'Sun',
     'Mon',
@@ -37,9 +39,9 @@ class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticW
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-        onRefresh: () async {
-          _fetchData();
-        },
+      onRefresh: () async {
+        _fetchData();
+      },
       child: _exerciseStatistics(),
     );
   }
@@ -47,30 +49,36 @@ class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticW
   Consumer<ExerciseStatisticsViewModel> _exerciseStatistics() {
     return Consumer<ExerciseStatisticsViewModel>(
         builder: (context, viewModel, child) {
-          if (viewModel.fetchCurrentWeekExerciseDaysStatistic.running) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      if (viewModel.fetchCurrentWeekExerciseDaysStatistic.running) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
 
-          if (viewModel.fetchCurrentWeekExerciseDaysStatistic.error) {
-            return Center(
-              child: Text((viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Error).toString()),
-            );
-          }
+      if (viewModel.fetchCurrentWeekExerciseDaysStatistic.error) {
+        return Center(
+          child: Text(
+              (viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Error)
+                  .toString()),
+        );
+      }
 
-          final daysExercised = viewModel.fetchCurrentWeekExerciseDaysStatistic.result is Ok
-              ? (viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Ok).value
-              : List.filled(viewModel.daysInWeek, false);
+      final daysExercised = viewModel
+              .fetchCurrentWeekExerciseDaysStatistic.result is Ok
+          ? (viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Ok).value
+          : List.filled(viewModel.daysInWeek, false);
 
-          return _buildUI(daysExercised);
-        });
+      return _buildUI(daysExercised);
+    });
   }
 
   Widget _buildUI(List<bool> daysExercised) {
     return Column(
       children: [
-        const Text('Weekly Progress'),
+        const Text(
+          'Weekly Progress',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -79,9 +87,9 @@ class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticW
               .asMap()
               .entries
               .map((entry) => _DayIndicator(
-            day: entry.value,
-            exercised: daysExercised[entry.key],
-          ))
+                    day: entry.value,
+                    exercised: daysExercised[entry.key],
+                  ))
               .toList(),
         ),
         Row(
@@ -91,9 +99,9 @@ class _WeeklyProgressStatisticWidgetState extends State<WeeklyProgressStatisticW
               .asMap()
               .entries
               .map((entry) => _DayIndicator(
-            day: entry.value,
-            exercised: daysExercised[entry.key + 5],
-          ))
+                    day: entry.value,
+                    exercised: daysExercised[entry.key + 5],
+                  ))
               .toList(),
         ),
         const SizedBox(height: 15),
@@ -122,9 +130,7 @@ class _DayIndicator extends StatelessWidget {
         Text(
           day,
           style: TextStyle(
-            color: exercised
-                ? Colors.green
-                : Colors.grey,
+            color: exercised ? Colors.green : Colors.grey,
           ),
         ),
       ],

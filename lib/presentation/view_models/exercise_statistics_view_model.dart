@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 import 'package:exercise_management/data/repository/exercise_statistics_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -11,18 +12,22 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
         Command0<List<bool>>(_fetchCurrentWeekExerciseDaysStatistic)
           ..addListener(_onCommandExecuted);
 
-    fetchAverageWeekly30Days = Command0<double>(
-            () => _fetchAverageWeeklyExerciseDays(30))
-        ..addListener(_onCommandExecuted);
-    fetchAverageWeekly90Days = Command0<double>(
-            () => _fetchAverageWeeklyExerciseDays(90))
-        ..addListener(_onCommandExecuted);
-    fetchAverageWeeklyHalfYear = Command0<double>(
-            () => _fetchAverageWeeklyExerciseDays(182))
-        ..addListener(_onCommandExecuted);
-    fetchAverageWeeklyYear = Command0<double>(
-            () => _fetchAverageWeeklyExerciseDays(365))
-        ..addListener(_onCommandExecuted);
+    fetchAverageWeekly30Days =
+        Command0<double>(() => _fetchAverageWeeklyExerciseDays(30))
+          ..addListener(_onCommandExecuted);
+    fetchAverageWeekly90Days =
+        Command0<double>(() => _fetchAverageWeeklyExerciseDays(90))
+          ..addListener(_onCommandExecuted);
+    fetchAverageWeeklyHalfYear =
+        Command0<double>(() => _fetchAverageWeeklyExerciseDays(182))
+          ..addListener(_onCommandExecuted);
+    fetchAverageWeeklyYear =
+        Command0<double>(() => _fetchAverageWeeklyExerciseDays(365))
+          ..addListener(_onCommandExecuted);
+
+    fetchExerciseVolumeStatistics =
+        Command0<List<ExerciseVolumeStatistics>>(_fetchExerciseVolumeStatistics)
+          ..addListener(_onCommandExecuted);
   }
 
   final int daysInWeek = 7;
@@ -35,13 +40,16 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
   late final Command0<double> fetchAverageWeeklyHalfYear;
   late final Command0<double> fetchAverageWeeklyYear;
 
+  late final Command0<List<ExerciseVolumeStatistics>>
+      fetchExerciseVolumeStatistics;
+
   void _onCommandExecuted() {
     notifyListeners();
   }
 
   Future<Result<List<bool>>> _fetchCurrentWeekExerciseDaysStatistic() async {
-    final result = await _statisticsRepository
-        .getCurrentWeekExerciseDays(startFromSunday: true);
+    final result = await _statisticsRepository.getCurrentWeekExerciseDays(
+        startFromSunday: true);
     switch (result) {
       case Ok<List<bool>>():
         return result;
@@ -50,13 +58,26 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Result<double>> _fetchAverageWeeklyExerciseDays(int daysLookback) async {
-    final result = await _statisticsRepository.getAverageWeeklyExerciseDays(daysLookback);
+  Future<Result<double>> _fetchAverageWeeklyExerciseDays(
+      int daysLookBack) async {
+    final result =
+        await _statisticsRepository.getAverageWeeklyExerciseDays(daysLookBack);
     switch (result) {
       case Ok<double>():
         return result;
       case Error<double>():
         return Result.ok(0.0);
+    }
+  }
+
+  Future<Result<List<ExerciseVolumeStatistics>>>
+      _fetchExerciseVolumeStatistics() async {
+    final result = await _statisticsRepository.getExerciseVolumeStatistics(numberOfExercises: 8);
+    switch (result) {
+      case Ok<List<ExerciseVolumeStatistics>>():
+        return result;
+      case Error<List<ExerciseVolumeStatistics>>():
+        return Result.ok([]);
     }
   }
 
@@ -72,6 +93,8 @@ class ExerciseStatisticsViewModel extends ChangeNotifier {
     fetchAverageWeeklyHalfYear.dispose();
     fetchAverageWeeklyYear.removeListener(_onCommandExecuted);
     fetchAverageWeeklyYear.dispose();
+    fetchExerciseVolumeStatistics.removeListener(_onCommandExecuted);
+    fetchExerciseVolumeStatistics.dispose();
     super.dispose();
   }
 }
