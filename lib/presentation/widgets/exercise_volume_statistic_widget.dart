@@ -66,7 +66,7 @@ class _ExerciseVolumeStatisticWidgetState
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 15),
+        const SizedBox(height: 15),
         Expanded(
             child: ListView.builder(
           itemCount: exercises.length,
@@ -96,6 +96,9 @@ class _ExerciseVolumeStatisticWidgetState
   }
 
   Widget _buildSimpleBarChart(List<int> volumes) {
+    if (volumes.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final maxVolume = volumes.reduce((a, b) => a > b ? a : b);
 
     return Row(
@@ -109,11 +112,4 @@ class _ExerciseVolumeStatisticWidgetState
       }).toList(),
     );
   }
-}
-
-class ExerciseData {
-  final String name;
-  final List<int> volumes;
-
-  ExerciseData(this.name, this.volumes);
 }
