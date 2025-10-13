@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 
 abstract class ExerciseStatisticsRepository {
   /// Returns a list of booleans representing whether an exercise
@@ -13,7 +14,9 @@ abstract class ExerciseStatisticsRepository {
   Future<Result<List<bool>>> getCurrentWeekExerciseDays({bool startFromSunday});
 
   /// Returns the average number of exercise days per week for the specified number of days
-  /// looking back from today. For example, if [daysLookback] is 30, it will calculate
+  /// looking back from today. For example, if [daysLookBack] is 30, it will calculate
   /// the average weekly exercise days for the last 30 days.
-  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookback);
+  Future<Result<double>> getAverageWeeklyExerciseDays(int daysLookBack);
+
+  Future<Result<List<ExerciseVolumeStatistics>>> getExerciseVolumeStatistics({int numberOfExercises = 5});
 }
