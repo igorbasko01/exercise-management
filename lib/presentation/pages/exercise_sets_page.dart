@@ -91,13 +91,29 @@ class ExerciseSetsPage extends StatelessWidget {
       List<String> sortedDates,
       ExerciseSetsViewModel viewModel) {
     return ListView.builder(
-      itemCount: sortedDates.length,
+      itemCount: sortedDates.length + 1, // +1 for "Load More" button
       itemBuilder: (context, index) {
+        // Show "Load More" button as last item
+        if (index == sortedDates.length) {
+          return _buildLoadMoreButton(viewModel);
+        }
         final date = sortedDates[index];
         final exercises = groupedExercises[date]!;
         return _buildDateExpansionTile(context, date, exercises, viewModel);
       },
     );
+  }
+
+  Widget _buildLoadMoreButton(ExerciseSetsViewModel viewModel) {
+    return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+            child: viewModel.fetchMoreExerciseSets.running
+                ? const CircularProgressIndicator()
+                : ElevatedButton.icon(
+                    onPressed: () => viewModel.fetchMoreExerciseSets.execute(),
+                    icon: const Icon(Icons.history),
+                    label: const Text('Load More History'))));
   }
 
   ExpansionTile _buildDateExpansionTile(
@@ -179,7 +195,8 @@ class ExerciseSetsPage extends StatelessWidget {
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
     final totalLoad = exercises
-        .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
+        .map(
+            (set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
         .fold(0.0, (value, element) => value + element);
     return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
