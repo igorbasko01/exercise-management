@@ -78,11 +78,11 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchMoreExerciseSets() async {
-    final countOfDistinctDates = _exerciseSets
+    final totalDaysToFetch = _exerciseSets
         .map((set) => DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day))
         .toSet()
         .length + 7;  // Fetch 7 more days
-    return await _fetchExerciseSets(lastNDays: countOfDistinctDates);
+    return await _fetchExerciseSets(lastNDays: totalDaysToFetch);
   }
 
   Future<Result<ExerciseSet>> _addExerciseSet(ExerciseSet exerciseSet) async {
