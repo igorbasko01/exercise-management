@@ -250,4 +250,163 @@ void main() {
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
     expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 3);
   });
+
+  test('getExerciseSets should filter by exercise template ID', () async {
+    // Arrange
+    final benchPressTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Bench Press', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium)
+    );
+    final benchPressTemplate = (benchPressTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final squatTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Squat', muscleGroup: MuscleGroup.quadriceps, repetitionsRangeTarget: RepetitionsRange.medium)
+    );
+    final squatTemplate = (squatTemplateResult as Ok<ExerciseTemplate>).value;
+
+    // Add sets for bench press
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 25,
+        repetitions: 10
+      )
+    );
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 30,
+        repetitions: 8
+      )
+    );
+
+    // Add sets for squat
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: squatTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 100,
+        repetitions: 12
+      )
+    );
+
+    // Act - filter by bench press template
+    final result = await presentationRepository.getExerciseSets(exerciseTemplateId: benchPressTemplate.id);
+
+    // Assert - should only get bench press sets
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    final presentations = (result as Ok<List<ExerciseSetPresentation>>).value;
+    expect(presentations.length, 2);
+    expect(presentations.every((p) => p.exerciseTemplateId == benchPressTemplate.id), true);
+    expect(presentations.every((p) => p.displayName == 'Bench Press'), true);
+  });
+
+  test('getExerciseSets should return empty list when filtering by non-existent template ID', () async {
+    // Arrange
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Bench Press', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium)
+    );
+    final exerciseTemplate = (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 25,
+        repetitions: 10
+      )
+    );
+
+    // Act - filter by non-existent template ID
+    final result = await presentationRepository.getExerciseSets(exerciseTemplateId: 'non-existent-id');
+
+    // Assert - should return empty list
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+  });
+
+  test('getExerciseSets should combine filtering with lastNDays parameter', () async {
+    // Arrange
+    final benchPressTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Bench Press', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium)
+    );
+    final benchPressTemplate = (benchPressTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final squatTemplateResult = await templatesRepository.addExercise(
+      ExerciseTemplate(name: 'Squat', muscleGroup: MuscleGroup.quadriceps, repetitionsRangeTarget: RepetitionsRange.medium)
+    );
+    final squatTemplate = (squatTemplateResult as Ok<ExerciseTemplate>).value;
+
+    // Add bench press sets on multiple days
+    // Day 1: 50 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 50)),
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 10
+      )
+    );
+
+    // Day 2: 10 days ago
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 10)),
+        equipmentWeight: 45,
+        platesWeight: 25,
+        repetitions: 10
+      )
+    );
+
+    // Day 3: today
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 30,
+        repetitions: 10
+      )
+    );
+
+    // Add squat sets on the same days
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: squatTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 50)),
+        equipmentWeight: 0,
+        platesWeight: 100,
+        repetitions: 12
+      )
+    );
+    await setsRepository.addExercise(
+      ExerciseSet(
+        exerciseTemplateId: squatTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 110,
+        repetitions: 12
+      )
+    );
+
+    // Act - filter by bench press template with last 2 days
+    final result = await presentationRepository.getExerciseSets(
+      lastNDays: 2,
+      exerciseTemplateId: benchPressTemplate.id
+    );
+
+    // Assert - should get 2 bench press sets (from 10 days ago and today, excluding 50 days ago)
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    final presentations = (result as Ok<List<ExerciseSetPresentation>>).value;
+    expect(presentations.length, 2);
+    expect(presentations.every((p) => p.exerciseTemplateId == benchPressTemplate.id), true);
+    expect(presentations.every((p) => p.displayName == 'Bench Press'), true);
+  });
 }

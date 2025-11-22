@@ -13,30 +13,37 @@ class ExerciseSetsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Column(
       children: [
-        _exerciseSetsList(),
-        Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: () async {
-                final viewModel = context.read<ExerciseSetsViewModel>();
+        _buildFilterBar(context),
+        Expanded(
+          child: Stack(
+            children: [
+              _exerciseSetsList(),
+              Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: FloatingActionButton(
+                    onPressed: () async {
+                      final viewModel = context.read<ExerciseSetsViewModel>();
 
-                await viewModel.fetchExerciseTemplates.execute();
+                      await viewModel.fetchExerciseTemplates.execute();
 
-                if (viewModel.exerciseTemplates.isEmpty && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'Please add an exercise template before adding an exercise set.')));
-                  return;
-                } else if (context.mounted) {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const AddExerciseSetPage()));
-                }
-              },
-              child: const Icon(Icons.add),
-            ))
+                      if (viewModel.exerciseTemplates.isEmpty && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text(
+                                'Please add an exercise template before adding an exercise set.')));
+                        return;
+                      } else if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const AddExerciseSetPage()));
+                      }
+                    },
+                    child: const Icon(Icons.add),
+                  ))
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -267,5 +274,46 @@ class ExerciseSetsPage extends StatelessWidget {
     return '${dateTime.year}'
         '-${dateTime.month.toString().padLeft(2, '0')}'
         '-${dateTime.day.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildFilterBar(BuildContext context) {
+    return Consumer<ExerciseSetsViewModel>(
+      builder: (context, viewModel, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Row(
+            children: [
+              const Icon(Icons.filter_list),
+              const SizedBox(width: 8),
+              const Text('Filter by exercise:'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButton<String?>(
+                  isExpanded: true,
+                  value: viewModel.selectedExerciseTemplateId,
+                  hint: const Text('All exercises'),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('All exercises'),
+                    ),
+                    ...viewModel.exerciseTemplates.map((template) {
+                      return DropdownMenuItem<String?>(
+                        value: template.id,
+                        child: Text(template.name),
+                      );
+                    }),
+                  ],
+                  onChanged: (String? newValue) {
+                    viewModel.setSelectedExerciseTemplateId(newValue);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
