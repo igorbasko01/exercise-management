@@ -62,12 +62,23 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   List<ExerciseSetPresentation> get exerciseSets => _exerciseSets;
 
+  String? _selectedExerciseTemplateId;
+
+  String? get selectedExerciseTemplateId => _selectedExerciseTemplateId;
+
+  void setSelectedExerciseTemplateId(String? templateId) {
+    _selectedExerciseTemplateId = templateId;
+    notifyListeners();
+    fetchExerciseSets.execute();
+  }
+
   void _onCommandExecuted() {
     notifyListeners();
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets({int lastNDays = 7}) async {
-    final result = await _exerciseSetPresentationRepository.getExerciseSets(lastNDays: lastNDays);
+    final result = await _exerciseSetPresentationRepository.getExerciseSets(
+        lastNDays: lastNDays, exerciseTemplateId: _selectedExerciseTemplateId);
     switch (result) {
       case Ok<List<ExerciseSetPresentation>>():
         _exerciseSets = result.value;

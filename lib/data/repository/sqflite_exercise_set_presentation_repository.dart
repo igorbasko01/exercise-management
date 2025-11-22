@@ -14,15 +14,22 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
   SqfliteExerciseSetPresentationRepository(this.database);
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7, String? exerciseTemplateId}) async {
     try {
+      // Build the WHERE clause for filtering by exercise template ID
+      final templateFilter = exerciseTemplateId != null 
+          ? 'AND es.exercise_template_id = ?' 
+          : '';
+      final templateParams = exerciseTemplateId != null ? [exerciseTemplateId] : [];
+
       // First, get the last N distinct dates that have exercises
       final List<Map<String, dynamic>> distinctDates = await database.rawQuery('''
       SELECT DISTINCT DATE(date_time) as exercise_date
-      FROM ${SqfliteExerciseSetsRepository.tableName}
+      FROM ${SqfliteExerciseSetsRepository.tableName} es
+      WHERE 1=1 $templateFilter
       ORDER BY DATE(date_time) DESC
       LIMIT ?
-      ''', [lastNDays]);
+      ''', [...templateParams, lastNDays]);
 
       if (distinctDates.isEmpty) {
         return Result.ok([]);
@@ -44,9 +51,9 @@ class SqfliteExerciseSetPresentationRepository extends ExerciseSetPresentationRe
         et.repetitions_range AS repetitions_range
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      WHERE DATE(es.date_time) >= ?
+      WHERE DATE(es.date_time) >= ? $templateFilter
       ORDER BY es.id DESC
-      ''', [oldestDate]);
+      ''', [oldestDate, ...templateParams]);
 
       final exerciseSetPresentations = maps.map((map) => ExerciseSetPresentationMapper.fromMap(map)).toList();
       return Result.ok(exerciseSetPresentations);

@@ -20,7 +20,7 @@ class InMemoryExerciseSetPresentationRepository
         _exerciseTemplateRepository = exerciseTemplateRepository;
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7}) async {
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7, String? exerciseTemplateId}) async {
     final result = await _exerciseSetRepository.getExercises();
 
     switch (result) {
@@ -29,8 +29,16 @@ class InMemoryExerciseSetPresentationRepository
           return Result.ok([]);
         }
 
+        // Filter by exercise template ID if specified
+        var setsToProcess = result.value;
+        if (exerciseTemplateId != null) {
+          setsToProcess = result.value
+              .where((set) => set.exerciseTemplateId == exerciseTemplateId)
+              .toList();
+        }
+
         // Get all exercise sets sorted by date descending
-        final sortedSets = List<ExerciseSet>.from(result.value)
+        final sortedSets = List<ExerciseSet>.from(setsToProcess)
           ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
         // Get distinct dates

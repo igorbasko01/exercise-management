@@ -126,7 +126,9 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(null);
       });
-      when(() => mockExerciseSetPresentationRepository.getExerciseSets())
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
         return Result.ok([]);
       });

@@ -441,4 +441,95 @@ void main() {
     expect(exerciseSetPresentation.any((s) => s.setId == '3'), true);
     expect(exerciseSetPresentation.any((s) => s.setId == '4'), true);
   });
+
+  test('getExerciseSets should filter by exercise template ID', () async {
+    final now = DateTime.now();
+    
+    final exerciseTemplate1 = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    final exerciseTemplate2 = ExerciseTemplate(
+        id: '2',
+        name: 'Squat',
+        muscleGroup: MuscleGroup.quadriceps,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate1);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate2);
+
+    // Add sets for exercise template 1
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 45,
+      repetitions: 10,
+    ));
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 50,
+      repetitions: 10,
+    ));
+
+    // Add sets for exercise template 2
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '3',
+      exerciseTemplateId: '2',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 100,
+      repetitions: 12,
+    ));
+
+    // Filter by exercise template 1
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getExerciseSets(exerciseTemplateId: '1');
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    // Should only include sets from template 1
+    expect(exerciseSetPresentation.length, 2);
+    expect(exerciseSetPresentation.every((s) => s.exerciseTemplateId == '1'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '1'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '3'), false);
+  });
+
+  test('getExerciseSets should return empty list when filtering by non-existent template ID', () async {
+    final now = DateTime.now();
+    
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 45,
+      repetitions: 10,
+    ));
+
+    // Filter by non-existent template ID
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getExerciseSets(exerciseTemplateId: 'nonexistent');
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    expect(exerciseSetPresentation.isEmpty, true);
+  });
 }
