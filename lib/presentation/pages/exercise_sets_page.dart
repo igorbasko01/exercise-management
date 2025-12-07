@@ -123,22 +123,31 @@ class ExerciseSetsPage extends StatelessWidget {
                     label: const Text('Load More History'))));
   }
 
-  ExpansionTile _buildDateExpansionTile(
+  Widget _buildDateExpansionTile(
       BuildContext context,
       String date,
       List<ExerciseSetPresentation> exercises,
       ExerciseSetsViewModel viewModel) {
-    return ExpansionTile(
-      controlAffinity: ListTileControlAffinity.leading,
-      title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
-      trailing: IconButton(
-        icon: const Icon(Icons.copy_all),
-        onPressed: () => _progressSets(exercises, viewModel),
-      ),
-      children:
-          _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
-    );
+    return Consumer<TrainingSessionManager>(
+        builder: (context, trainingManager, child) {
+      final allCompleted = exercises.every((set) =>
+          set.setId != null && trainingManager.isSetCompleted(set.setId!));
+      return ExpansionTile(
+        controlAffinity: ListTileControlAffinity.leading,
+        collapsedBackgroundColor:
+            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+        backgroundColor:
+            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+        title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
+        trailing: IconButton(
+          icon: const Icon(Icons.copy_all),
+          onPressed: () => _progressSets(exercises, viewModel),
+        ),
+        children:
+            _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
+      );
+    });
   }
 
   List<Widget> _buildExerciseTemplateExpansionTiles(
