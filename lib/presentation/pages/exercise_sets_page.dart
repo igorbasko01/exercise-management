@@ -160,11 +160,19 @@ class ExerciseSetsPage extends StatelessWidget {
           .putIfAbsent(exercise.exerciseTemplateId, () => [])
           .add(exercise);
     }
+    
+    // Calculate ranks for all exercise groups across all loaded sets
+    final ranks = _calculateExerciseGroupRanks(viewModel.exerciseSets);
+    
     final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
+      final date = _formatDate(entry.value.first.dateTime);
+      final rankKey = '$date-${entry.key}';
+      final rank = ranks[rankKey] ?? 0;
+      
       widgets.add(_buildExerciseTemplateExpansionTile(
-          templateName, entry.value, context, viewModel));
+          templateName, entry.value, context, viewModel, rank));
     }
     return widgets;
   }
@@ -175,11 +183,46 @@ class ExerciseSetsPage extends StatelessWidget {
         '$exerciseNames';
   }
 
+  /// Calculate ranks for all exercise groups based on total volume
+  /// Returns a map where key is 'date-templateId' and value is the rank
+  Map<String, int> _calculateExerciseGroupRanks(
+      List<ExerciseSetPresentation> allSets) {
+    // Group sets by date and template
+    final groupedSets = <String, List<ExerciseSetPresentation>>{};
+    for (var set in allSets) {
+      final date = _formatDate(set.dateTime);
+      final key = '$date-${set.exerciseTemplateId}';
+      groupedSets.putIfAbsent(key, () => []).add(set);
+    }
+
+    // Calculate total volume for each group
+    final volumeMap = <String, double>{};
+    for (var entry in groupedSets.entries) {
+      final totalVolume = entry.value
+          .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
+          .fold(0.0, (value, element) => value + element);
+      volumeMap[entry.key] = totalVolume;
+    }
+
+    // Sort groups by total volume (descending)
+    final sortedEntries = volumeMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Assign ranks
+    final ranks = <String, int>{};
+    for (var i = 0; i < sortedEntries.length; i++) {
+      ranks[sortedEntries[i].key] = i + 1;
+    }
+
+    return ranks;
+  }
+
   Widget _buildExerciseTemplateExpansionTile(
       String templateName,
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
-      ExerciseSetsViewModel viewModel) {
+      ExerciseSetsViewModel viewModel,
+      int rank) {
     return Consumer<TrainingSessionManager>(
         builder: (context, trainingManager, child) {
       final allCompleted = exercises.every((set) =>
@@ -192,7 +235,7 @@ class ExerciseSetsPage extends StatelessWidget {
             allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
         title: Text(templateName,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseTemplateSubtitle(exercises)),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, rank)),
         trailing: IconButton(
           icon: const Icon(Icons.copy_all),
           onPressed: () => _progressSets(exercises, viewModel),
@@ -206,7 +249,7 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   String _buildExerciseTemplateSubtitle(
-      List<ExerciseSetPresentation> exercises) {
+      List<ExerciseSetPresentation> exercises, int rank) {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
@@ -214,7 +257,8 @@ class ExerciseSetsPage extends StatelessWidget {
         .map(
             (set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
         .fold(0.0, (value, element) => value + element);
-    return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+    return "Rank: #$rank, "
+        "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
         "plates weight: $maxPlatesWeight, "
         "total volume: ${totalVolume.toStringAsFixed(1)}";
