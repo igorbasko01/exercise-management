@@ -8,6 +8,7 @@ import 'package:exercise_management/data/repository/exercise_set_presentation_re
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ void main() {
         mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
     late TrainingSessionManager trainingSessionManager;
+    late ExerciseRankingManager rankingManager;
 
     final date1 = DateTime(2023, 1, 1);
     final date2 = DateTime(2023, 1, 2);
@@ -54,6 +56,7 @@ void main() {
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
       trainingSessionManager = TrainingSessionManager();
+      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
@@ -149,6 +152,9 @@ void main() {
             ChangeNotifierProvider<TrainingSessionManager>.value(
               value: trainingSessionManager,
             ),
+            ChangeNotifierProvider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -199,6 +205,9 @@ void main() {
             ),
             ChangeNotifierProvider<TrainingSessionManager>.value(
               value: trainingSessionManager,
+            ),
+            ChangeNotifierProvider<ExerciseRankingManager>.value(
+              value: rankingManager,
             ),
           ],
           child: const MaterialApp(

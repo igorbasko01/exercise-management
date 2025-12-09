@@ -3,6 +3,7 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
@@ -68,6 +69,10 @@ class ExerciseSetsPage extends StatelessWidget {
           child: Text('No exercise sets found'),
         );
       }
+
+      // Calculate ranks whenever exercise sets change
+      final rankingManager = context.read<ExerciseRankingManager>();
+      rankingManager.calculateRanks(viewModel.exerciseSets, _formatDate);
 
       final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
       final sortedDates = _getSortedDates(groupedExercises);
@@ -161,17 +166,13 @@ class ExerciseSetsPage extends StatelessWidget {
           .add(exercise);
     }
     
-    // Calculate ranks for all exercise groups across all loaded sets
-    // This is called during widget rebuild, but since it only rebuilds when
-    // viewModel.exerciseSets changes (add/update/delete/fetch), it's optimal
-    final ranks = _calculateExerciseGroupRanks(viewModel.exerciseSets);
+    final rankingManager = context.read<ExerciseRankingManager>();
     
     final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
       final date = _formatDate(entry.value.first.dateTime);
-      final rankKey = '$date-${entry.key}';
-      final rank = ranks[rankKey] ?? 1;
+      final rank = rankingManager.getRank(date, entry.key);
       
       widgets.add(_buildExerciseTemplateExpansionTile(
           templateName, entry.value, context, viewModel, rank));
@@ -183,45 +184,6 @@ class ExerciseSetsPage extends StatelessWidget {
     final exerciseNames = exercises.map((e) => e.displayName).toSet().toList();
     return '${exercises.length} set${exercises.length != 1 ? 's' : ''}, '
         '$exerciseNames';
-  }
-
-  /// Calculate total volume for a list of exercise sets
-  /// Total volume = sum of (weight * repetitions) for all sets
-  double _calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
-    return exercises
-        .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
-        .fold(0.0, (value, element) => value + element);
-  }
-
-  /// Calculate ranks for all exercise groups based on total volume
-  /// Returns a map where key is 'date-templateId' and value is the rank
-  Map<String, int> _calculateExerciseGroupRanks(
-      List<ExerciseSetPresentation> allSets) {
-    // Group sets by date and template
-    final groupedSets = <String, List<ExerciseSetPresentation>>{};
-    for (var set in allSets) {
-      final date = _formatDate(set.dateTime);
-      final key = '$date-${set.exerciseTemplateId}';
-      groupedSets.putIfAbsent(key, () => []).add(set);
-    }
-
-    // Calculate total volume for each group
-    final volumeMap = <String, double>{};
-    for (var entry in groupedSets.entries) {
-      volumeMap[entry.key] = _calculateTotalVolume(entry.value);
-    }
-
-    // Sort groups by total volume (descending)
-    final sortedEntries = volumeMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    // Assign ranks
-    final ranks = <String, int>{};
-    for (var i = 0; i < sortedEntries.length; i++) {
-      ranks[sortedEntries[i].key] = i + 1;
-    }
-
-    return ranks;
   }
 
   Widget _buildExerciseTemplateExpansionTile(
@@ -242,7 +204,7 @@ class ExerciseSetsPage extends StatelessWidget {
             allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
         title: Text(templateName,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, rank)),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, rank, context)),
         trailing: IconButton(
           icon: const Icon(Icons.copy_all),
           onPressed: () => _progressSets(exercises, viewModel),
@@ -256,11 +218,12 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   String _buildExerciseTemplateSubtitle(
-      List<ExerciseSetPresentation> exercises, int rank) {
+      List<ExerciseSetPresentation> exercises, int rank, BuildContext context) {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
-    final totalVolume = _calculateTotalVolume(exercises);
+    final rankingManager = context.read<ExerciseRankingManager>();
+    final totalVolume = rankingManager.calculateTotalVolume(exercises);
     return "Rank: #$rank, "
         "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "

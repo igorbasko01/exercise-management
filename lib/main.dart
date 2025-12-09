@@ -12,6 +12,7 @@ import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
@@ -65,6 +66,7 @@ void main() async {
           create: (context) =>
               ExerciseStatisticsViewModel(statisticsRepository: context.read())),
       ChangeNotifierProvider(create: (context) => TrainingSessionManager()),
+      ChangeNotifierProvider(create: (context) => ExerciseRankingManager()),
       ChangeNotifierProvider(create: (context) => SettingsViewModel(
             templatesRepository: context.read(),
             setsRepository: context.read(),
