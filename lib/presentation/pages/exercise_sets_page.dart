@@ -71,6 +71,7 @@ class ExerciseSetsPage extends StatelessWidget {
       }
 
       // Calculate ranks whenever exercise sets change
+      // This only runs when the Consumer rebuilds due to viewModel changes
       final rankingManager = context.read<ExerciseRankingManager>();
       rankingManager.calculateRanks(viewModel.exerciseSets, _formatDate);
 

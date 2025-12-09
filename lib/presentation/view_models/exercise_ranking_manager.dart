@@ -25,7 +25,7 @@ class ExerciseRankingManager extends ChangeNotifier {
     // Calculate total volume for each group
     final volumeMap = <String, double>{};
     for (var entry in groupedSets.entries) {
-      volumeMap[entry.key] = _calculateTotalVolume(entry.value);
+      volumeMap[entry.key] = calculateTotalVolume(entry.value);
     }
 
     // Sort groups by total volume (descending)
@@ -45,10 +45,6 @@ class ExerciseRankingManager extends ChangeNotifier {
   /// Calculate total volume for a list of exercise sets
   /// Total volume = sum of (weight * repetitions) for all sets
   double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
-    return _calculateTotalVolume(exercises);
-  }
-
-  double _calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
     return exercises
         .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
         .fold(0.0, (value, element) => value + element);
