@@ -185,6 +185,14 @@ class ExerciseSetsPage extends StatelessWidget {
         '$exerciseNames';
   }
 
+  /// Calculate total volume for a list of exercise sets
+  /// Total volume = sum of (weight * repetitions) for all sets
+  double _calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
+    return exercises
+        .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
+        .fold(0.0, (value, element) => value + element);
+  }
+
   /// Calculate ranks for all exercise groups based on total volume
   /// Returns a map where key is 'date-templateId' and value is the rank
   Map<String, int> _calculateExerciseGroupRanks(
@@ -200,10 +208,7 @@ class ExerciseSetsPage extends StatelessWidget {
     // Calculate total volume for each group
     final volumeMap = <String, double>{};
     for (var entry in groupedSets.entries) {
-      final totalVolume = entry.value
-          .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
-          .fold(0.0, (value, element) => value + element);
-      volumeMap[entry.key] = totalVolume;
+      volumeMap[entry.key] = _calculateTotalVolume(entry.value);
     }
 
     // Sort groups by total volume (descending)
@@ -255,10 +260,7 @@ class ExerciseSetsPage extends StatelessWidget {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
-    final totalVolume = exercises
-        .map(
-            (set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
-        .fold(0.0, (value, element) => value + element);
+    final totalVolume = _calculateTotalVolume(exercises);
     return "Rank: #$rank, "
         "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
