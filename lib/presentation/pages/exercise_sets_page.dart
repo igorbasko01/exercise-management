@@ -162,6 +162,8 @@ class ExerciseSetsPage extends StatelessWidget {
     }
     
     // Calculate ranks for all exercise groups across all loaded sets
+    // This is called during widget rebuild, but since it only rebuilds when
+    // viewModel.exerciseSets changes (add/update/delete/fetch), it's optimal
     final ranks = _calculateExerciseGroupRanks(viewModel.exerciseSets);
     
     final widgets = <Widget>[];
@@ -169,7 +171,7 @@ class ExerciseSetsPage extends StatelessWidget {
       final templateName = entry.value.first.displayName;
       final date = _formatDate(entry.value.first.dateTime);
       final rankKey = '$date-${entry.key}';
-      final rank = ranks[rankKey] ?? 0;
+      final rank = ranks[rankKey] ?? 1;
       
       widgets.add(_buildExerciseTemplateExpansionTile(
           templateName, entry.value, context, viewModel, rank));
