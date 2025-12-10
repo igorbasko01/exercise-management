@@ -13,6 +13,7 @@ class ExerciseRankingManager extends ChangeNotifier {
   }
 
   /// Calculate and update ranks for all exercise groups based on total volume
+  /// Ranks are calculated per exercise template, comparing sessions of the same exercise
   void calculateRanks(List<ExerciseSetPresentation> allSets, String Function(DateTime) formatDate) {
     // Group sets by date and template
     final groupedSets = <String, List<ExerciseSetPresentation>>{};
@@ -28,14 +29,25 @@ class ExerciseRankingManager extends ChangeNotifier {
       volumeMap[entry.key] = calculateTotalVolume(entry.value);
     }
 
-    // Sort groups by total volume (descending)
-    final sortedEntries = volumeMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    // Group by template ID to rank within each exercise type
+    final volumesByTemplate = <String, List<MapEntry<String, double>>>{};
+    for (var entry in volumeMap.entries) {
+      // Extract template ID from the key (format: 'date-templateId')
+      final templateId = entry.key.split('-').last;
+      volumesByTemplate.putIfAbsent(templateId, () => []).add(entry);
+    }
 
-    // Assign ranks
+    // Assign ranks per template
     final newRanks = <String, int>{};
-    for (var i = 0; i < sortedEntries.length; i++) {
-      newRanks[sortedEntries[i].key] = i + 1;
+    for (var templateEntries in volumesByTemplate.values) {
+      // Sort entries for this template by volume (descending)
+      final sortedEntries = templateEntries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      
+      // Assign ranks within this template
+      for (var i = 0; i < sortedEntries.length; i++) {
+        newRanks[sortedEntries[i].key] = i + 1;
+      }
     }
 
     _ranks = newRanks;

@@ -74,9 +74,9 @@ void main() {
       });
     });
 
-    testWidgets('displays rank based on total volume', (WidgetTester tester) async {
-      // Create test data with different total volumes
-      // Date 1, Template 1: 3 sets * (20 + 20) * 10 = 1200 total volume
+    testWidgets('displays rank based on total volume within same template', (WidgetTester tester) async {
+      // Create test data with different total volumes for the SAME template
+      // Date 1, Template 1: 3 sets * (20 + 20) * 10 = 1200 total volume (Rank #1)
       final date1Template1Sets = [
         ExerciseSetPresentation(
           setId: '1',
@@ -110,31 +110,32 @@ void main() {
         ),
       ];
 
-      // Date 2, Template 2: 2 sets * (15 + 15) * 8 = 480 total volume
-      final date2Template2Sets = [
+      // Date 2, Template 1: 2 sets * (15 + 15) * 8 = 480 total volume (Rank #2)
+      // Same template as above, so it should be ranked against date1
+      final date2Template1Sets = [
         ExerciseSetPresentation(
           setId: '4',
-          exerciseTemplateId: 'template2',
+          exerciseTemplateId: 'template1',
           repetitions: 8,
           platesWeight: 15,
           equipmentWeight: 15,
           dateTime: date2,
-          displayName: 'Squat',
+          displayName: 'Bench Press',
           repetitionsRange: RepetitionsRange.medium,
         ),
         ExerciseSetPresentation(
           setId: '5',
-          exerciseTemplateId: 'template2',
+          exerciseTemplateId: 'template1',
           repetitions: 8,
           platesWeight: 15,
           equipmentWeight: 15,
           dateTime: date2,
-          displayName: 'Squat',
+          displayName: 'Bench Press',
           repetitionsRange: RepetitionsRange.medium,
         ),
       ];
 
-      final allSets = [...date1Template1Sets, ...date2Template2Sets];
+      final allSets = [...date1Template1Sets, ...date2Template1Sets];
 
       when(() => mockExerciseSetPresentationRepository.getExerciseSets(
               lastNDays: any(named: 'lastNDays'),
@@ -168,15 +169,15 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
-      // Verify that ranks are displayed correctly
-      // Bench Press should be Rank #1 (higher volume)
+      // Verify that ranks are displayed correctly within the same template
+      // Date 1 Bench Press should be Rank #1 (higher volume)
       expect(find.textContaining('Rank: #1'), findsOneWidget);
-      // Squat should be Rank #2 (lower volume)
+      // Date 2 Bench Press should be Rank #2 (lower volume, but same template)
       expect(find.textContaining('Rank: #2'), findsOneWidget);
     });
 
-    testWidgets('ranks update when sets are added', (WidgetTester tester) async {
-      // Initial data
+    testWidgets('different templates each get their own rank #1', (WidgetTester tester) async {
+      // Initial data - template 1
       final initialSets = [
         ExerciseSetPresentation(
           setId: '1',
@@ -224,7 +225,7 @@ void main() {
       // Should show rank #1 for the only exercise
       expect(find.textContaining('Rank: #1'), findsOneWidget);
 
-      // Add a new exercise with higher volume
+      // Add a new exercise from a DIFFERENT template
       final updatedSets = [
         ...initialSets,
         ExerciseSetPresentation(
@@ -249,9 +250,8 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
-      // Now we should see both ranks
-      expect(find.textContaining('Rank: #1'), findsOneWidget);
-      expect(find.textContaining('Rank: #2'), findsOneWidget);
+      // Both exercises are in different templates, so both should be rank #1
+      expect(find.textContaining('Rank: #1'), findsNWidgets(2));
     });
   });
 }
