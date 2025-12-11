@@ -205,10 +205,17 @@ class ExerciseSetsPage extends StatelessWidget {
             allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
         title: Text(templateName,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, rank, context)),
-        trailing: IconButton(
-          icon: const Icon(Icons.copy_all),
-          onPressed: () => _progressSets(exercises, viewModel),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, context)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRankBadge(rank),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.copy_all),
+              onPressed: () => _progressSets(exercises, viewModel),
+            ),
+          ],
         ),
         children: exercises
             .map<Widget>((exercise) =>
@@ -219,17 +226,47 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   String _buildExerciseTemplateSubtitle(
-      List<ExerciseSetPresentation> exercises, int rank, BuildContext context) {
+      List<ExerciseSetPresentation> exercises, BuildContext context) {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
     final rankingManager = context.read<ExerciseRankingManager>();
     final totalVolume = rankingManager.calculateTotalVolume(exercises);
-    return "Rank: #$rank, "
-        "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
+    return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
         "plates weight: $maxPlatesWeight, "
         "total volume: ${totalVolume.toStringAsFixed(1)}";
+  }
+
+  /// Build a rank badge widget with color gradient from green (#1) to red (higher ranks)
+  Widget _buildRankBadge(int rank) {
+    // Calculate color based on rank: green for 1, transitioning to red for higher ranks
+    // Using a logarithmic scale to make the transition more gradual
+    final normalizedRank = (rank - 1).clamp(0, 10) / 10.0;
+    final color = Color.lerp(
+      Colors.green.shade700,
+      Colors.red.shade700,
+      normalizedRank,
+    )!;
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          '#$rank',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildExerciseListTile(BuildContext context,
