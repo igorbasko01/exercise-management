@@ -12,6 +12,7 @@ import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
@@ -55,16 +56,18 @@ void main() async {
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
             ..fetchExerciseTemplates.execute()),
+      ChangeNotifierProvider(create: (context) => TrainingSessionManager()),
+      Provider(create: (context) => ExerciseRankingManager()),
       ChangeNotifierProvider(
           create: (context) => ExerciseSetsViewModel(
               exerciseSetRepository: context.read(),
               exerciseSetPresentationRepository: context.read(),
-              exerciseTemplateRepository: context.read())
+              exerciseTemplateRepository: context.read(),
+              rankingManager: context.read())
             ..preloadExercises.execute()),
       ChangeNotifierProvider(
           create: (context) =>
               ExerciseStatisticsViewModel(statisticsRepository: context.read())),
-      ChangeNotifierProvider(create: (context) => TrainingSessionManager()),
       ChangeNotifierProvider(create: (context) => SettingsViewModel(
             templatesRepository: context.read(),
             setsRepository: context.read(),

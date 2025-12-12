@@ -10,6 +10,7 @@ import 'package:exercise_management/data/repository/exercise_template_repository
 import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -120,7 +121,8 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository);
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: ExerciseRankingManager());
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -363,7 +365,8 @@ void main() {
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: exerciseSetRepository,
           exerciseSetPresentationRepository: exerciseSetPresentationRepository,
-          exerciseTemplateRepository: exerciseTemplateRepository);
+          exerciseTemplateRepository: exerciseTemplateRepository,
+          rankingManager: ExerciseRankingManager());
     });
 
     test(

@@ -69,6 +69,7 @@ class ExerciseSetsPage extends StatelessWidget {
         );
       }
 
+
       final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
       final sortedDates = _getSortedDates(groupedExercises);
 
@@ -160,11 +161,15 @@ class ExerciseSetsPage extends StatelessWidget {
           .putIfAbsent(exercise.exerciseTemplateId, () => [])
           .add(exercise);
     }
+    
     final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
+      final date = _formatDate(entry.value.first.dateTime);
+      final rank = viewModel.getRank(date, entry.key);
+
       widgets.add(_buildExerciseTemplateExpansionTile(
-          templateName, entry.value, context, viewModel));
+          templateName, entry.value, context, viewModel, rank));
     }
     return widgets;
   }
@@ -179,7 +184,8 @@ class ExerciseSetsPage extends StatelessWidget {
       String templateName,
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
-      ExerciseSetsViewModel viewModel) {
+      ExerciseSetsViewModel viewModel,
+      int rank) {
     return Consumer<TrainingSessionManager>(
         builder: (context, trainingManager, child) {
       final allCompleted = exercises.every((set) =>
@@ -192,10 +198,17 @@ class ExerciseSetsPage extends StatelessWidget {
             allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
         title: Text(templateName,
             style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseTemplateSubtitle(exercises)),
-        trailing: IconButton(
-          icon: const Icon(Icons.copy_all),
-          onPressed: () => _progressSets(exercises, viewModel),
+        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, context)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRankBadge(rank),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.copy_all),
+              onPressed: () => _progressSets(exercises, viewModel),
+            ),
+          ],
         ),
         children: exercises
             .map<Widget>((exercise) =>
@@ -206,18 +219,46 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   String _buildExerciseTemplateSubtitle(
-      List<ExerciseSetPresentation> exercises) {
+      List<ExerciseSetPresentation> exercises, BuildContext context) {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
-    final totalVolume = exercises
-        .map(
-            (set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
-        .fold(0.0, (value, element) => value + element);
+    final totalVolume = ExerciseSetsViewModel.calculateTotalVolume(exercises);
     return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
         "plates weight: $maxPlatesWeight, "
         "total volume: ${totalVolume.toStringAsFixed(1)}";
+  }
+
+  /// Build a rank badge widget with color gradient from green (#1) to red (higher ranks)
+  Widget _buildRankBadge(int rank) {
+    // Calculate color based on rank: green for 1, transitioning to red for higher ranks
+    // Using a logarithmic scale to make the transition more gradual
+    final normalizedRank = (rank - 1).clamp(0, 10) / 10.0;
+    final color = Color.lerp(
+      Colors.green.shade700,
+      Colors.red.shade700,
+      normalizedRank,
+    )!;
+
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          '#$rank',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildExerciseListTile(BuildContext context,
@@ -244,7 +285,7 @@ class ExerciseSetsPage extends StatelessWidget {
   String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
     return 'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
         'Plates Weight: ${exercise.platesWeight}, '
-        'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}';
+        'Volume: ${ExerciseSetsViewModel.calculateTotalVolume([exercise])}';
   }
 
   void _navigateToEditExerciseSet(
