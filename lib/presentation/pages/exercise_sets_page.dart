@@ -250,8 +250,8 @@ class ExerciseSetsPage extends StatelessWidget {
     )!;
 
     return Container(
-      width: 40,
-      height: 40,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
@@ -262,7 +262,7 @@ class ExerciseSetsPage extends StatelessWidget {
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
       ),
