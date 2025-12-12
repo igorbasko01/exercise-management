@@ -3,7 +3,6 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
-import 'package:exercise_management/presentation/view_models/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
@@ -70,10 +69,6 @@ class ExerciseSetsPage extends StatelessWidget {
         );
       }
 
-      // Calculate ranks whenever exercise sets change
-      // This only runs when the Consumer rebuilds due to viewModel changes
-      final rankingManager = context.read<ExerciseRankingManager>();
-      rankingManager.calculateRanks(viewModel.exerciseSets, _formatDate);
 
       final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
       final sortedDates = _getSortedDates(groupedExercises);
@@ -167,14 +162,12 @@ class ExerciseSetsPage extends StatelessWidget {
           .add(exercise);
     }
     
-    final rankingManager = context.read<ExerciseRankingManager>();
-    
     final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
       final date = _formatDate(entry.value.first.dateTime);
-      final rank = rankingManager.getRank(date, entry.key);
-      
+      final rank = viewModel.getRank(date, entry.key);
+
       widgets.add(_buildExerciseTemplateExpansionTile(
           templateName, entry.value, context, viewModel, rank));
     }
@@ -230,8 +223,7 @@ class ExerciseSetsPage extends StatelessWidget {
     final maxPlatesWeight = exercises
         .map((set) => set.platesWeight)
         .fold(0.0, (value, element) => value > element ? value : element);
-    final rankingManager = context.read<ExerciseRankingManager>();
-    final totalVolume = rankingManager.calculateTotalVolume(exercises);
+    final totalVolume = ExerciseSetsViewModel.calculateTotalVolume(exercises);
     return "${exercises.length} set${exercises.length != 1 ? 's' : ''}, "
         "reps: ${exercises.map((set) => set.repetitions)}, "
         "plates weight: $maxPlatesWeight, "
@@ -293,7 +285,7 @@ class ExerciseSetsPage extends StatelessWidget {
   String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
     return 'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
         'Plates Weight: ${exercise.platesWeight}, '
-        'Load: ${(exercise.equipmentWeight + exercise.platesWeight) * exercise.repetitions}';
+        'Volume: ${ExerciseSetsViewModel.calculateTotalVolume([exercise])}';
   }
 
   void _navigateToEditExerciseSet(

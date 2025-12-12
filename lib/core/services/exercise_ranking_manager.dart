@@ -1,5 +1,4 @@
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
-import 'package:flutter/material.dart';
 
 /// Key for identifying a unique exercise group (date + template)
 class RankKey {
@@ -32,7 +31,7 @@ class VolumeEntry {
 }
 
 /// Manages ranking of exercise groups by total volume
-class ExerciseRankingManager extends ChangeNotifier {
+class ExerciseRankingManager {
   Map<RankKey, int> _ranks = {};
 
   /// Get the rank for a specific exercise group
@@ -82,12 +81,11 @@ class ExerciseRankingManager extends ChangeNotifier {
     }
 
     _ranks = newRanks;
-    notifyListeners();
   }
 
   /// Calculate total volume for a list of exercise sets
   /// Total volume = sum of (weight * repetitions) for all sets
-  double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
+  static double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
     return exercises
         .map((set) => (set.equipmentWeight + set.platesWeight) * set.repetitions)
         .fold(0.0, (value, element) => value + element);

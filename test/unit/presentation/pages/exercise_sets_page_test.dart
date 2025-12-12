@@ -1,14 +1,12 @@
-import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
-import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
-import 'package:exercise_management/presentation/view_models/exercise_ranking_manager.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +60,8 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository);
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: rankingManager);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -153,7 +152,7 @@ void main() {
             ChangeNotifierProvider<TrainingSessionManager>.value(
               value: trainingSessionManager,
             ),
-            ChangeNotifierProvider<ExerciseRankingManager>.value(
+            Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
           ],
@@ -169,11 +168,24 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
+      // Expand the date-level ExpansionTiles to reveal template-level tiles with rank badges
+      // Find and tap the date1 expansion tile
+      final date1Tile = find.text('2023-01-01');
+      expect(date1Tile, findsOneWidget);
+      await tester.tap(date1Tile);
+      await tester.pumpAndSettle();
+
+      // Find and tap the date2 expansion tile
+      final date2Tile = find.text('2023-01-02');
+      expect(date2Tile, findsOneWidget);
+      await tester.tap(date2Tile);
+      await tester.pumpAndSettle();
+
       // Verify that ranks are displayed correctly within the same template
       // Date 1 Bench Press should be Rank #1 (higher volume)
-      expect(find.textContaining('Rank: #1'), findsOneWidget);
+      expect(find.text('#1'), findsOneWidget);
       // Date 2 Bench Press should be Rank #2 (lower volume, but same template)
-      expect(find.textContaining('Rank: #2'), findsOneWidget);
+      expect(find.text('#2'), findsOneWidget);
     });
 
     testWidgets('different templates each get their own rank #1', (WidgetTester tester) async {
@@ -207,7 +219,7 @@ void main() {
             ChangeNotifierProvider<TrainingSessionManager>.value(
               value: trainingSessionManager,
             ),
-            ChangeNotifierProvider<ExerciseRankingManager>.value(
+            Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
           ],
@@ -222,8 +234,14 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
+      // Expand the date1 expansion tile to reveal the exercise template tile
+      final date1Tile = find.text('2023-01-01');
+      expect(date1Tile, findsOneWidget);
+      await tester.tap(date1Tile);
+      await tester.pumpAndSettle();
+
       // Should show rank #1 for the only exercise
-      expect(find.textContaining('Rank: #1'), findsOneWidget);
+      expect(find.text('#1'), findsOneWidget);
 
       // Add a new exercise from a DIFFERENT template
       final updatedSets = [
@@ -250,8 +268,22 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
+      // Expand only the lower tile as the first tile is already expanded
+      final date1TileAgain = find.text('2023-01-01');
+      expect(date1TileAgain, findsOneWidget);
+      await tester.tap(date1TileAgain);
+      await tester.pumpAndSettle();
+
+      // a way to capture golden snapshot
+      // to create the golden file, run the test with --update-goldens
+      // e.g. flutter test test/unit/presentation/pages/exercise_sets_page_test.dart --update-goldens
+      // await expectLater(
+      //     find.byType(MaterialApp),
+      //     matchesGoldenFile('debug_snapshot.png')
+      // );
+
       // Both exercises are in different templates, so both should be rank #1
-      expect(find.textContaining('Rank: #1'), findsNWidgets(2));
+      expect(find.text('#1'), findsNWidgets(2));
     });
   });
 }

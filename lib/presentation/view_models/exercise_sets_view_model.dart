@@ -7,17 +7,19 @@ import 'package:exercise_management/data/models/progression_strategy.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:flutter/material.dart';
 
 class ExerciseSetsViewModel extends ChangeNotifier {
-  ExerciseSetsViewModel(
-      {required ExerciseSetRepository exerciseSetRepository,
-      required ExerciseSetPresentationRepository
-          exerciseSetPresentationRepository,
-      required ExerciseTemplateRepository exerciseTemplateRepository})
-      : _exerciseSetRepository = exerciseSetRepository,
+  ExerciseSetsViewModel({
+    required ExerciseSetRepository exerciseSetRepository,
+    required ExerciseSetPresentationRepository exerciseSetPresentationRepository,
+    required ExerciseTemplateRepository exerciseTemplateRepository,
+    required ExerciseRankingManager rankingManager,
+  })  : _exerciseSetRepository = exerciseSetRepository,
         _exerciseSetPresentationRepository = exerciseSetPresentationRepository,
-        _exerciseTemplateRepository = exerciseTemplateRepository {
+        _exerciseTemplateRepository = exerciseTemplateRepository,
+        _rankingManager = rankingManager {
     fetchExerciseTemplates =
         Command0<List<ExerciseTemplate>>(_fetchExerciseTemplates)
           ..addListener(_onCommandExecuted);
@@ -43,6 +45,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
+  final ExerciseRankingManager _rankingManager;
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -72,6 +75,16 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     fetchExerciseSets.execute();
   }
 
+  /// Get the rank for a specific exercise group (date + template)
+  int getRank(String date, String templateId) {
+    return _rankingManager.getRank(date, templateId);
+  }
+
+  /// Calculate total volume for a list of exercise sets
+  static double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
+    return ExerciseRankingManager.calculateTotalVolume(exercises);
+  }
+
   void _onCommandExecuted() {
     notifyListeners();
   }
@@ -82,10 +95,17 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     switch (result) {
       case Ok<List<ExerciseSetPresentation>>():
         _exerciseSets = result.value;
+        _rankingManager.calculateRanks(_exerciseSets, _formatDate);
         return Result.ok(_exerciseSets);
       case Error():
         return Result.error(result.error);
     }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchMoreExerciseSets() async {
