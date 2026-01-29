@@ -298,4 +298,89 @@ void main() {
     expect(result, isA<Error>());
     expect(error, isA<ExerciseNotFoundException>());
   });
+
+  group('completedAt field', () {
+    test('addExerciseSet should store completedAt timestamp', () async {
+      final now = DateTime.now();
+      final completedTime = DateTime.now().subtract(const Duration(minutes: 5));
+      final exerciseSetModel = ExerciseSet(
+        exerciseTemplateId: '1',
+        dateTime: now,
+        equipmentWeight: 0,
+        platesWeight: 45,
+        repetitions: 10,
+        completedAt: completedTime,
+      );
+
+      final result =
+          await inMemoryExerciseSetRepository.addExercise(exerciseSetModel);
+
+      final exerciseSet = (result as Ok<ExerciseSet>).value;
+
+      expect(exerciseSet.completedAt, completedTime);
+    });
+
+    test('getExercises should return exercise set with completedAt', () async {
+      final now = DateTime.now();
+      final completedTime = DateTime.now().subtract(const Duration(minutes: 5));
+      final exerciseSetModel = ExerciseSet(
+        exerciseTemplateId: '1',
+        dateTime: now,
+        equipmentWeight: 0,
+        platesWeight: 45,
+        repetitions: 10,
+        completedAt: completedTime,
+      );
+
+      await inMemoryExerciseSetRepository.addExercise(exerciseSetModel);
+
+      final result = await inMemoryExerciseSetRepository.getExercises();
+      final exerciseSet = (result as Ok<List<ExerciseSet>>).value.first;
+
+      expect(exerciseSet.completedAt, completedTime);
+    });
+
+    test('updateExerciseSet should update completedAt', () async {
+      final now = DateTime.now();
+      final exerciseSetModel = ExerciseSet(
+        exerciseTemplateId: '1',
+        dateTime: now,
+        equipmentWeight: 0,
+        platesWeight: 45,
+        repetitions: 10,
+      );
+
+      final result =
+          await inMemoryExerciseSetRepository.addExercise(exerciseSetModel);
+      final exerciseSet = (result as Ok<ExerciseSet>).value;
+
+      final completedTime = DateTime.now();
+      final updatedExerciseSet = exerciseSet.copyWith(
+        completedAt: completedTime,
+      );
+
+      final updateResult = await inMemoryExerciseSetRepository
+          .updateExercise(updatedExerciseSet);
+      final updatedSet = (updateResult as Ok<ExerciseSet>).value;
+
+      expect(updatedSet.completedAt, completedTime);
+    });
+
+    test('exercise set without completedAt should have null', () async {
+      final now = DateTime.now();
+      final exerciseSetModel = ExerciseSet(
+        exerciseTemplateId: '1',
+        dateTime: now,
+        equipmentWeight: 0,
+        platesWeight: 45,
+        repetitions: 10,
+      );
+
+      final result =
+          await inMemoryExerciseSetRepository.addExercise(exerciseSetModel);
+      final exerciseSet = (result as Ok<ExerciseSet>).value;
+
+      expect(exerciseSet.completedAt, isNull);
+    });
+  });
 }
