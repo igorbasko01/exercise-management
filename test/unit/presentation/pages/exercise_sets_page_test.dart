@@ -8,7 +8,6 @@ import 'package:exercise_management/data/repository/exercise_template_repository
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
-import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -29,7 +28,6 @@ void main() {
     late MockExerciseSetPresentationRepository
         mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
-    late TrainingSessionManager trainingSessionManager;
     late ExerciseRankingManager rankingManager;
 
     final date1 = DateTime(2023, 1, 1);
@@ -53,7 +51,6 @@ void main() {
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
-      trainingSessionManager = TrainingSessionManager();
       rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
@@ -73,7 +70,8 @@ void main() {
       });
     });
 
-    testWidgets('displays rank based on total volume within same template', (WidgetTester tester) async {
+    testWidgets('displays rank based on total volume within same template',
+        (WidgetTester tester) async {
       // Create test data with different total volumes for the SAME template
       // Date 1, Template 1: 3 sets * (20 + 20) * 10 = 1200 total volume (Rank #1)
       final date1Template1Sets = [
@@ -149,9 +147,6 @@ void main() {
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
             ),
-            ChangeNotifierProvider<TrainingSessionManager>.value(
-              value: trainingSessionManager,
-            ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
@@ -188,7 +183,8 @@ void main() {
       expect(find.text('#2'), findsOneWidget);
     });
 
-    testWidgets('different templates each get their own rank #1', (WidgetTester tester) async {
+    testWidgets('different templates each get their own rank #1',
+        (WidgetTester tester) async {
       // Initial data - template 1
       final initialSets = [
         ExerciseSetPresentation(
@@ -215,9 +211,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            ChangeNotifierProvider<TrainingSessionManager>.value(
-              value: trainingSessionManager,
             ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,

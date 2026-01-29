@@ -17,7 +17,6 @@ import 'package:exercise_management/presentation/view_models/exercise_sets_view_
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
-import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -56,7 +55,6 @@ void main() async {
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
             ..fetchExerciseTemplates.execute()),
-      ChangeNotifierProvider(create: (context) => TrainingSessionManager()),
       Provider(create: (context) => ExerciseRankingManager()),
       ChangeNotifierProvider(
           create: (context) => ExerciseSetsViewModel(
@@ -66,12 +64,13 @@ void main() async {
               rankingManager: context.read())
             ..preloadExercises.execute()),
       ChangeNotifierProvider(
-          create: (context) =>
-              ExerciseStatisticsViewModel(statisticsRepository: context.read())),
-      ChangeNotifierProvider(create: (context) => SettingsViewModel(
-            templatesRepository: context.read(),
-            setsRepository: context.read(),
-          )),
+          create: (context) => ExerciseStatisticsViewModel(
+              statisticsRepository: context.read())),
+      ChangeNotifierProvider(
+          create: (context) => SettingsViewModel(
+                templatesRepository: context.read(),
+                setsRepository: context.read(),
+              )),
     ],
     child: const MyApp(),
   ));
@@ -134,7 +133,8 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: Icon(Icons.fitness_center), label: 'Sets'),
           BottomNavigationBarItem(
               icon: Icon(Icons.library_books), label: 'Exercises'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

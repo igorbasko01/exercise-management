@@ -4,7 +4,6 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
-import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,7 +28,8 @@ class ExerciseSetsPage extends StatelessWidget {
 
                       await viewModel.fetchExerciseTemplates.execute();
 
-                      if (viewModel.exerciseTemplates.isEmpty && context.mounted) {
+                      if (viewModel.exerciseTemplates.isEmpty &&
+                          context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                             content: Text(
                                 'Please add an exercise template before adding an exercise set.')));
@@ -68,7 +68,6 @@ class ExerciseSetsPage extends StatelessWidget {
           child: Text('No exercise sets found'),
         );
       }
-
 
       final groupedExercises = _groupExercisesByDate(viewModel.exerciseSets);
       final sortedDates = _getSortedDates(groupedExercises);
@@ -129,26 +128,22 @@ class ExerciseSetsPage extends StatelessWidget {
       String date,
       List<ExerciseSetPresentation> exercises,
       ExerciseSetsViewModel viewModel) {
-    return Consumer<TrainingSessionManager>(
-        builder: (context, trainingManager, child) {
-      final allCompleted = exercises.every((set) =>
-          set.setId != null && trainingManager.isSetCompleted(set.setId!));
-      return ExpansionTile(
-        controlAffinity: ListTileControlAffinity.leading,
-        collapsedBackgroundColor:
-            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
-        backgroundColor:
-            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
-        title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
-        trailing: IconButton(
-          icon: const Icon(Icons.copy_all),
-          onPressed: () => _progressSets(exercises, viewModel),
-        ),
-        children:
-            _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
-      );
-    });
+    final allCompleted = exercises.every((set) => set.completedAt != null);
+    return ExpansionTile(
+      controlAffinity: ListTileControlAffinity.leading,
+      collapsedBackgroundColor:
+          allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      backgroundColor:
+          allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
+      trailing: IconButton(
+        icon: const Icon(Icons.copy_all),
+        onPressed: () => _progressSets(exercises, viewModel),
+      ),
+      children:
+          _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
+    );
   }
 
   List<Widget> _buildExerciseTemplateExpansionTiles(
@@ -161,7 +156,7 @@ class ExerciseSetsPage extends StatelessWidget {
           .putIfAbsent(exercise.exerciseTemplateId, () => [])
           .add(exercise);
     }
-    
+
     final widgets = <Widget>[];
     for (var entry in setsByTemplate.entries) {
       final templateName = entry.value.first.displayName;
@@ -186,36 +181,32 @@ class ExerciseSetsPage extends StatelessWidget {
       BuildContext context,
       ExerciseSetsViewModel viewModel,
       int rank) {
-    return Consumer<TrainingSessionManager>(
-        builder: (context, trainingManager, child) {
-      final allCompleted = exercises.every((set) =>
-          set.setId != null && trainingManager.isSetCompleted(set.setId!));
-      return ExpansionTile(
-        controlAffinity: ListTileControlAffinity.leading,
-        collapsedBackgroundColor:
-            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
-        backgroundColor:
-            allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
-        title: Text(templateName,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(_buildExerciseTemplateSubtitle(exercises, context)),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildRankBadge(rank),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.copy_all),
-              onPressed: () => _progressSets(exercises, viewModel),
-            ),
-          ],
-        ),
-        children: exercises
-            .map<Widget>((exercise) =>
-                _buildExerciseListTile(context, exercise, viewModel))
-            .toList(),
-      );
-    });
+    final allCompleted = exercises.every((set) => set.completedAt != null);
+    return ExpansionTile(
+      controlAffinity: ListTileControlAffinity.leading,
+      collapsedBackgroundColor:
+          allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      backgroundColor:
+          allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      title: Text(templateName,
+          style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(_buildExerciseTemplateSubtitle(exercises, context)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRankBadge(rank),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.copy_all),
+            onPressed: () => _progressSets(exercises, viewModel),
+          ),
+        ],
+      ),
+      children: exercises
+          .map<Widget>((exercise) =>
+              _buildExerciseListTile(context, exercise, viewModel))
+          .toList(),
+    );
   }
 
   String _buildExerciseTemplateSubtitle(
@@ -263,23 +254,17 @@ class ExerciseSetsPage extends StatelessWidget {
 
   Widget _buildExerciseListTile(BuildContext context,
       ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    return Consumer<TrainingSessionManager>(
-        builder: (context, trainingManager, child) {
-      final setId = exercise.setId;
-      final isCompleted = setId != null
-          ? trainingManager.isSetCompleted(exercise.setId!)
-          : false;
-      return ListTile(
-        tileColor: isCompleted ? Colors.green.withValues(alpha: 0.2) : null,
-        title: Text(exercise.displayName),
-        subtitle: Text(_buildExerciseSubtitle(exercise)),
-        onTap: () => _navigateToEditExerciseSet(context, exercise),
-        onLongPress: () => setId != null
-            ? trainingManager.toggleSetCompletion(exercise.setId!)
-            : null,
-        trailing: _buildActionButtons(exercise, viewModel),
-      );
-    });
+    final isCompleted = exercise.completedAt != null;
+    return ListTile(
+      tileColor: isCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      title: Text(exercise.displayName),
+      subtitle: Text(_buildExerciseSubtitle(exercise)),
+      onTap: () => _navigateToEditExerciseSet(context, exercise),
+      onLongPress: () => exercise.setId != null
+          ? _toggleSetCompletion(exercise, viewModel)
+          : null,
+      trailing: _buildActionButtons(exercise, viewModel),
+    );
   }
 
   String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
@@ -313,6 +298,18 @@ class ExerciseSetsPage extends StatelessWidget {
     final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
         .copyWithoutId(dateTime: DateTime.now());
     viewModel.addExerciseSet.execute(duplicatedSet);
+  }
+
+  void _toggleSetCompletion(
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+    // TODO: Seems that it can't be un-marked, I think it should be possible.
+    final isCurrentlyCompleted = exercise.completedAt != null;
+
+    // Update the database with completedAt
+    final updatedSet = exercise.toExerciseSet().copyWith(
+          completedAt: isCurrentlyCompleted ? null : DateTime.now(),
+        );
+    viewModel.updateExerciseSet.execute(updatedSet);
   }
 
   void _progressSets(
