@@ -6,6 +6,7 @@ class ExerciseSet {
   final double equipmentWeight;
   final double platesWeight;
   final int repetitions;
+  final DateTime? completedAt;
 
   ExerciseSet({
     this.id,
@@ -14,6 +15,7 @@ class ExerciseSet {
     required this.equipmentWeight,
     required this.platesWeight,
     required this.repetitions,
+    this.completedAt,
   });
 
   double get totalWeight => equipmentWeight + platesWeight;
@@ -25,6 +27,7 @@ class ExerciseSet {
     double? equipmentWeight,
     double? platesWeight,
     int? repetitions,
+    DateTime? completedAt,
   }) {
     return ExerciseSet(
       id: id ?? this.id,
@@ -33,6 +36,7 @@ class ExerciseSet {
       equipmentWeight: equipmentWeight ?? this.equipmentWeight,
       platesWeight: platesWeight ?? this.platesWeight,
       repetitions: repetitions ?? this.repetitions,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -42,6 +46,7 @@ class ExerciseSet {
     double? equipmentWeight,
     double? platesWeight,
     int? repetitions,
+    DateTime? completedAt,
   }) {
     return ExerciseSet(
       id: null,
@@ -50,6 +55,7 @@ class ExerciseSet {
       equipmentWeight: equipmentWeight ?? this.equipmentWeight,
       platesWeight: platesWeight ?? this.platesWeight,
       repetitions: repetitions ?? this.repetitions,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -61,6 +67,7 @@ class ExerciseSet {
       'equipment_weight': equipmentWeight,
       'plates_weight': platesWeight,
       'repetitions': repetitions,
+      'completed_at': completedAt?.toIso8601String(),
     };
   }
 
@@ -72,6 +79,9 @@ class ExerciseSet {
       equipmentWeight: (map['equipment_weight'] as num).toDouble(),
       platesWeight: (map['plates_weight'] as num).toDouble(),
       repetitions: map['repetitions'] as int,
+      completedAt: map['completed_at'] != null
+          ? DateTime.parse(map['completed_at'] as String)
+          : null,
     );
   }
 
@@ -85,7 +95,8 @@ class ExerciseSet {
         other.dateTime == dateTime &&
         other.equipmentWeight == equipmentWeight &&
         other.platesWeight == platesWeight &&
-        other.repetitions == repetitions;
+        other.repetitions == repetitions &&
+        other.completedAt == completedAt;
   }
 
   @override
@@ -95,6 +106,7 @@ class ExerciseSet {
         dateTime.hashCode ^
         equipmentWeight.hashCode ^
         platesWeight.hashCode ^
-        repetitions.hashCode;
+        repetitions.hashCode ^
+        completedAt.hashCode;
   }
 }
