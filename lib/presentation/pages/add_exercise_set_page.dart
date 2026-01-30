@@ -33,9 +33,8 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
           ? _viewModel.exerciseTemplates.first
           : null;
     } else {
-      _selectedExerciseTemplate = _viewModel.exerciseTemplates.firstWhere(
-          (e) => e.id == widget.exerciseSet!.exerciseTemplateId
-      );
+      _selectedExerciseTemplate = _viewModel.exerciseTemplates
+          .firstWhere((e) => e.id == widget.exerciseSet!.exerciseTemplateId);
     }
     _equipmentWeightController = TextEditingController(
         text: widget.exerciseSet?.equipmentWeight.toString() ?? '0');
@@ -69,7 +68,8 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    if (_selectedExerciseTemplate == null || _selectedExerciseTemplate?.id == null) {
+    if (_selectedExerciseTemplate == null ||
+        _selectedExerciseTemplate?.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select an exercise template.')));
       return;
@@ -97,6 +97,11 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
     Navigator.pop(context);
   }
 
+  // Uses Dart's built-in ISO 8601 formatting
+  String _formatCompletedAt(DateTime dateTime) {
+    return dateTime.toIso8601String();
+  }
+
   Form _buildForm() {
     return Form(
         key: _formKey,
@@ -118,60 +123,66 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
                 }
               }),
           TextFormField(
-            controller: _equipmentWeightController,
-            decoration: const InputDecoration(labelText: 'Equipment Weight'),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter equipment weight';
-              }
-              if (double.tryParse(value) == null) {
-                return 'Please enter a valid number';
-              }
-              if (double.parse(value) < 0) {
-                return 'Please enter a non-negative number';
-              }
-              return null;
-            }
-          ),
+              controller: _equipmentWeightController,
+              decoration: const InputDecoration(labelText: 'Equipment Weight'),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter equipment weight';
+                }
+                if (double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                if (double.parse(value) < 0) {
+                  return 'Please enter a non-negative number';
+                }
+                return null;
+              }),
           TextFormField(
-            controller: _platesWeightController,
-            decoration: const InputDecoration(labelText: 'Plates Weight'),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter plates weight';
-              }
-              if (double.tryParse(value) == null) {
-                return 'Please enter a valid number';
-              }
-              if (double.parse(value) < 0) {
-                return 'Please enter a non-negative number';
-              }
-              return null;
-            }
-          ),
+              controller: _platesWeightController,
+              decoration: const InputDecoration(labelText: 'Plates Weight'),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter plates weight';
+                }
+                if (double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                if (double.parse(value) < 0) {
+                  return 'Please enter a non-negative number';
+                }
+                return null;
+              }),
           TextFormField(
-            controller: _repetitionsController,
-            decoration: InputDecoration(
-                labelText: _selectedExerciseTemplate?.repetitionsRangeTarget.range != null
-                    ? 'Repetitions ${_selectedExerciseTemplate!.repetitionsRangeTarget.range}'
-                    : 'Repetitions'
+              controller: _repetitionsController,
+              decoration: InputDecoration(
+                  labelText: _selectedExerciseTemplate
+                              ?.repetitionsRangeTarget.range !=
+                          null
+                      ? 'Repetitions ${_selectedExerciseTemplate!.repetitionsRangeTarget.range}'
+                      : 'Repetitions'),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter number of repetitions';
+                }
+                if (int.tryParse(value) == null) {
+                  return 'Please enter a valid integer';
+                }
+                if (int.parse(value) < 0) {
+                  return 'Please enter a non-negative integer';
+                }
+                return null;
+              }),
+          if (widget.exerciseSet?.completedAt != null)
+            TextFormField(
+              initialValue:
+                  _formatCompletedAt(widget.exerciseSet!.completedAt!),
+              decoration: const InputDecoration(labelText: 'Completed At'),
+              readOnly: true,
+              enabled: false,
             ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter number of repetitions';
-              }
-              if (int.tryParse(value) == null) {
-                return 'Please enter a valid integer';
-              }
-              if (int.parse(value) < 0) {
-                return 'Please enter a non-negative integer';
-              }
-              return null;
-            }
-          ),
           ElevatedButton(
               onPressed: _saveExerciseSet, child: const Text('Save')),
         ]));
