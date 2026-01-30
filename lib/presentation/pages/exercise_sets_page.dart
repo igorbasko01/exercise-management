@@ -203,7 +203,15 @@ class ExerciseSetsPage extends StatelessWidget {
           ),
         ],
       ),
-      children: exercises
+      children: (List<ExerciseSetPresentation>.from(exercises)
+            ..sort((a, b) {
+              // Nulls at the bottom
+              if (a.completedAt == null && b.completedAt == null) return 0;
+              if (a.completedAt == null) return 1;
+              if (b.completedAt == null) return -1;
+              // Ascending order (most recent at bottom, just above nulls)
+              return a.completedAt!.compareTo(b.completedAt!);
+            }))
           .map<Widget>((exercise) =>
               _buildExerciseListTile(context, exercise, viewModel))
           .toList(),
