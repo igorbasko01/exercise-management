@@ -14,7 +14,7 @@ class AppDatabaseFactory {
         await db.execute(statement);
       }
     }, onUpgrade: (db, oldVersion, newVersion) async {
-      for (var i = oldVersion; i < newVersion; i++) {
+      for (var i = oldVersion + 1; i <= newVersion; i++) {
         final step = migration.upgradeSteps[i];
         if (step != null) {
           await step(db);
