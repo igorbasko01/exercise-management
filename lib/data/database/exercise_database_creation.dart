@@ -15,7 +15,8 @@ CREATE TABLE exercise_sets (
   date_time TEXT NOT NULL,
   equipment_weight REAL NOT NULL,
   plates_weight REAL NOT NULL,
-  repetitions INTEGER NOT NULL
+  repetitions INTEGER NOT NULL,
+  completed_at TEXT
 )
 '''
 ];

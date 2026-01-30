@@ -11,6 +11,7 @@ class ExerciseSetPresentation {
   final int repetitions;
   final String displayName;
   final RepetitionsRange repetitionsRange;
+  final DateTime? completedAt;
 
   ExerciseSetPresentation({
     this.setId,
@@ -21,6 +22,7 @@ class ExerciseSetPresentation {
     required this.repetitions,
     required this.displayName,
     required this.repetitionsRange,
+    this.completedAt,
   });
 
   double get totalWeight => equipmentWeight + platesWeight;
@@ -34,6 +36,7 @@ class ExerciseSetPresentation {
     int? repetitions,
     String? displayName,
     RepetitionsRange? repetitionsRange,
+    DateTime? completedAt,
   }) {
     return ExerciseSetPresentation(
       setId: setId ?? this.setId,
@@ -44,6 +47,7 @@ class ExerciseSetPresentation {
       repetitions: repetitions ?? this.repetitions,
       displayName: displayName ?? this.displayName,
       repetitionsRange: repetitionsRange ?? this.repetitionsRange,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -55,6 +59,7 @@ class ExerciseSetPresentation {
     int? repetitions,
     String? displayName,
     RepetitionsRange? repetitionsRange,
+    DateTime? completedAt,
   }) {
     return ExerciseSetPresentation(
       setId: null,
@@ -65,6 +70,7 @@ class ExerciseSetPresentation {
       repetitions: repetitions ?? this.repetitions,
       displayName: displayName ?? this.displayName,
       repetitionsRange: repetitionsRange ?? this.repetitionsRange,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -84,7 +90,8 @@ class ExerciseSetPresentation {
         other.platesWeight == platesWeight &&
         other.repetitions == repetitions &&
         other.displayName == displayName &&
-        other.repetitionsRange == repetitionsRange;
+        other.repetitionsRange == repetitionsRange &&
+        other.completedAt == completedAt;
   }
 
   @override
@@ -96,6 +103,7 @@ class ExerciseSetPresentation {
         platesWeight.hashCode ^
         repetitions.hashCode ^
         displayName.hashCode ^
-        repetitionsRange.hashCode;
+        repetitionsRange.hashCode ^
+        completedAt.hashCode;
   }
 }

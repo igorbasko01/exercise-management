@@ -8,7 +8,6 @@ import 'package:exercise_management/data/repository/exercise_template_repository
 import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
-import 'package:exercise_management/presentation/view_models/training_session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -29,7 +28,6 @@ void main() {
     late MockExerciseSetPresentationRepository
         mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
-    late TrainingSessionManager trainingSessionManager;
     late ExerciseRankingManager rankingManager;
 
     final date1 = DateTime(2023, 1, 1);
@@ -53,7 +51,6 @@ void main() {
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
-      trainingSessionManager = TrainingSessionManager();
       rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
@@ -73,7 +70,8 @@ void main() {
       });
     });
 
-    testWidgets('displays rank based on total volume within same template', (WidgetTester tester) async {
+    testWidgets('displays rank based on total volume within same template',
+        (WidgetTester tester) async {
       // Create test data with different total volumes for the SAME template
       // Date 1, Template 1: 3 sets * (20 + 20) * 10 = 1200 total volume (Rank #1)
       final date1Template1Sets = [
@@ -149,9 +147,6 @@ void main() {
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
             ),
-            ChangeNotifierProvider<TrainingSessionManager>.value(
-              value: trainingSessionManager,
-            ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
@@ -188,7 +183,8 @@ void main() {
       expect(find.text('#2'), findsOneWidget);
     });
 
-    testWidgets('different templates each get their own rank #1', (WidgetTester tester) async {
+    testWidgets('different templates each get their own rank #1',
+        (WidgetTester tester) async {
       // Initial data - template 1
       final initialSets = [
         ExerciseSetPresentation(
@@ -215,9 +211,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            ChangeNotifierProvider<TrainingSessionManager>.value(
-              value: trainingSessionManager,
             ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
@@ -284,6 +277,195 @@ void main() {
 
       // Both exercises are in different templates, so both should be rank #1
       expect(find.text('#1'), findsNWidgets(2));
+    });
+  });
+
+  group('ExerciseSetsPage Toggle Completion', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+    late ExerciseRankingManager rankingManager;
+
+    final testDate = DateTime(2023, 1, 1);
+
+    setUpAll(() {
+      registerFallbackValue(<ExerciseSet>[]);
+      registerFallbackValue(ExerciseSet(
+        id: 'fallback',
+        exerciseTemplateId: 'fallback',
+        repetitions: 0,
+        platesWeight: 0,
+        equipmentWeight: 0,
+        dateTime: DateTime(2023, 1, 1),
+      ));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      rankingManager = ExerciseRankingManager();
+
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: rankingManager);
+
+      when(() => mockExerciseSetRepository.addExercises(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockExerciseTemplateRepository.getExercises())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+    });
+
+    testWidgets('long press on unmarked set calls update with completedAt set',
+        (WidgetTester tester) async {
+      // Create an unmarked exercise set (completedAt is null)
+      final unmarkedSet = ExerciseSetPresentation(
+        setId: '1',
+        exerciseTemplateId: 'template1',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 20,
+        dateTime: testDate,
+        displayName: 'Bench Press',
+        repetitionsRange: RepetitionsRange.medium,
+        completedAt: null, // Not completed
+      );
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([unmarkedSet]);
+      });
+
+      ExerciseSet? capturedExerciseSet;
+      when(() => mockExerciseSetRepository.updateExercise(any()))
+          .thenAnswer((invocation) async {
+        capturedExerciseSet = invocation.positionalArguments[0] as ExerciseSet;
+        return Result.ok(capturedExerciseSet!);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            Provider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      // Expand the date tile to reveal the exercise
+      final dateTile = find.text('2023-01-01');
+      await tester.tap(dateTile);
+      await tester.pumpAndSettle();
+
+      // Expand the template tile to reveal the list tile
+      final templateTile = find.text('Bench Press').first;
+      await tester.tap(templateTile);
+      await tester.pumpAndSettle();
+
+      // Long press on the exercise to toggle completion
+      final exerciseTile = find.widgetWithText(ListTile, 'Bench Press').last;
+      await tester.longPress(exerciseTile);
+      await tester.pumpAndSettle();
+
+      // Verify updateExercise was called with completedAt set (not null)
+      expect(capturedExerciseSet, isNotNull);
+      expect(capturedExerciseSet!.completedAt, isNotNull);
+    });
+
+    testWidgets('long press on marked set calls update with completedAt null',
+        (WidgetTester tester) async {
+      final completedTime = DateTime(2023, 1, 1, 10, 30);
+
+      // Create a marked exercise set (completedAt is set)
+      final markedSet = ExerciseSetPresentation(
+        setId: '1',
+        exerciseTemplateId: 'template1',
+        repetitions: 10,
+        platesWeight: 20,
+        equipmentWeight: 20,
+        dateTime: testDate,
+        displayName: 'Bench Press',
+        repetitionsRange: RepetitionsRange.medium,
+        completedAt: completedTime, // Already completed
+      );
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([markedSet]);
+      });
+
+      ExerciseSet? capturedExerciseSet;
+      when(() => mockExerciseSetRepository.updateExercise(any()))
+          .thenAnswer((invocation) async {
+        capturedExerciseSet = invocation.positionalArguments[0] as ExerciseSet;
+        return Result.ok(capturedExerciseSet!);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            Provider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      // Expand the date tile to reveal the exercise
+      final dateTile = find.text('2023-01-01');
+      await tester.tap(dateTile);
+      await tester.pumpAndSettle();
+
+      // Expand the template tile to reveal the list tile
+      final templateTile = find.text('Bench Press').first;
+      await tester.tap(templateTile);
+      await tester.pumpAndSettle();
+
+      // Long press on the exercise to toggle completion (unmark)
+      final exerciseTile = find.widgetWithText(ListTile, 'Bench Press').last;
+      await tester.longPress(exerciseTile);
+      await tester.pumpAndSettle();
+
+      // Verify updateExercise was called with completedAt set to null (unmarked)
+      expect(capturedExerciseSet, isNotNull);
+      expect(capturedExerciseSet!.completedAt, isNull);
     });
   });
 }

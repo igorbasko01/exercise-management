@@ -15,6 +15,7 @@ class ExerciseSetPresentationMapper {
       dateTime: set.dateTime,
       exerciseTemplateId: set.exerciseTemplateId,
       repetitionsRange: template.repetitionsRangeTarget,
+      completedAt: set.completedAt,
     );
   }
 
@@ -30,6 +31,9 @@ class ExerciseSetPresentationMapper {
       repetitionsRange: RepetitionsRange.values.firstWhere(
           (e) => e.index == map['repetitions_range'],
           orElse: () => RepetitionsRange.medium),
+      completedAt: map['completed_at'] != null
+          ? DateTime.parse(map['completed_at'] as String)
+          : null,
     );
   }
 
@@ -41,6 +45,7 @@ class ExerciseSetPresentationMapper {
       equipmentWeight: presentation.equipmentWeight,
       platesWeight: presentation.platesWeight,
       repetitions: presentation.repetitions,
+      completedAt: presentation.completedAt,
     );
   }
 }
