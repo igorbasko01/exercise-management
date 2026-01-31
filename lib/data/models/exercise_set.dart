@@ -72,15 +72,25 @@ class ExerciseSet {
   }
 
   factory ExerciseSet.fromMap(Map<String, dynamic> map) {
+    final equipmentWeight = map['equipment_weight'];
+    final platesWeight = map['plates_weight'];
+    final repetitions = map['repetitions'];
+    final completedAtValue = map['completed_at'];
+
     return ExerciseSet(
       id: map['id']?.toString(),
       exerciseTemplateId: map['exercise_template_id'].toString(),
-      dateTime: DateTime.parse(map['date_time'] as String),
-      equipmentWeight: (map['equipment_weight'] as num).toDouble(),
-      platesWeight: (map['plates_weight'] as num).toDouble(),
-      repetitions: map['repetitions'] as int,
-      completedAt: map['completed_at'] != null
-          ? DateTime.parse(map['completed_at'] as String)
+      dateTime: DateTime.parse(map['date_time'].toString()),
+      equipmentWeight: equipmentWeight is num
+          ? equipmentWeight.toDouble()
+          : double.parse(equipmentWeight.toString()),
+      platesWeight: platesWeight is num
+          ? platesWeight.toDouble()
+          : double.parse(platesWeight.toString()),
+      repetitions:
+          repetitions is int ? repetitions : int.parse(repetitions.toString()),
+      completedAt: completedAtValue != null
+          ? DateTime.parse(completedAtValue.toString())
           : null,
     );
   }

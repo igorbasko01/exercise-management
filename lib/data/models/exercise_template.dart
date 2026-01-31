@@ -59,13 +59,20 @@ class ExerciseTemplate {
   }
 
   factory ExerciseTemplate.fromMap(Map<String, dynamic> map) {
+    final muscleGroupValue = map['muscle_group'];
+    final repetitionsRangeValue = map['repetitions_range'];
+
     return ExerciseTemplate(
       id: map['id']?.toString(),
-      name: map['name'] as String,
-      muscleGroup: MuscleGroup.values[map['muscle_group'] as int],
-      repetitionsRangeTarget:
-          RepetitionsRange.values[map['repetitions_range'] as int],
-      description: map['description'] as String?,
+      name: map['name'].toString(),
+      muscleGroup: MuscleGroup.values[muscleGroupValue is int
+          ? muscleGroupValue
+          : int.parse(muscleGroupValue.toString())],
+      repetitionsRangeTarget: RepetitionsRange.values[
+          repetitionsRangeValue is int
+              ? repetitionsRangeValue
+              : int.parse(repetitionsRangeValue.toString())],
+      description: map['description']?.toString(),
     );
   }
 

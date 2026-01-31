@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:csv/csv.dart';
-import 'package:exercise_management/core/enums/muscle_group.dart';
-import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/csv_serializer.dart';
 import 'package:path/path.dart' as path;
 import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/command.dart';
@@ -187,86 +185,23 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   String _createTemplatesCSV(List<ExerciseTemplate> templates) {
-    final rows = <List<String>>[];
-
-    rows.add(
-        ['id', 'name', 'muscle_group', 'repetitions_range', 'description']);
-
-    for (final template in templates) {
-      rows.add([
-        template.id ?? 'unknown',
-        template.name,
-        template.muscleGroup.index.toString(),
-        template.repetitionsRangeTarget.index.toString(),
-        template.description ?? ''
-      ]);
-    }
-
-    return const ListToCsvConverter().convert(rows);
+    return CsvSerializer.toCSV(templates.map((t) => t.toMap()).toList());
   }
 
   String _createSetsCSV(List<ExerciseSet> sets) {
-    final rows = <List<String>>[];
-
-    rows.add([
-      'id',
-      'exercise_template_id',
-      'date_time',
-      'equipment_weight',
-      'plates_weight',
-      'repetitions'
-    ]);
-
-    for (final set in sets) {
-      rows.add([
-        set.id ?? 'unknown',
-        set.exerciseTemplateId,
-        set.dateTime.toIso8601String(),
-        set.equipmentWeight.toString(),
-        set.platesWeight.toString(),
-        set.repetitions.toString()
-      ]);
-    }
-
-    return const ListToCsvConverter().convert(rows);
+    return CsvSerializer.toCSV(sets.map((s) => s.toMap()).toList());
   }
 
   List<ExerciseTemplate> _parseTemplatesCSV(String csvContent) {
-    final rows = const CsvToListConverter().convert(csvContent, eol: '\n');
-    final templates = <ExerciseTemplate>[];
-
-    for (var i = 1; i < rows.length; i++) {
-      final row = rows[i];
-      templates.add(ExerciseTemplate(
-        id: row[0].toString(),
-        name: row[1].toString(),
-        muscleGroup: MuscleGroup.values[int.parse(row[2].toString())],
-        repetitionsRangeTarget:
-            RepetitionsRange.values[int.parse(row[3].toString())],
-        description: row[4].toString().trim().isEmpty ? null : row[4].toString(),
-      ));
-    }
-
-    return templates;
+    return CsvSerializer.fromCSV(csvContent)
+        .map((map) => ExerciseTemplate.fromMap(map))
+        .toList();
   }
 
   List<ExerciseSet> _parseSetsCSV(String csvContent) {
-    final rows = const CsvToListConverter().convert(csvContent, eol: '\n');
-    final sets = <ExerciseSet>[];
-
-    for (var i = 1; i < rows.length; i++) {
-      final row = rows[i];
-      sets.add(ExerciseSet(
-        id: row[0].toString(),
-        exerciseTemplateId: row[1].toString(),
-        dateTime: DateTime.parse(row[2].toString()),
-        equipmentWeight: double.parse(row[3].toString()),
-        platesWeight: double.parse(row[4].toString()),
-        repetitions: int.parse(row[5].toString()),
-      ));
-    }
-
-    return sets;
+    return CsvSerializer.fromCSV(csvContent)
+        .map((map) => ExerciseSet.fromMap(map))
+        .toList();
   }
 }
 

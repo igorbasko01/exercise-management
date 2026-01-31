@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:csv/csv.dart';
+import 'package:exercise_management/core/csv_serializer.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
@@ -146,8 +146,7 @@ void main() {
         return Result.ok(null);
       });
       when(() => mockSetRepository.clearAll()).thenAnswer((invocation) async {
-        return Result.error(
-            ExerciseDatabaseException('Failed to clear sets'));
+        return Result.error(ExerciseDatabaseException('Failed to clear sets'));
       });
 
       await viewModel.importDataCommand.execute(zipFile.path);
@@ -176,28 +175,50 @@ void main() {
 Future<File> _createValidZipFile(Directory tempDir) async {
   final archive = Archive();
 
-  final templatesRows = [
-    ['id', 'name', 'muscle_group', 'repetitions_range', 'description'],
-    ['1', 'Push-up', '2', '1', 'Basic push-up exercise'],
-    ['2', 'Squat', '0', '1', ''],
+  // Create templates using the same format as SettingsViewModel export
+  final templates = [
+    ExerciseTemplate(
+      id: '1',
+      name: 'Push-up',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+      description: 'Basic push-up exercise',
+    ),
+    ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+      description: null,
+    ),
   ];
-  final templatesCSV = const ListToCsvConverter().convert(templatesRows);
+  final templatesCSV =
+      CsvSerializer.toCSV(templates.map((t) => t.toMap()).toList());
   archive.addFile(ArchiveFile(
       'exercise_templates.csv', templatesCSV.length, templatesCSV.codeUnits));
 
-  final setsRows = [
-    [
-      'id',
-      'exercise_template_id',
-      'date_time',
-      'equipment_weight',
-      'plates_weight',
-      'repetitions'
-    ],
-    ['1', '1', '2023-01-01T10:00:00.000Z', '0.0', '20.0', '10'],
-    ['2', '2', '2023-01-02T11:00:00.000Z', '0.0', '30.0', '15'],
+  // Create sets using the same format as SettingsViewModel export
+  final sets = [
+    ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: DateTime.parse('2023-01-01T10:00:00.000Z'),
+      equipmentWeight: 0.0,
+      platesWeight: 20.0,
+      repetitions: 10,
+      completedAt: null,
+    ),
+    ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '2',
+      dateTime: DateTime.parse('2023-01-02T11:00:00.000Z'),
+      equipmentWeight: 0.0,
+      platesWeight: 30.0,
+      repetitions: 15,
+      completedAt: DateTime.parse('2023-01-02T11:30:00.000Z'),
+    ),
   ];
-  final setsCSV = const ListToCsvConverter().convert(setsRows);
+  final setsCSV = CsvSerializer.toCSV(sets.map((s) => s.toMap()).toList());
   archive.addFile(
       ArchiveFile('exercise_sets.csv', setsCSV.length, setsCSV.codeUnits));
 
@@ -209,11 +230,9 @@ Future<File> _createValidZipFile(Directory tempDir) async {
 Future<File> _createInvalidEnumZipFile(Directory tempDir) async {
   final archive = Archive();
 
-  final templatesRows = [
-    ['id', 'name', 'muscle_group', 'repetitions_range', 'description'],
-    ['1', 'Push-up', '99999', '1', 'Basic push-up exercise'],
-  ];
-  final templatesCSV = const ListToCsvConverter().convert(templatesRows);
+  // Create an invalid template with out-of-range enum value
+  final templatesCSV =
+      'id,name,muscle_group,repetitions_range,description\n1,Push-up,99999,1,Basic push-up exercise';
   archive.addFile(ArchiveFile(
       'exercise_templates.csv', templatesCSV.length, templatesCSV.codeUnits));
 
