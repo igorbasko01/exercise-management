@@ -620,7 +620,7 @@ void main() {
         repetitions: 15,
         platesWeight: 25,
         equipmentWeight: 5,
-        dateTime: completedAt,
+        completedAt: Value(completedAt),
       );
 
       exerciseTemplateRepository.addExercise(exerciseTemplate);
