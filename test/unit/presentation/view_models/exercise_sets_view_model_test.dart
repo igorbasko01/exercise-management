@@ -616,17 +616,12 @@ void main() {
 
       final completedAt = DateTime.now().add(const Duration(minutes: 30));
 
-      final updatedExerciseSet = ExerciseSet(
-        id: '1',
-        exerciseTemplateId: '1',
+      final updatedExerciseSet = exerciseSet.copyWith(
         repetitions: 15,
         platesWeight: 25,
         equipmentWeight: 5,
-        dateTime: now,
+        dateTime: completedAt,
       );
-
-      final completedExerciseSet1 = exerciseSet.copyWith(
-          id: const Value(null), completedAt: Value(completedAt));
 
       exerciseTemplateRepository.addExercise(exerciseTemplate);
       exerciseSetRepository.addExercise(exerciseSet);
