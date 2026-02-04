@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/value.dart';
 
 /// This class represents a description of an exercise.
 class ExerciseTemplate {
@@ -18,28 +19,13 @@ class ExerciseTemplate {
   });
 
   ExerciseTemplate copyWith(
-      {String? id,
+      {Value<String?>? id,
       String? name,
       MuscleGroup? muscleGroup,
       RepetitionsRange? repetitionsRangeTarget,
       String? description}) {
     return ExerciseTemplate(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      muscleGroup: muscleGroup ?? this.muscleGroup,
-      repetitionsRangeTarget:
-          repetitionsRangeTarget ?? this.repetitionsRangeTarget,
-      description: description ?? this.description,
-    );
-  }
-
-  ExerciseTemplate copyWithoutId(
-      {String? name,
-      MuscleGroup? muscleGroup,
-      RepetitionsRange? repetitionsRangeTarget,
-      String? description}) {
-    return ExerciseTemplate(
-      id: null,
+      id: id != null ? id.value : this.id,
       name: name ?? this.name,
       muscleGroup: muscleGroup ?? this.muscleGroup,
       repetitionsRangeTarget:

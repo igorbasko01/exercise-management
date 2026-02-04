@@ -1,6 +1,6 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
@@ -305,7 +305,7 @@ class ExerciseSetsPage extends StatelessWidget {
   void _duplicateExerciseSet(
       ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
     final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
-        .copyWithoutId(dateTime: DateTime.now());
+        .copyWith(id: const Value(null), dateTime: DateTime.now());
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
@@ -314,15 +314,10 @@ class ExerciseSetsPage extends StatelessWidget {
     final isCurrentlyCompleted = exercise.completedAt != null;
     final exerciseSet = exercise.toExerciseSet();
 
-    // Create updated set - constructing directly to allow setting completedAt to null
-    final updatedSet = ExerciseSet(
-      id: exerciseSet.id,
-      exerciseTemplateId: exerciseSet.exerciseTemplateId,
-      dateTime: exerciseSet.dateTime,
-      equipmentWeight: exerciseSet.equipmentWeight,
-      platesWeight: exerciseSet.platesWeight,
-      repetitions: exerciseSet.repetitions,
-      completedAt: isCurrentlyCompleted ? null : DateTime.now(),
+    // Use the new copyWith with Value wrapper to handle nullability explicitly
+    final updatedSet = exerciseSet.copyWith(
+      completedAt:
+          isCurrentlyCompleted ? const Value(null) : Value(DateTime.now()),
     );
     viewModel.updateExerciseSet.execute(updatedSet);
   }

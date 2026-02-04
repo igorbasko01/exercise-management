@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 
@@ -28,7 +29,7 @@ class ExerciseSetPresentation {
   double get totalWeight => equipmentWeight + platesWeight;
 
   ExerciseSetPresentation copyWith({
-    String? setId,
+    Value<String?>? setId,
     String? exerciseTemplateId,
     DateTime? dateTime,
     double? equipmentWeight,
@@ -36,10 +37,10 @@ class ExerciseSetPresentation {
     int? repetitions,
     String? displayName,
     RepetitionsRange? repetitionsRange,
-    DateTime? completedAt,
+    Value<DateTime?>? completedAt,
   }) {
     return ExerciseSetPresentation(
-      setId: setId ?? this.setId,
+      setId: setId != null ? setId.value : this.setId,
       exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
       dateTime: dateTime ?? this.dateTime,
       equipmentWeight: equipmentWeight ?? this.equipmentWeight,
@@ -47,30 +48,7 @@ class ExerciseSetPresentation {
       repetitions: repetitions ?? this.repetitions,
       displayName: displayName ?? this.displayName,
       repetitionsRange: repetitionsRange ?? this.repetitionsRange,
-      completedAt: completedAt ?? this.completedAt,
-    );
-  }
-
-  ExerciseSetPresentation copyWithoutId({
-    String? exerciseTemplateId,
-    DateTime? dateTime,
-    double? equipmentWeight,
-    double? platesWeight,
-    int? repetitions,
-    String? displayName,
-    RepetitionsRange? repetitionsRange,
-    DateTime? completedAt,
-  }) {
-    return ExerciseSetPresentation(
-      setId: null,
-      exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
-      dateTime: dateTime ?? this.dateTime,
-      equipmentWeight: equipmentWeight ?? this.equipmentWeight,
-      platesWeight: platesWeight ?? this.platesWeight,
-      repetitions: repetitions ?? this.repetitions,
-      displayName: displayName ?? this.displayName,
-      repetitionsRange: repetitionsRange ?? this.repetitionsRange,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: completedAt != null ? completedAt.value : this.completedAt,
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
@@ -181,7 +182,7 @@ void main() {
     final exerciseSet = (result as Ok<ExerciseSet>).value;
 
     final updatedExerciseSet = exerciseSet.copyWith(
-      id: '2',
+      id: const Value('2'),
       equipmentWeight: 10,
       platesWeight: 35,
       repetitions: 5,
@@ -356,7 +357,7 @@ void main() {
 
       final completedTime = DateTime.now();
       final updatedExerciseSet = exerciseSet.copyWith(
-        completedAt: completedTime,
+        completedAt: Value(completedTime),
       );
 
       final updateResult = await inMemoryExerciseSetRepository

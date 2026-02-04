@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_creation.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
@@ -63,7 +64,8 @@ void main() {
 
     await repository.addExercise(exerciseSet);
 
-    final duplicateExerciseSet = exerciseSet.copyWith();
+    final duplicateExerciseSet =
+        exerciseSet.copyWith(id: Value(exerciseSet.id));
     final addResult = await repository.addExercise(duplicateExerciseSet);
     expect(addResult, isA<Error>());
     expect((addResult as Error<ExerciseSet>).error,
@@ -335,7 +337,7 @@ void main() {
       final addedExerciseSet = (addResult as Ok<ExerciseSet>).value;
       final completedTime = DateTime.now();
       final updatedExerciseSet =
-          addedExerciseSet.copyWith(completedAt: completedTime);
+          addedExerciseSet.copyWith(completedAt: Value(completedTime));
 
       final updateResult = await repository.updateExercise(updatedExerciseSet);
       expect(updateResult, isA<Ok>());

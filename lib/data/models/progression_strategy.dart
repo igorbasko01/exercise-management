@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
@@ -75,8 +76,8 @@ sealed class ProgressionStrategy {
   List<ExerciseSet> _copyAllSetsWithoutProgression(
       List<ExerciseSetPresentation> sets) {
     return sets
-        .map((set) =>
-            ExerciseSetPresentationMapper.toExerciseSet(set.copyWithoutId()))
+        .map((set) => ExerciseSetPresentationMapper.toExerciseSet(
+            set.copyWith(setId: const Value(null))))
         .toList();
   }
 
@@ -93,10 +94,10 @@ sealed class ProgressionStrategy {
   List<ExerciseSet> _createNewSetsWithLoad(List<ExerciseSetPresentation> sets,
       int newRepetitions, double newWeight) {
     return sets
-        .map((set) => ExerciseSetPresentationMapper.toExerciseSet(
-            set.copyWithoutId(
-                repetitions: newRepetitions,
-                platesWeight: newWeight - set.equipmentWeight)))
+        .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set.copyWith(
+            setId: const Value(null),
+            repetitions: newRepetitions,
+            platesWeight: newWeight - set.equipmentWeight)))
         .toList();
   }
 }

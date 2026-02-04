@@ -1,3 +1,5 @@
+import 'package:exercise_management/core/value.dart';
+
 /// ExerciseSet is an exercise set that was performed.
 class ExerciseSet {
   final String? id;
@@ -21,41 +23,22 @@ class ExerciseSet {
   double get totalWeight => equipmentWeight + platesWeight;
 
   ExerciseSet copyWith({
-    String? id,
+    Value<String?>? id,
     String? exerciseTemplateId,
     DateTime? dateTime,
     double? equipmentWeight,
     double? platesWeight,
     int? repetitions,
-    DateTime? completedAt,
+    Value<DateTime?>? completedAt,
   }) {
     return ExerciseSet(
-      id: id ?? this.id,
+      id: id != null ? id.value : this.id,
       exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
       dateTime: dateTime ?? this.dateTime,
       equipmentWeight: equipmentWeight ?? this.equipmentWeight,
       platesWeight: platesWeight ?? this.platesWeight,
       repetitions: repetitions ?? this.repetitions,
-      completedAt: completedAt ?? this.completedAt,
-    );
-  }
-
-  ExerciseSet copyWithoutId({
-    String? exerciseTemplateId,
-    DateTime? dateTime,
-    double? equipmentWeight,
-    double? platesWeight,
-    int? repetitions,
-    DateTime? completedAt,
-  }) {
-    return ExerciseSet(
-      id: null,
-      exerciseTemplateId: exerciseTemplateId ?? this.exerciseTemplateId,
-      dateTime: dateTime ?? this.dateTime,
-      equipmentWeight: equipmentWeight ?? this.equipmentWeight,
-      platesWeight: platesWeight ?? this.platesWeight,
-      repetitions: repetitions ?? this.repetitions,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: completedAt != null ? completedAt.value : this.completedAt,
     );
   }
 
