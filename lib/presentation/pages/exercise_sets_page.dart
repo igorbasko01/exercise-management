@@ -305,7 +305,10 @@ class ExerciseSetsPage extends StatelessWidget {
   void _duplicateExerciseSet(
       ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
     final duplicatedSet = ExerciseSetPresentationMapper.toExerciseSet(exercise)
-        .copyWith(id: const Value(null), dateTime: DateTime.now());
+        .copyWith(
+            id: const Value(null),
+            dateTime: DateTime.now(),
+            completedAt: const Value(null));
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 

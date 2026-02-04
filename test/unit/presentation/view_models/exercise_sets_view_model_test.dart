@@ -140,8 +140,9 @@ void main() {
     test('returns cloned set if provided only single set', () async {
       await viewModel.progressSets.execute([chestSet1], fixedDate);
 
-      final chestSet1New =
-          chestSet1.copyWith(setId: Value(null)).toExerciseSet();
+      final chestSet1New = chestSet1
+          .copyWith(setId: Value(null), completedAt: const Value(null))
+          .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises([chestSet1New]));
     });
@@ -149,10 +150,12 @@ void main() {
     test('returns cloned sets if provided 2 sets of same exercise', () async {
       await viewModel.progressSets.execute([chestSet1, chestSet2], fixedDate);
 
-      final chestSet2New =
-          chestSet2.copyWith(setId: Value(null)).toExerciseSet();
-      final chestSet1New =
-          chestSet1.copyWith(setId: Value(null)).toExerciseSet();
+      final chestSet2New = chestSet2
+          .copyWith(setId: Value(null), completedAt: const Value(null))
+          .toExerciseSet();
+      final chestSet1New = chestSet1
+          .copyWith(setId: Value(null), completedAt: const Value(null))
+          .toExerciseSet();
 
       verify(() => mockExerciseSetRepository
           .addExercises([chestSet1New, chestSet2New])).called(1);
@@ -186,13 +189,22 @@ void main() {
           .execute([chestSet1, chestSet2, chestSet3DifferentReps], fixedDate);
 
       final chestSet3New = chestSet3DifferentReps
-          .copyWith(setId: Value(null), repetitions: 6)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 6)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 6)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository
@@ -208,16 +220,28 @@ void main() {
           .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises(
@@ -233,16 +257,28 @@ void main() {
           .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
-          .copyWith(setId: Value(null), repetitions: 7)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 7,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 7)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 7,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 7)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 7,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 7)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 7,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises(
@@ -264,16 +300,32 @@ void main() {
           [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
-          .copyWith(setId: Value(null), repetitions: 6, platesWeight: 27.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              platesWeight: 27.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 6, platesWeight: 27.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              platesWeight: 27.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 6, platesWeight: 27.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              platesWeight: 27.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 6, platesWeight: 27.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 6,
+              platesWeight: 27.5,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises(
@@ -292,16 +344,32 @@ void main() {
           [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises(
@@ -320,16 +388,32 @@ void main() {
           [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
 
       final chestSet4New = chestSet4
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 10, platesWeight: 22.5)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 10,
+              platesWeight: 22.5,
+              completedAt: const Value(null))
           .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises(
@@ -344,21 +428,42 @@ void main() {
           fixedDate);
 
       final chestSet3New = chestSet3
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
-          .copyWith(setId: Value(null), repetitions: 8)
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
           .toExerciseSet();
 
-      final backSet3New =
-          backSet3.copyWith(setId: Value(null), repetitions: 8).toExerciseSet();
-      final backSet2New =
-          backSet2.copyWith(setId: Value(null), repetitions: 8).toExerciseSet();
-      final backSet1New =
-          backSet1.copyWith(setId: Value(null), repetitions: 8).toExerciseSet();
+      final backSet3New = backSet3
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
+          .toExerciseSet();
+      final backSet2New = backSet2
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
+          .toExerciseSet();
+      final backSet1New = backSet1
+          .copyWith(
+              setId: Value(null),
+              repetitions: 8,
+              completedAt: const Value(null))
+          .toExerciseSet();
 
       verify(() => mockExerciseSetRepository.addExercises([
             chestSet1New,

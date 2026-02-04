@@ -76,8 +76,8 @@ sealed class ProgressionStrategy {
   List<ExerciseSet> _copyAllSetsWithoutProgression(
       List<ExerciseSetPresentation> sets) {
     return sets
-        .map((set) => ExerciseSetPresentationMapper.toExerciseSet(
-            set.copyWith(setId: const Value(null))))
+        .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set.copyWith(
+            setId: const Value(null), completedAt: const Value(null))))
         .toList();
   }
 
@@ -96,6 +96,7 @@ sealed class ProgressionStrategy {
     return sets
         .map((set) => ExerciseSetPresentationMapper.toExerciseSet(set.copyWith(
             setId: const Value(null),
+            completedAt: const Value(null),
             repetitions: newRepetitions,
             platesWeight: newWeight - set.equipmentWeight)))
         .toList();

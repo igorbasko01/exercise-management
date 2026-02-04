@@ -1,5 +1,6 @@
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -13,7 +14,8 @@ import 'package:flutter/material.dart';
 class ExerciseSetsViewModel extends ChangeNotifier {
   ExerciseSetsViewModel({
     required ExerciseSetRepository exerciseSetRepository,
-    required ExerciseSetPresentationRepository exerciseSetPresentationRepository,
+    required ExerciseSetPresentationRepository
+        exerciseSetPresentationRepository,
     required ExerciseTemplateRepository exerciseTemplateRepository,
     required ExerciseRankingManager rankingManager,
   })  : _exerciseSetRepository = exerciseSetRepository,
@@ -36,10 +38,12 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       ..addListener(_onCommandExecuted);
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
-    progressSets = Command2<void, List<ExerciseSetPresentation>, DateTime>(_progressSets)
-      ..addListener(_onCommandExecuted);
-    fetchMoreExerciseSets = Command0<List<ExerciseSetPresentation>>(_fetchMoreExerciseSets)
-      ..addListener(_onCommandExecuted);
+    progressSets =
+        Command2<void, List<ExerciseSetPresentation>, DateTime>(_progressSets)
+          ..addListener(_onCommandExecuted);
+    fetchMoreExerciseSets =
+        Command0<List<ExerciseSetPresentation>>(_fetchMoreExerciseSets)
+          ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -54,7 +58,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
-  late final Command2<void, List<ExerciseSetPresentation>, DateTime> progressSets;
+  late final Command2<void, List<ExerciseSetPresentation>, DateTime>
+      progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
@@ -89,7 +94,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets({int lastNDays = 7}) async {
+  Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets(
+      {int lastNDays = 7}) async {
     final result = await _exerciseSetPresentationRepository.getExerciseSets(
         lastNDays: lastNDays, exerciseTemplateId: _selectedExerciseTemplateId);
     switch (result) {
@@ -110,9 +116,11 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchMoreExerciseSets() async {
     final totalDaysToFetch = _exerciseSets
-        .map((set) => DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day))
-        .toSet()
-        .length + 7;  // Fetch 7 more days
+            .map((set) => DateTime(
+                set.dateTime.year, set.dateTime.month, set.dateTime.day))
+            .toSet()
+            .length +
+        7; // Fetch 7 more days
     return await _fetchExerciseSets(lastNDays: totalDaysToFetch);
   }
 
@@ -194,7 +202,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     List<ExerciseSet> newSets = [];
     for (var entry in groupedSets.entries) {
       final progressedSets = _progressSetsGroup(entry.value)
-          .map((set) => set.copyWith(dateTime: newDate))
+          .map((set) =>
+              set.copyWith(dateTime: newDate, completedAt: const Value(null)))
           .toList();
       newSets.addAll(progressedSets);
     }
