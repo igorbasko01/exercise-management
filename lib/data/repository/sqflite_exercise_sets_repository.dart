@@ -1,4 +1,6 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
+
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
@@ -15,7 +17,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
     try {
       final id = await database.insert(tableName, exerciseSet.toMap(),
           conflictAlgorithm: ConflictAlgorithm.rollback);
-      return Result.ok(exerciseSet.copyWith(id: id.toString()));
+      return Result.ok(exerciseSet.copyWith(id: Value(id.toString())));
     } catch (e) {
       return Result.error(
           ExerciseAlreadyExistsException("Exercise already exists"));
@@ -36,8 +38,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
-    if (count == 0)
-    {
+    if (count == 0) {
       return Result.error(ExerciseNotFoundException('Exercise $id not found'));
     }
     return Result.ok(exerciseSet);
@@ -58,7 +59,8 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
 
   @override
   Future<Result<List<ExerciseSet>>> getExercises() async {
-    final List<Map<String, dynamic>> maps = await database.query(tableName, orderBy: 'id');
+    final List<Map<String, dynamic>> maps =
+        await database.query(tableName, orderBy: 'id');
     return Result.ok(maps.map((e) => ExerciseSet.fromMap(e)).toList());
   }
 
@@ -93,8 +95,8 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
       await batch.commit(noResult: true);
       return Result.ok(null);
     } catch (e) {
-      return Result.error(
-          ExerciseAlreadyExistsException("One or more exercises already exist"));
+      return Result.error(ExerciseAlreadyExistsException(
+          "One or more exercises already exist"));
     }
   }
 

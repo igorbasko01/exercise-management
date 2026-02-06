@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -16,7 +17,7 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
     try {
       final id = await database.insert(tableName, exercise.toMap(),
           conflictAlgorithm: ConflictAlgorithm.rollback);
-      return Result.ok(exercise.copyWith(id: id.toString()));
+      return Result.ok(exercise.copyWith(id: Value(id.toString())));
     } catch (e) {
       return Result.error(
           ExerciseAlreadyExistsException("Exercise already exists"));
