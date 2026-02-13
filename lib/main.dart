@@ -105,18 +105,18 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _pages = <Widget>[
-    const HomePage(),
-    const ExerciseSetsPage(),
-    const ExerciseTemplatesPage(),
-    const SettingsPage(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
+  List<Widget> get _pages => <Widget>[
+        HomePage(onNavigateToSets: () => _onItemTapped(1)),
+        const ExerciseSetsPage(),
+        const ExerciseTemplatesPage(),
+        const SettingsPage(),
+      ];
 
   @override
   Widget build(BuildContext context) {

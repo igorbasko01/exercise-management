@@ -4,68 +4,91 @@ import 'package:exercise_management/presentation/widgets/weekly_progress_statist
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
+  final VoidCallback? onNavigateToSets;
 
-  const HomePage({super.key});
+  const HomePage({super.key, this.onNavigateToSets});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      primary: false,
-      padding: const EdgeInsets.all(20),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      crossAxisCount: 2,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildCallToAction(context),
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Weekly Progress'),
+          const SizedBox(height: 8),
+          _buildStatCard(
+            child: const WeeklyProgressStatisticWidget(),
           ),
-          child: const WeeklyProgressStatisticWidget(),
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Average Weekly Stats'),
+          const SizedBox(height: 8),
+          _buildStatCard(
+            child: const SizedBox(
+              height: 200,
+              child: AverageWeeklyStatisticsWidget(),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Exercise Volume'),
+          const SizedBox(height: 8),
+          _buildStatCard(
+            child: const SizedBox(
+              height: 300,
+              child: ExerciseVolumeStatisticWidget(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCallToAction(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      child: ElevatedButton.icon(
+        onPressed: onNavigateToSets,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
+        icon: const Icon(Icons.fitness_center, size: 28),
+        label: const Text(
+          'EXERCISE NOW',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
           ),
-          child: const AverageWeeklyStatisticsWidget(),
         ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          child: const ExerciseVolumeStatisticWidget(),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
-          ),
-          child: const Center(child: Text('Even More Stats')),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
-          ),
-          child: const Center(child: Text('Stats')),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
-          ),
-          child: const Center(child: Text('Last Stats')),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-              border: Border.all()
-          ),
-          child: const Center(child: Text('Additional Stats')),
-        )
-      ],
+    );
+  }
+
+  Widget _buildStatCard({required Widget child}) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: child,
+      ),
     );
   }
 }
