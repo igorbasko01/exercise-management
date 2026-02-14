@@ -8,6 +8,8 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+// TODO: When moving out of the SettingsPage, getting an error:
+// Looking up a deactivated widget's ancestor is unsafe.
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -68,8 +70,8 @@ class _SettingsPageState extends State<SettingsPage> {
     } else if (command.error) {
       final result = command.result;
       if (result is Error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error importing data: ${result.error}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error importing data: ${result.error}')));
       }
     } else if (command.result is Ok) {
       ScaffoldMessenger.of(context).showSnackBar(
