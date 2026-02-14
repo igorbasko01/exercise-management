@@ -8,8 +8,6 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-// TODO: When moving out of the SettingsPage, getting an error:
-// Looking up a deactivated widget's ancestor is unsafe.
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -19,31 +17,23 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _isExportDialogShowing = false;
+  late final SettingsViewModel _settingsViewModel;
 
   @override
   void initState() {
     super.initState();
+    _settingsViewModel = context.read<SettingsViewModel>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<SettingsViewModel>()
-          .exportDataCommand
-          .addListener(_onExportCommandChanged);
-      context
-          .read<SettingsViewModel>()
-          .importDataCommand
-          .addListener(_onImportCommandChanged);
+      _settingsViewModel.exportDataCommand.addListener(_onExportCommandChanged);
+      _settingsViewModel.importDataCommand.addListener(_onImportCommandChanged);
     });
   }
 
   @override
   void dispose() {
-    context
-        .read<SettingsViewModel>()
-        .exportDataCommand
+    _settingsViewModel.exportDataCommand
         .removeListener(_onExportCommandChanged);
-    context
-        .read<SettingsViewModel>()
-        .importDataCommand
+    _settingsViewModel.importDataCommand
         .removeListener(_onImportCommandChanged);
     super.dispose();
   }
