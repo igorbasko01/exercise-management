@@ -20,6 +20,8 @@ class AppDatabaseFactory {
           await step(db);
         }
       }
+    }, onConfigure: (db) async {
+      await db.execute('PRAGMA foreign_keys = ON');
     });
   }
 }

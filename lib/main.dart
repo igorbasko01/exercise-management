@@ -1,9 +1,11 @@
 import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_statistics_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
+import 'package:exercise_management/data/repository/sqflite_exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_sets_repository.dart';
 import 'package:exercise_management/data/repository/sqflite_exercise_statistics_repository.dart';
@@ -13,6 +15,7 @@ import 'package:exercise_management/presentation/pages/exercise_templates_page.d
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
+import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
@@ -51,6 +54,9 @@ void main() async {
       Provider<ExerciseStatisticsRepository>(
         create: (context) => SqfliteExerciseStatisticsRepository(database),
       ),
+      Provider<ExerciseProgramRepository>(
+        create: (context) => SqfliteExerciseProgramRepository(database),
+      ),
       ChangeNotifierProvider(
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
@@ -71,6 +77,10 @@ void main() async {
                 templatesRepository: context.read(),
                 setsRepository: context.read(),
               )),
+      ChangeNotifierProvider(
+          create: (context) => ExerciseProgramsViewModel(
+              repository: context.read())
+            ..fetchPrograms.execute()),
     ],
     child: const MyApp(),
   ));

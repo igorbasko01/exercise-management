@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/presentation/pages/exercise_programs_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
@@ -161,6 +162,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _importData,
                 icon: const Icon(Icons.upload),
                 label: const Text('Import Data')),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const ExerciseProgramsPage()));
+                },
+                icon: const Icon(Icons.fitness_center),
+                label: const Text('Training Programs')),
           ]));
     });
   }

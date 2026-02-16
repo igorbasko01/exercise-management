@@ -22,6 +22,22 @@ void main() {
     db = await AppDatabaseFactory.createDatabase(
         inMemoryDatabasePath, createStatements, ExerciseDatabaseMigrations());
     repository = SqfliteExerciseSetsRepository(db);
+
+    // Insert dummy exercise templates to satisfy foreign key constraints
+    await db.insert('exercise_templates', {
+      'id': 1,
+      'name': 'Bench Press',
+      'muscle_group': 1,
+      'repetitions_range': 1,
+      'description': 'Chest exercise'
+    });
+    await db.insert('exercise_templates', {
+      'id': 2,
+      'name': 'Squat',
+      'muscle_group': 2,
+      'repetitions_range': 1,
+      'description': 'Leg exercise'
+    });
   });
 
   tearDown(() async {

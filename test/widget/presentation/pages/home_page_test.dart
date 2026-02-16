@@ -2,6 +2,7 @@ import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
+import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,10 +12,14 @@ import 'package:provider/provider.dart';
 class MockExerciseStatisticsViewModel extends Mock
     implements ExerciseStatisticsViewModel {}
 
+class MockExerciseProgramsViewModel extends Mock
+    implements ExerciseProgramsViewModel {}
+
 class MockCommand0<T> extends Mock implements Command0<T> {}
 
 void main() {
   late MockExerciseStatisticsViewModel mockStatsViewModel;
+  late MockExerciseProgramsViewModel mockProgramsViewModel;
 
   late MockCommand0<List<bool>> mockFetchCurrentWeek;
   late MockCommand0<double> mockFetchAvg30;
@@ -25,6 +30,7 @@ void main() {
 
   setUp(() {
     mockStatsViewModel = MockExerciseStatisticsViewModel();
+    mockProgramsViewModel = MockExerciseProgramsViewModel();
 
     mockFetchCurrentWeek = MockCommand0<List<bool>>();
     mockFetchAvg30 = MockCommand0<double>();
@@ -37,6 +43,11 @@ void main() {
 
     when(() => mockStatsViewModel.addListener(any())).thenReturn(null);
     when(() => mockStatsViewModel.removeListener(any())).thenReturn(null);
+    when(() => mockProgramsViewModel.addListener(any())).thenReturn(null);
+    when(() => mockProgramsViewModel.removeListener(any())).thenReturn(null);
+
+    // Mock activeProgram to return null (no active program)
+    when(() => mockProgramsViewModel.activeProgram).thenReturn(null);
 
     when(() => mockStatsViewModel.fetchCurrentWeekExerciseDaysStatistic)
         .thenReturn(mockFetchCurrentWeek);
@@ -89,6 +100,8 @@ void main() {
       providers: [
         ChangeNotifierProvider<ExerciseStatisticsViewModel>.value(
             value: mockStatsViewModel),
+        ChangeNotifierProvider<ExerciseProgramsViewModel>.value(
+            value: mockProgramsViewModel),
       ],
       child: MaterialApp(
         home: Scaffold(
