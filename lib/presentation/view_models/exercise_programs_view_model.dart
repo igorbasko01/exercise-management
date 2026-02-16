@@ -50,7 +50,8 @@ class ExerciseProgramsViewModel extends ChangeNotifier {
     return result;
   }
 
-  Future<Result<ExerciseProgram>> _updateProgram(ExerciseProgram program) async {
+  Future<Result<ExerciseProgram>> _updateProgram(
+      ExerciseProgram program) async {
     final result = await _repository.updateProgram(program);
     if (result is Ok<ExerciseProgram>) {
       await fetchPrograms.execute();
