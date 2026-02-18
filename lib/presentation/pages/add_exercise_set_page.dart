@@ -4,6 +4,7 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class AddExerciseSetPage extends StatefulWidget {
@@ -21,6 +22,7 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
   late final TextEditingController _equipmentWeightController;
   late final TextEditingController _platesWeightController;
   late final TextEditingController _repetitionsController;
+  late DateTime _selectedDateTime;
 
   late ExerciseSetsViewModel _viewModel;
 
@@ -32,9 +34,11 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
       _selectedExerciseTemplate = _viewModel.exerciseTemplates.isNotEmpty
           ? _viewModel.exerciseTemplates.first
           : null;
+      _selectedDateTime = DateTime.now();
     } else {
       _selectedExerciseTemplate = _viewModel.exerciseTemplates
           .firstWhere((e) => e.id == widget.exerciseSet!.exerciseTemplateId);
+      _selectedDateTime = widget.exerciseSet!.dateTime;
     }
     _equipmentWeightController = TextEditingController(
         text: widget.exerciseSet?.equipmentWeight.toString() ?? '0');
@@ -77,7 +81,7 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
     if (widget.exerciseSet == null) {
       final exerciseSet = ExerciseSet(
         exerciseTemplateId: _selectedExerciseTemplate!.id!,
-        dateTime: DateTime.now(),
+        dateTime: _selectedDateTime,
         equipmentWeight: double.parse(_equipmentWeightController.text),
         platesWeight: double.parse(_platesWeightController.text),
         repetitions: int.parse(_repetitionsController.text),
@@ -87,7 +91,7 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
       final exerciseSet = ExerciseSet(
         id: widget.exerciseSet!.setId,
         exerciseTemplateId: _selectedExerciseTemplate!.id!,
-        dateTime: widget.exerciseSet!.dateTime,
+        dateTime: _selectedDateTime,
         equipmentWeight: double.parse(_equipmentWeightController.text),
         platesWeight: double.parse(_platesWeightController.text),
         repetitions: int.parse(_repetitionsController.text),
@@ -97,15 +101,50 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
     Navigator.pop(context);
   }
 
-  // Uses Dart's built-in ISO 8601 formatting
-  String _formatCompletedAt(DateTime dateTime) {
-    return dateTime.toIso8601String();
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDateTime,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (date == null) return;
+
+    if (!mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+    );
+    if (time == null) return;
+
+    if (!mounted) return;
+
+    setState(() {
+      _selectedDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
   }
 
   Form _buildForm() {
     return Form(
         key: _formKey,
         child: Column(children: [
+          ListTile(
+            title: const Text('Date & Time'),
+            subtitle: Text(_formatDateTime(_selectedDateTime)),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: _pickDateTime,
+          ),
           DropdownButtonFormField(
               initialValue: _selectedExerciseTemplate,
               decoration: const InputDecoration(labelText: 'Exercise Template'),
@@ -177,8 +216,7 @@ class _AddExerciseSetPageState extends State<AddExerciseSetPage> {
               }),
           if (widget.exerciseSet?.completedAt != null)
             TextFormField(
-              initialValue:
-                  _formatCompletedAt(widget.exerciseSet!.completedAt!),
+              initialValue: _formatDateTime(widget.exerciseSet!.completedAt!),
               decoration: const InputDecoration(labelText: 'Completed At'),
               readOnly: true,
               enabled: false,
