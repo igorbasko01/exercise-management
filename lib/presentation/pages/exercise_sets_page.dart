@@ -158,8 +158,19 @@ class ExerciseSetsPage extends StatelessWidget {
           .add(exercise);
     }
 
+    final sortedEntries = setsByTemplate.entries.toList()
+      ..sort((a, b) {
+        final aLatest = _getLatestCompletionTime(a.value);
+        final bLatest = _getLatestCompletionTime(b.value);
+
+        if (aLatest == null && bLatest == null) return 0;
+        if (aLatest == null) return 1;
+        if (bLatest == null) return -1;
+        return aLatest.compareTo(bLatest);
+      });
+
     final widgets = <Widget>[];
-    for (var entry in setsByTemplate.entries) {
+    for (var entry in sortedEntries) {
       final templateName = entry.value.first.displayName;
       final date = _formatDate(entry.value.first.dateTime);
       final rank = viewModel.getRank(date, entry.key);
@@ -168,6 +179,16 @@ class ExerciseSetsPage extends StatelessWidget {
           templateName, entry.value, context, viewModel, rank));
     }
     return widgets;
+  }
+
+  DateTime? _getLatestCompletionTime(List<ExerciseSetPresentation> sets) {
+    return sets
+        .map((e) => e.completedAt)
+        .where((e) => e != null)
+        .fold<DateTime?>(null, (prev, curr) {
+      if (prev == null) return curr;
+      return curr!.isAfter(prev) ? curr : prev;
+    });
   }
 
   String _buildExerciseGroupSubtitle(List<ExerciseSetPresentation> exercises) {
