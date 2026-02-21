@@ -280,6 +280,147 @@ void main() {
     });
   });
 
+  group('ExerciseSetsPage Groups Sorting', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+    late ExerciseRankingManager rankingManager;
+
+    final testDate = DateTime(2023, 1, 1);
+
+    setUpAll(() {
+      registerFallbackValue(<ExerciseSet>[]);
+      registerFallbackValue(ExerciseSet(
+        id: 'fallback',
+        exerciseTemplateId: 'fallback',
+        repetitions: 0,
+        platesWeight: 0,
+        equipmentWeight: 0,
+        dateTime: DateTime(2023, 1, 1),
+      ));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      rankingManager = ExerciseRankingManager();
+
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: rankingManager);
+
+      when(() => mockExerciseSetRepository.addExercises(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockExerciseTemplateRepository.getExercises())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+    });
+
+    testWidgets(
+        'groups are sorted by latest completedAt descending, nulls last',
+        (WidgetTester tester) async {
+      final completedEarlier = DateTime(2023, 1, 1, 9, 0);
+      final completedLater = DateTime(2023, 1, 1, 10, 0);
+
+      // Template A was completed earlier; template B was completed later.
+      // Expected order: template B first, then template A, then template C (null).
+      final sets = [
+        ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'templateA',
+          repetitions: 10,
+          platesWeight: 10,
+          equipmentWeight: 10,
+          dateTime: testDate,
+          displayName: 'Exercise A',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: completedEarlier,
+        ),
+        ExerciseSetPresentation(
+          setId: '2',
+          exerciseTemplateId: 'templateB',
+          repetitions: 10,
+          platesWeight: 10,
+          equipmentWeight: 10,
+          dateTime: testDate,
+          displayName: 'Exercise B',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: completedLater,
+        ),
+        ExerciseSetPresentation(
+          setId: '3',
+          exerciseTemplateId: 'templateC',
+          repetitions: 10,
+          platesWeight: 10,
+          equipmentWeight: 10,
+          dateTime: testDate,
+          displayName: 'Exercise C',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: null,
+        ),
+      ];
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            Provider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      // Expand the date tile to reveal the template groups
+      final dateTile = find.text('2023-01-01');
+      await tester.tap(dateTile);
+      await tester.pumpAndSettle();
+
+      // Verify all three template groups are visible
+      expect(find.text('Exercise A'), findsOneWidget);
+      expect(find.text('Exercise B'), findsOneWidget);
+      expect(find.text('Exercise C'), findsOneWidget);
+
+      // Verify order: Exercise B (latest completedAt) before Exercise A, before Exercise C (null)
+      final exerciseBOffset =
+          tester.getTopLeft(find.text('Exercise B')).dy;
+      final exerciseAOffset =
+          tester.getTopLeft(find.text('Exercise A')).dy;
+      final exerciseCOffset =
+          tester.getTopLeft(find.text('Exercise C')).dy;
+
+      expect(exerciseBOffset, lessThan(exerciseAOffset));
+      expect(exerciseAOffset, lessThan(exerciseCOffset));
+    });
+  });
+
   group('ExerciseSetsPage Toggle Completion', () {
     late MockExerciseSetRepository mockExerciseSetRepository;
     late MockExerciseTemplateRepository mockExerciseTemplateRepository;
