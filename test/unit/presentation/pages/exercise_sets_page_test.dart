@@ -261,11 +261,14 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
-      // Expand only the lower tile as the first tile is already expanded
-      final date1TileAgain = find.text('2023-01-01');
-      expect(date1TileAgain, findsOneWidget);
-      await tester.tap(date1TileAgain);
+      // Expand the new date tile
+      final date2Tile = find.text('2023-01-02');
+      expect(date2Tile, findsOneWidget);
+      await tester.tap(date2Tile);
       await tester.pumpAndSettle();
+
+      // The first tile (date1) should still be expanded due to PageStorageKey
+      // So both should be expanded now.
 
       // a way to capture golden snapshot
       // to create the golden file, run the test with --update-goldens
@@ -409,12 +412,9 @@ void main() {
       expect(find.text('Exercise C'), findsOneWidget);
 
       // Verify order: Exercise B (latest completedAt) before Exercise A, before Exercise C (null)
-      final exerciseBOffset =
-          tester.getTopLeft(find.text('Exercise B')).dy;
-      final exerciseAOffset =
-          tester.getTopLeft(find.text('Exercise A')).dy;
-      final exerciseCOffset =
-          tester.getTopLeft(find.text('Exercise C')).dy;
+      final exerciseBOffset = tester.getTopLeft(find.text('Exercise B')).dy;
+      final exerciseAOffset = tester.getTopLeft(find.text('Exercise A')).dy;
+      final exerciseCOffset = tester.getTopLeft(find.text('Exercise C')).dy;
 
       expect(exerciseBOffset, lessThan(exerciseAOffset));
       expect(exerciseAOffset, lessThan(exerciseCOffset));

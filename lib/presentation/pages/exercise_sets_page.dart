@@ -131,6 +131,7 @@ class ExerciseSetsPage extends StatelessWidget {
       ExerciseSetsViewModel viewModel) {
     final allCompleted = exercises.every((set) => set.completedAt != null);
     return ExpansionTile(
+      key: PageStorageKey(date),
       controlAffinity: ListTileControlAffinity.leading,
       collapsedBackgroundColor:
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
@@ -175,7 +176,12 @@ class ExerciseSetsPage extends StatelessWidget {
       final rank = viewModel.getRank(date, entry.key);
 
       widgets.add(_buildExerciseTemplateExpansionTile(
-          templateName, entry.value, context, viewModel, rank));
+          PageStorageKey('${date}_${entry.key}'),
+          templateName,
+          entry.value,
+          context,
+          viewModel,
+          rank));
     }
     return widgets;
   }
@@ -187,6 +193,7 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   Widget _buildExerciseTemplateExpansionTile(
+      Key key,
       String templateName,
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
@@ -194,6 +201,7 @@ class ExerciseSetsPage extends StatelessWidget {
       int rank) {
     final allCompleted = exercises.every((set) => set.completedAt != null);
     return ExpansionTile(
+      key: key,
       controlAffinity: ListTileControlAffinity.leading,
       collapsedBackgroundColor:
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
@@ -341,11 +349,8 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   DateTime? _latestCompletedAt(List<ExerciseSetPresentation> sets) {
-    return sets
-        .map((e) => e.completedAt)
-        .whereType<DateTime>()
-        .fold<DateTime?>(
-            null, (max, dt) => max == null || dt.isAfter(max) ? dt : max);
+    return sets.map((e) => e.completedAt).whereType<DateTime>().fold<DateTime?>(
+        null, (max, dt) => max == null || dt.isAfter(max) ? dt : max);
   }
 
   String _formatDate(DateTime dateTime) {
