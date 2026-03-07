@@ -131,6 +131,7 @@ class ExerciseSetsPage extends StatelessWidget {
       ExerciseSetsViewModel viewModel) {
     final allCompleted = exercises.every((set) => set.completedAt != null);
     return ExpansionTile(
+      key: PageStorageKey(date),
       controlAffinity: ListTileControlAffinity.leading,
       collapsedBackgroundColor:
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
@@ -158,14 +159,29 @@ class ExerciseSetsPage extends StatelessWidget {
           .add(exercise);
     }
 
+    final sortedEntries = setsByTemplate.entries.toList()
+      ..sort((a, b) {
+        final aLatest = _latestCompletedAt(a.value);
+        final bLatest = _latestCompletedAt(b.value);
+        if (aLatest == null && bLatest == null) return 0;
+        if (aLatest == null) return 1;
+        if (bLatest == null) return -1;
+        return bLatest.compareTo(aLatest);
+      });
+
     final widgets = <Widget>[];
-    for (var entry in setsByTemplate.entries) {
+    for (var entry in sortedEntries) {
       final templateName = entry.value.first.displayName;
       final date = _formatDate(entry.value.first.dateTime);
       final rank = viewModel.getRank(date, entry.key);
 
       widgets.add(_buildExerciseTemplateExpansionTile(
-          templateName, entry.value, context, viewModel, rank));
+          PageStorageKey('${date}_${entry.key}'),
+          templateName,
+          entry.value,
+          context,
+          viewModel,
+          rank));
     }
     return widgets;
   }
@@ -177,6 +193,7 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   Widget _buildExerciseTemplateExpansionTile(
+      Key key,
       String templateName,
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
@@ -184,6 +201,7 @@ class ExerciseSetsPage extends StatelessWidget {
       int rank) {
     final allCompleted = exercises.every((set) => set.completedAt != null);
     return ExpansionTile(
+      key: key,
       controlAffinity: ListTileControlAffinity.leading,
       collapsedBackgroundColor:
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
@@ -328,6 +346,11 @@ class ExerciseSetsPage extends StatelessWidget {
   void _progressSets(
       List<ExerciseSetPresentation> sets, ExerciseSetsViewModel viewModel) {
     viewModel.progressSets.execute(sets, DateTime.now());
+  }
+
+  DateTime? _latestCompletedAt(List<ExerciseSetPresentation> sets) {
+    return sets.map((e) => e.completedAt).whereType<DateTime>().fold<DateTime?>(
+        null, (max, dt) => max == null || dt.isAfter(max) ? dt : max);
   }
 
   String _formatDate(DateTime dateTime) {

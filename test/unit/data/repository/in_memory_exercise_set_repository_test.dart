@@ -60,6 +60,7 @@ void main() {
   test('addExercise set with existing id should fail', () async {
     final now = DateTime.now();
     final exerciseSetModel = ExerciseSet(
+      id: 'existing-id',
       exerciseTemplateId: '1',
       dateTime: now,
       equipmentWeight: 0,
