@@ -36,11 +36,23 @@ jobs:
       - name: Run flutter analyze
         run: flutter analyze
 
-      - name: Build APK (Debug)
-        run: flutter build apk --debug
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
+      - name: Build APK (Release)
+        run: flutter build apk --release
+        env:
+          KEYSTORE_FILE: upload-keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/exercise-management-${{ github.event.release.tag_name }}.apk
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-debug.apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          files: build/app/outputs/flutter-apk/exercise-management-${{ github.event.release.tag_name }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
