@@ -37,9 +37,12 @@ class ExerciseProgramsPage extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (program.isActive)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8.0),
-                          child: Icon(Icons.check_circle, color: Colors.green),
+                        TextButton.icon(
+                          onPressed: () {
+                            viewModel.deactivateProgram.execute(program);
+                          },
+                          icon: const Icon(Icons.check_circle, color: Colors.green),
+                          label: const Text('Active', style: TextStyle(color: Colors.green)),
                         )
                       else
                         TextButton(
