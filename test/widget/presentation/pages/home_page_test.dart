@@ -37,6 +37,7 @@ void main() {
   late MockCommand0<double> mockFetchAvgHalfYear;
   late MockCommand0<double> mockFetchAvgYear;
   late MockCommand0<List<ExerciseVolumeStatistics>> mockFetchVolume;
+  late MockCommand0<void> mockFetchProgressionData;
 
   setUp(() {
     mockStatsViewModel = MockExerciseStatisticsViewModel();
@@ -50,6 +51,7 @@ void main() {
     mockFetchAvgHalfYear = MockCommand0<double>();
     mockFetchAvgYear = MockCommand0<double>();
     mockFetchVolume = MockCommand0<List<ExerciseVolumeStatistics>>();
+    mockFetchProgressionData = MockCommand0<void>();
 
     registerFallbackValue(() {});
 
@@ -111,6 +113,11 @@ void main() {
     when(() => mockFetchVolume.result)
         .thenReturn(Result<List<ExerciseVolumeStatistics>>.ok([]));
     when(() => mockFetchVolume.execute()).thenAnswer((_) async {});
+
+    when(() => mockFetchProgressionData.running).thenReturn(false);
+    when(() => mockFetchProgressionData.error).thenReturn(false);
+    when(() => mockFetchProgressionData.execute()).thenAnswer((_) async {});
+    when(() => mockProgressionViewModel.fetchProgressionData).thenReturn(mockFetchProgressionData);
   });
 
   Widget createWidgetUnderTest({VoidCallback? onNavigateToSets}) {

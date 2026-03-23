@@ -2,8 +2,21 @@ import 'package:exercise_management/presentation/view_models/program_progression
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ActiveProgramWidget extends StatelessWidget {
+class ActiveProgramWidget extends StatefulWidget {
   const ActiveProgramWidget({super.key});
+
+  @override
+  State<ActiveProgramWidget> createState() => _ActiveProgramWidgetState();
+}
+
+class _ActiveProgramWidgetState extends State<ActiveProgramWidget> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProgramProgressionViewModel>().fetchProgressionData.execute();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
