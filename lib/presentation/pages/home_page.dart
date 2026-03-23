@@ -1,8 +1,13 @@
+import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/widgets/active_program_widget.dart';
 import 'package:exercise_management/presentation/widgets/average_weekly_statistics_widget.dart';
 import 'package:exercise_management/presentation/widgets/exercise_volume_statistic_widget.dart';
 import 'package:exercise_management/presentation/widgets/weekly_progress_statistic_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
   final VoidCallback? onNavigateToSets;
@@ -51,7 +56,37 @@ class HomePage extends StatelessWidget {
     return SizedBox(
       height: 60,
       child: ElevatedButton.icon(
-        onPressed: onNavigateToSets,
+        onPressed: () async {
+          final progressionViewModel = context.read<ProgramProgressionViewModel>();
+          final setsViewModel = context.read<ExerciseSetsViewModel>();
+          
+          if (progressionViewModel.activeProgram != null && progressionViewModel.nextSession != null) {
+            final historicalSets = await progressionViewModel.getLatestSetsForNextSession();
+            
+            if (historicalSets != null && historicalSets.isNotEmpty) {
+              await setsViewModel.progressSets.execute(historicalSets, DateTime.now());
+            } else {
+              // Creating 4 sets per template with 0 weight, using min reps
+              final newSets = <ExerciseSet>[];
+              for (var template in progressionViewModel.nextSession!.exercises) {
+                for (int i = 0; i < 4; i++) {
+                   newSets.add(ExerciseSet(
+                     exerciseTemplateId: template.id!,
+                     dateTime: DateTime.now(),
+                     equipmentWeight: 0,
+                     platesWeight: 0,
+                     repetitions: template.repetitionsRangeTarget.range.min,
+                   ));
+                }
+              }
+              await setsViewModel.addExerciseSets.execute(newSets);
+            }
+          }
+          
+          if (onNavigateToSets != null) {
+            onNavigateToSets!();
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,

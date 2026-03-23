@@ -3,7 +3,9 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
+import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -15,11 +17,19 @@ class MockExerciseStatisticsViewModel extends Mock
 class MockExerciseProgramsViewModel extends Mock
     implements ExerciseProgramsViewModel {}
 
+class MockProgramProgressionViewModel extends Mock
+    implements ProgramProgressionViewModel {}
+
+class MockExerciseSetsViewModel extends Mock
+    implements ExerciseSetsViewModel {}
+
 class MockCommand0<T> extends Mock implements Command0<T> {}
 
 void main() {
   late MockExerciseStatisticsViewModel mockStatsViewModel;
   late MockExerciseProgramsViewModel mockProgramsViewModel;
+  late MockProgramProgressionViewModel mockProgressionViewModel;
+  late MockExerciseSetsViewModel mockSetsViewModel;
 
   late MockCommand0<List<bool>> mockFetchCurrentWeek;
   late MockCommand0<double> mockFetchAvg30;
@@ -31,6 +41,8 @@ void main() {
   setUp(() {
     mockStatsViewModel = MockExerciseStatisticsViewModel();
     mockProgramsViewModel = MockExerciseProgramsViewModel();
+    mockProgressionViewModel = MockProgramProgressionViewModel();
+    mockSetsViewModel = MockExerciseSetsViewModel();
 
     mockFetchCurrentWeek = MockCommand0<List<bool>>();
     mockFetchAvg30 = MockCommand0<double>();
@@ -45,9 +57,15 @@ void main() {
     when(() => mockStatsViewModel.removeListener(any())).thenReturn(null);
     when(() => mockProgramsViewModel.addListener(any())).thenReturn(null);
     when(() => mockProgramsViewModel.removeListener(any())).thenReturn(null);
+    when(() => mockProgressionViewModel.addListener(any())).thenReturn(null);
+    when(() => mockProgressionViewModel.removeListener(any())).thenReturn(null);
+    when(() => mockSetsViewModel.addListener(any())).thenReturn(null);
+    when(() => mockSetsViewModel.removeListener(any())).thenReturn(null);
 
     // Mock activeProgram to return null (no active program)
     when(() => mockProgramsViewModel.activeProgram).thenReturn(null);
+    when(() => mockProgressionViewModel.activeProgram).thenReturn(null);
+    when(() => mockProgressionViewModel.nextSession).thenReturn(null);
 
     when(() => mockStatsViewModel.fetchCurrentWeekExerciseDaysStatistic)
         .thenReturn(mockFetchCurrentWeek);
@@ -102,6 +120,10 @@ void main() {
             value: mockStatsViewModel),
         ChangeNotifierProvider<ExerciseProgramsViewModel>.value(
             value: mockProgramsViewModel),
+        ChangeNotifierProvider<ProgramProgressionViewModel>.value(
+            value: mockProgressionViewModel),
+        ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+            value: mockSetsViewModel),
       ],
       child: MaterialApp(
         home: Scaffold(

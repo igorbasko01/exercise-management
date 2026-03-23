@@ -2,6 +2,7 @@ import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_program_session.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -97,6 +98,28 @@ class ProgramProgressionViewModel extends ChangeNotifier {
     }
 
     return Result.ok(null);
+  }
+
+  Future<List<ExerciseSetPresentation>?> getLatestSetsForNextSession() async {
+    if (_nextSession == null || _nextSession!.exercises.isEmpty) {
+      return null;
+    }
+
+    final templateIds = _nextSession!.exercises.map((e) => e.id).whereType<String>().toList();
+    if (templateIds.isEmpty) return null;
+
+    final completionResult = await _setPresentationRepository.getMostRecentCompletionDate(templateIds);
+    if (completionResult is Ok<DateTime?>) {
+      final date = completionResult.value;
+      if (date != null) {
+        final setsResult = await _setPresentationRepository.getExerciseSetsByDateAndTemplates(date, templateIds);
+        if (setsResult is Ok<List<ExerciseSetPresentation>>) {
+          return setsResult.value;
+        }
+      }
+    }
+    
+    return []; // Return empty list to signify "no sets found" vs null for "error/not ready"
   }
 
   @override
