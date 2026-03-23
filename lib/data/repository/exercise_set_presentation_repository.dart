@@ -4,4 +4,5 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 abstract class ExerciseSetPresentationRepository {
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSets({int lastNDays = 7, String? exerciseTemplateId});
   Future<Result<ExerciseSetPresentation>> getExerciseSet(String setId);
+  Future<Result<DateTime?>> getMostRecentCompletionDate(List<String> templateIds);
 }

@@ -100,4 +100,32 @@ class SqfliteExerciseSetPresentationRepository
           ExerciseDatabaseException('Failed to fetch exercise set: $e'));
     }
   }
+
+  @override
+  Future<Result<DateTime?>> getMostRecentCompletionDate(List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok(null);
+
+    try {
+      final placeholders = List.filled(templateIds.length, '?').join(', ');
+      
+      final List<Map<String, dynamic>> result = await database.rawQuery('''
+      SELECT DATE(date_time) as exercise_date
+      FROM ${SqfliteExerciseSetsRepository.tableName}
+      WHERE exercise_template_id IN ($placeholders)
+      GROUP BY DATE(date_time)
+      HAVING COUNT(DISTINCT exercise_template_id) = ?
+      ORDER BY DATE(date_time) DESC
+      LIMIT 1
+      ''', [...templateIds, templateIds.length]);
+
+      if (result.isEmpty) {
+        return Result.ok(null);
+      }
+
+      final dateStr = result.first['exercise_date'] as String;
+      return Result.ok(DateTime.parse(dateStr));
+    } catch (e) {
+      return Result.error(ExerciseDatabaseException('Failed to get most recent completion date: $e'));
+    }
+  }
 }

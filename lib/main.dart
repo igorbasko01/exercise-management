@@ -19,6 +19,7 @@ import 'package:exercise_management/presentation/view_models/exercise_programs_v
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
+import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -81,6 +82,17 @@ void main() async {
           create: (context) => ExerciseProgramsViewModel(
               repository: context.read())
             ..fetchPrograms.execute()),
+      ChangeNotifierProxyProvider<ExerciseProgramsViewModel, ProgramProgressionViewModel>(
+          create: (context) => ProgramProgressionViewModel(
+              programRepository: context.read(),
+              setPresentationRepository: context.read())
+            ..fetchProgressionData.execute(),
+          update: (context, programsViewModel, previous) {
+            // Whenever ExerciseProgramsViewModel changes (e.g., activating a program),
+            // tell ProgramProgressionViewModel to fetch fresh data.
+            return previous!..fetchProgressionData.execute();
+          },
+      ),
     ],
     child: const MyApp(),
   ));
