@@ -27,6 +27,12 @@ class ProgramProgressionViewModel extends ChangeNotifier {
   ExerciseProgramSession? _nextSession;
   ExerciseProgramSession? get nextSession => _nextSession;
 
+  ExerciseProgramSession? _lastSession;
+  ExerciseProgramSession? get lastSession => _lastSession;
+
+  DateTime? _lastSessionDate;
+  DateTime? get lastSessionDate => _lastSessionDate;
+
   void _onCommandExecuted() {
     notifyListeners();
   }
@@ -44,11 +50,15 @@ class ProgramProgressionViewModel extends ChangeNotifier {
     } catch (_) {
       _activeProgram = null;
       _nextSession = null;
+      _lastSession = null;
+      _lastSessionDate = null;
       return Result.ok(null);
     }
 
     if (_activeProgram!.sessions.isEmpty) {
       _nextSession = null;
+      _lastSession = null;
+      _lastSessionDate = null;
       return Result.ok(null);
     }
 
@@ -73,6 +83,9 @@ class ProgramProgressionViewModel extends ChangeNotifier {
         }
       }
     }
+
+    _lastSession = mostRecentlyCompletedSession;
+    _lastSessionDate = mostRecentCompletionDate;
 
     // 3. Determine the "next session"
     if (mostRecentlyCompletedSession == null) {

@@ -45,14 +45,18 @@ void main() {
 
       expect(viewModel.activeProgram, equals(activeProgram));
       expect(viewModel.nextSession, equals(session1));
+      expect(viewModel.lastSession, isNull);
+      expect(viewModel.lastSessionDate, isNull);
     });
 
     test('nextSession is second session when first session was completely done', () async {
+      final completionDate = DateTime(2023, 1, 1);
+      
       when(() => mockProgramRepository.getPrograms())
           .thenAnswer((_) async => Result.ok([activeProgram]));
           
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t1', 't2']))
-          .thenAnswer((_) async => Result.ok(DateTime.now()));
+          .thenAnswer((_) async => Result.ok(completionDate));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t3']))
           .thenAnswer((_) async => Result.ok(null));
 
@@ -60,6 +64,8 @@ void main() {
 
       expect(viewModel.activeProgram, equals(activeProgram));
       expect(viewModel.nextSession, equals(session2)); // session 1 fully completed, next is session 2
+      expect(viewModel.lastSession, equals(session1));
+      expect(viewModel.lastSessionDate, equals(completionDate));
     });
 
     test('nextSession is first session when first session was only partially completed', () async {
@@ -76,21 +82,27 @@ void main() {
 
       expect(viewModel.activeProgram, equals(activeProgram));
       expect(viewModel.nextSession, equals(session1)); // session 1 NOT fully completed, we stay on session 1
+      expect(viewModel.lastSession, isNull);
+      expect(viewModel.lastSessionDate, isNull);
     });
 
     test('nextSession wraps around to first session when last session was recently completed', () async {
+      final completionDate = DateTime(2023, 1, 2);
+
       when(() => mockProgramRepository.getPrograms())
           .thenAnswer((_) async => Result.ok([activeProgram]));
           
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t1', 't2']))
           .thenAnswer((_) async => Result.ok(null));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t3']))
-          .thenAnswer((_) async => Result.ok(DateTime.now()));
+          .thenAnswer((_) async => Result.ok(completionDate));
 
       await viewModel.fetchProgressionData.execute();
 
       expect(viewModel.activeProgram, equals(activeProgram));
       expect(viewModel.nextSession, equals(session1)); // session 2 completed, loops back to session 1
+      expect(viewModel.lastSession, equals(session2));
+      expect(viewModel.lastSessionDate, equals(completionDate));
     });
 
     test('nextSession is null when no active program', () async {
@@ -103,6 +115,8 @@ void main() {
 
       expect(viewModel.activeProgram, isNull);
       expect(viewModel.nextSession, isNull);
+      expect(viewModel.lastSession, isNull);
+      expect(viewModel.lastSessionDate, isNull);
     });
   });
 }

@@ -31,6 +31,24 @@ class ActiveProgramWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('${activeProgram.sessions.length} sessions',
                     style: Theme.of(context).textTheme.bodySmall),
+                if (viewModel.lastSession != null && viewModel.lastSessionDate != null) ...[
+                  const Divider(height: 24),
+                  Text('Last Completed Session',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary)),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(viewModel.lastSession!.name,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        '${viewModel.lastSessionDate!.year}-${viewModel.lastSessionDate!.month.toString().padLeft(2, '0')}-${viewModel.lastSessionDate!.day.toString().padLeft(2, '0')}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ],
                 if (nextSession != null) ...[
                   const Divider(height: 24),
                   Text('Next Session',
