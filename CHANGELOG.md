@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/igorbasko01/exercise-management/compare/v1.0.1...v1.1.0) (2026-03-28)
+
+
+### Features
+
+* implement active program session tracking ([#58](https://github.com/igorbasko01/exercise-management/issues/58)) ([4cb6e7e](https://github.com/igorbasko01/exercise-management/commit/4cb6e7efc43d1ab03e64d7472dd74a0dda46d3a2))
+
 ## [1.0.1](https://github.com/igorbasko01/exercise-management/compare/v1.0.0...v1.0.1) (2026-03-21)
 
 
