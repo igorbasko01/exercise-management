@@ -5,23 +5,34 @@ import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 class ProgramProgressionViewModel extends ChangeNotifier {
   final ExerciseProgramRepository _programRepository;
   final ExerciseSetPresentationRepository _setPresentationRepository;
+  final ExerciseSetRepository _exerciseSetRepository;
   StreamSubscription? _programSubscription;
+  StreamSubscription? _setSubscription;
 
   ProgramProgressionViewModel({
     required ExerciseProgramRepository programRepository,
     required ExerciseSetPresentationRepository setPresentationRepository,
+    required ExerciseSetRepository exerciseSetRepository,
   })  : _programRepository = programRepository,
-        _setPresentationRepository = setPresentationRepository {
+        _setPresentationRepository = setPresentationRepository,
+        _exerciseSetRepository = exerciseSetRepository {
     fetchProgressionData = Command0(_fetchProgressionData)
       ..addListener(_onCommandExecuted);
 
     _programSubscription = _programRepository.watchPrograms().listen((_) {
+      if (!fetchProgressionData.running) {
+        fetchProgressionData.execute();
+      }
+    });
+
+    _setSubscription = _exerciseSetRepository.watchExerciseSets().listen((_) {
       if (!fetchProgressionData.running) {
         fetchProgressionData.execute();
       }
@@ -137,6 +148,7 @@ class ProgramProgressionViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _programSubscription?.cancel();
+    _setSubscription?.cancel();
     fetchProgressionData.removeListener(_onCommandExecuted);
     fetchProgressionData.dispose();
     super.dispose();

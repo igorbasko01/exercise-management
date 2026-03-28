@@ -6,12 +6,14 @@ import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockExerciseProgramRepository extends Mock implements ExerciseProgramRepository {}
 class MockExerciseSetPresentationRepository extends Mock implements ExerciseSetPresentationRepository {}
+class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
 
 void main() {
   setUpAll(() {
@@ -21,6 +23,7 @@ void main() {
   group('ProgramProgressionViewModel', () {
     late MockExerciseProgramRepository mockProgramRepository;
     late MockExerciseSetPresentationRepository mockSetPresentationRepository;
+    late MockExerciseSetRepository mockSetRepository;
     late ProgramProgressionViewModel viewModel;
 
     final template1 = ExerciseTemplate(id: 't1', name: 'Exercise 1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium);
@@ -33,12 +36,17 @@ void main() {
     setUp(() {
       mockProgramRepository = MockExerciseProgramRepository();
       mockSetPresentationRepository = MockExerciseSetPresentationRepository();
+      mockSetRepository = MockExerciseSetRepository();
+
       when(() => mockProgramRepository.watchPrograms())
+          .thenAnswer((_) => Stream.empty());
+      when(() => mockSetRepository.watchExerciseSets())
           .thenAnswer((_) => Stream.empty());
 
       viewModel = ProgramProgressionViewModel(
         programRepository: mockProgramRepository,
         setPresentationRepository: mockSetPresentationRepository,
+        exerciseSetRepository: mockSetRepository,
       );
     });
 

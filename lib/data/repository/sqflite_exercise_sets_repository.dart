@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
 
@@ -9,14 +10,21 @@ import 'package:sqflite/sqflite.dart';
 class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   final Database database;
   static String tableName = 'exercise_sets';
+  final _controller = StreamController<void>.broadcast();
 
   SqfliteExerciseSetsRepository(this.database);
+
+  @override
+  Stream<void> watchExerciseSets() => _controller.stream;
+
+  void _notify() => _controller.add(null);
 
   @override
   Future<Result<ExerciseSet>> addExercise(ExerciseSet exerciseSet) async {
     try {
       final id = await database.insert(tableName, exerciseSet.toMap(),
           conflictAlgorithm: ConflictAlgorithm.rollback);
+      _notify();
       return Result.ok(exerciseSet.copyWith(id: Value(id.toString())));
     } catch (e) {
       return Result.error(
@@ -41,6 +49,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
     if (count == 0) {
       return Result.error(ExerciseNotFoundException('Exercise $id not found'));
     }
+    _notify();
     return Result.ok(exerciseSet);
   }
 
@@ -77,6 +86,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
         return Result.error(
             ExerciseNotFoundException('Exercise ${exerciseSet.id} not found'));
       }
+      _notify();
       return Result.ok(exerciseSet);
     } catch (e) {
       return Result.error(
@@ -93,6 +103,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
     }
     try {
       await batch.commit(noResult: true);
+      _notify();
       return Result.ok(null);
     } catch (e) {
       return Result.error(ExerciseAlreadyExistsException(
@@ -104,6 +115,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   Future<Result<void>> clearAll() async {
     try {
       await database.delete(tableName);
+      _notify();
       return Result.ok(null);
     } catch (e) {
       return Result.error(

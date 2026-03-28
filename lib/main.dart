@@ -85,7 +85,8 @@ void main() async {
       ChangeNotifierProvider(
           create: (context) => ProgramProgressionViewModel(
               programRepository: context.read(),
-              setPresentationRepository: context.read())),
+              setPresentationRepository: context.read(),
+              exerciseSetRepository: context.read())),
     ],
     child: const MyApp(),
   ));

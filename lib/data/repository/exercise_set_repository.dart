@@ -3,6 +3,7 @@ import 'package:exercise_management/data/models/exercise_set.dart';
 
 /// This repository handles a specific exercise set that was performed.
 abstract class ExerciseSetRepository {
+  Stream<void> watchExerciseSets();
   Future<Result<ExerciseSet>> addExercise(ExerciseSet exerciseSet);
   Future<Result<void>> addExercises(List<ExerciseSet> exerciseSets);
   Future<Result<List<ExerciseSet>>> getExercises();

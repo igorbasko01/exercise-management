@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:exercise_management/core/iterable_extensions.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/utils.dart';
@@ -8,6 +9,12 @@ import 'package:exercise_management/data/repository/exercise_set_repository.dart
 
 class InMemoryExerciseSetRepository implements ExerciseSetRepository {
   final List<ExerciseSet> _exerciseSets = [];
+  final _controller = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> watchExerciseSets() => _controller.stream;
+
+  void _notify() => _controller.add(null);
 
   @override
   Future<Result<ExerciseSet>> addExercise(ExerciseSet exerciseSet) async {
@@ -21,6 +28,7 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
     }
 
     _exerciseSets.add(exerciseSet);
+    _notify();
     return Result.ok(exerciseSet);
   }
 
@@ -32,6 +40,7 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
           ExerciseNotFoundException('Exercise set $id not found'));
     }
     final exerciseSet = _exerciseSets.removeAt(index);
+    _notify();
     return Result.ok(exerciseSet);
   }
 
@@ -60,6 +69,7 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
           'Exercise set ${exerciseSet.id} not found'));
     }
     _exerciseSets[index] = exerciseSet;
+    _notify();
     return Result.ok(exerciseSet);
   }
 
@@ -77,12 +87,14 @@ class InMemoryExerciseSetRepository implements ExerciseSetRepository {
 
       _exerciseSets.add(exerciseSet);
     }
+    _notify();
     return Result.ok(null);
   }
 
   @override
   Future<Result<void>> clearAll() {
     _exerciseSets.clear();
+    _notify();
     return Future.value(Result.ok(null));
   }
 }
