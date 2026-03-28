@@ -495,4 +495,68 @@ void main() {
         completedTime.toIso8601String());
     expect(incompleteSet.completedAt, isNull);
   });
+
+  test('getMostRecentCompletionDate should return correct date', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    // On date1, only t1 was done
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    
+    // On date2, both t1 and t2 were done
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getMostRecentCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d?.year, 2023);
+    expect(d?.month, 1);
+    expect(d?.day, 2);
+  });
+
+  test('getMostRecentCompletionDate should return null if not all templates are present on the same day', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getMostRecentCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d, isNull);
+  });
+
+  test('getExerciseSetsByDateAndTemplates should return correct sets', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final targetDate = DateTime(2023, 1, 1);
+    final otherDate = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: targetDate, equipmentWeight: 10, platesWeight: 0, repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: targetDate, equipmentWeight: 20, platesWeight: 0, repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: otherDate, equipmentWeight: 30, platesWeight: 0, repetitions: 5));
+
+    final result = await presentationRepository.getExerciseSetsByDateAndTemplates(targetDate, [t1.id!, t2.id!]);
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    final sets = (result as Ok<List<ExerciseSetPresentation>>).value;
+    
+    expect(sets.length, 2);
+    expect(sets.any((s) => s.exerciseTemplateId == t1.id! && s.equipmentWeight == 10), isTrue);
+    expect(sets.any((s) => s.exerciseTemplateId == t2.id! && s.equipmentWeight == 20), isTrue);
+  });
 }

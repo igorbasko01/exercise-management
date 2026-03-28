@@ -82,17 +82,10 @@ void main() async {
           create: (context) => ExerciseProgramsViewModel(
               repository: context.read())
             ..fetchPrograms.execute()),
-      ChangeNotifierProxyProvider<ExerciseProgramsViewModel, ProgramProgressionViewModel>(
+      ChangeNotifierProvider(
           create: (context) => ProgramProgressionViewModel(
               programRepository: context.read(),
-              setPresentationRepository: context.read())
-            ..fetchProgressionData.execute(),
-          update: (context, programsViewModel, previous) {
-            // Whenever ExerciseProgramsViewModel changes (e.g., activating a program),
-            // tell ProgramProgressionViewModel to fetch fresh data.
-            return previous!..fetchProgressionData.execute();
-          },
-      ),
+              setPresentationRepository: context.read())),
     ],
     child: const MyApp(),
   ));

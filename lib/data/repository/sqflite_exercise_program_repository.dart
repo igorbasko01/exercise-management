@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
@@ -16,6 +17,20 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
   static const String exerciseTable = 'exercise_templates';
 
   SqfliteExerciseProgramRepository(this.database);
+
+  final _updates = StreamController<void>.broadcast();
+
+  @override
+  Stream<Result<List<ExerciseProgram>>> watchPrograms() async* {
+    yield await getPrograms();
+    await for (final _ in _updates.stream) {
+      yield await getPrograms();
+    }
+  }
+
+  void _notifyProgramsChanged() {
+    _updates.add(null);
+  }
 
   @override
   Future<Result<List<ExerciseProgram>>> getPrograms() async {
@@ -228,6 +243,8 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
                 programId: Value(program.id),
               ));
             }
+            
+            _notifyProgramsChanged();
 
             return Result.ok(program.copyWith(sessions: savedSessions));
           } catch (e) {
@@ -257,6 +274,8 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
         whereArgs: [id],
       );
       // Relying on ON DELETE CASCADE for sessions and links.
+
+      _notifyProgramsChanged();
 
       return Result.ok(program);
     } catch (e) {

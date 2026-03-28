@@ -2,6 +2,7 @@ import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 
 abstract class ExerciseProgramRepository {
+  Stream<Result<List<ExerciseProgram>>> watchPrograms();
   Future<Result<List<ExerciseProgram>>> getPrograms();
   Future<Result<ExerciseProgram>> getProgram(String id);
   Future<Result<ExerciseProgram>> addProgram(ExerciseProgram program);

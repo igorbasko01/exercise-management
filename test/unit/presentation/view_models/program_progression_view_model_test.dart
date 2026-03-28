@@ -14,6 +14,10 @@ class MockExerciseProgramRepository extends Mock implements ExerciseProgramRepos
 class MockExerciseSetPresentationRepository extends Mock implements ExerciseSetPresentationRepository {}
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(<String>[]);
+  });
+
   group('ProgramProgressionViewModel', () {
     late MockExerciseProgramRepository mockProgramRepository;
     late MockExerciseSetPresentationRepository mockSetPresentationRepository;
@@ -29,6 +33,9 @@ void main() {
     setUp(() {
       mockProgramRepository = MockExerciseProgramRepository();
       mockSetPresentationRepository = MockExerciseSetPresentationRepository();
+      when(() => mockProgramRepository.watchPrograms())
+          .thenAnswer((_) => Stream.empty());
+
       viewModel = ProgramProgressionViewModel(
         programRepository: mockProgramRepository,
         setPresentationRepository: mockSetPresentationRepository,

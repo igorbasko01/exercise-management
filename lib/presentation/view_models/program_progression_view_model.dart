@@ -5,11 +5,13 @@ import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 class ProgramProgressionViewModel extends ChangeNotifier {
   final ExerciseProgramRepository _programRepository;
   final ExerciseSetPresentationRepository _setPresentationRepository;
+  StreamSubscription? _programSubscription;
 
   ProgramProgressionViewModel({
     required ExerciseProgramRepository programRepository,
@@ -18,6 +20,12 @@ class ProgramProgressionViewModel extends ChangeNotifier {
         _setPresentationRepository = setPresentationRepository {
     fetchProgressionData = Command0(_fetchProgressionData)
       ..addListener(_onCommandExecuted);
+
+    _programSubscription = _programRepository.watchPrograms().listen((_) {
+      if (!fetchProgressionData.running) {
+        fetchProgressionData.execute();
+      }
+    });
   }
 
   late final Command0<void> fetchProgressionData;
@@ -109,10 +117,14 @@ class ProgramProgressionViewModel extends ChangeNotifier {
     if (templateIds.isEmpty) return null;
 
     final completionResult = await _setPresentationRepository.getMostRecentCompletionDate(templateIds);
+    if (completionResult is Error) return null;
+
     if (completionResult is Ok<DateTime?>) {
       final date = completionResult.value;
       if (date != null) {
         final setsResult = await _setPresentationRepository.getExerciseSetsByDateAndTemplates(date, templateIds);
+        if (setsResult is Error) return null;
+
         if (setsResult is Ok<List<ExerciseSetPresentation>>) {
           return setsResult.value;
         }
@@ -124,6 +136,7 @@ class ProgramProgressionViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _programSubscription?.cancel();
     fetchProgressionData.removeListener(_onCommandExecuted);
     fetchProgressionData.dispose();
     super.dispose();

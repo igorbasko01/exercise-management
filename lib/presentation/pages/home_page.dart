@@ -62,17 +62,20 @@ class HomePage extends StatelessWidget {
           
           if (progressionViewModel.activeProgram != null && progressionViewModel.nextSession != null) {
             final historicalSets = await progressionViewModel.getLatestSetsForNextSession();
+            final now = DateTime.now();
             
             if (historicalSets != null && historicalSets.isNotEmpty) {
-              await setsViewModel.progressSets.execute(historicalSets, DateTime.now());
+              await setsViewModel.progressSets.execute(historicalSets, now);
             } else {
               // Creating 4 sets per template with 0 weight, using min reps
               final newSets = <ExerciseSet>[];
               for (var template in progressionViewModel.nextSession!.exercises) {
+                final templateId = template.id;
+                if (templateId == null) continue;
                 for (int i = 0; i < 4; i++) {
                    newSets.add(ExerciseSet(
-                     exerciseTemplateId: template.id!,
-                     dateTime: DateTime.now(),
+                     exerciseTemplateId: templateId,
+                     dateTime: now,
                      equipmentWeight: 0,
                      platesWeight: 0,
                      repetitions: template.repetitionsRangeTarget.range.min,
