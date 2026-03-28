@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
@@ -8,6 +9,20 @@ class InMemoryExerciseProgramRepository implements ExerciseProgramRepository {
   final Map<String, ExerciseProgram> _programs = {};
   int _nextId = 1;
   int _nextSessionId = 1;
+
+  final _updates = StreamController<void>.broadcast();
+
+  @override
+  Stream<Result<List<ExerciseProgram>>> watchPrograms() async* {
+    yield await getPrograms();
+    await for (final _ in _updates.stream) {
+      yield await getPrograms();
+    }
+  }
+
+  void _notifyProgramsChanged() {
+    _updates.add(null);
+  }
 
   @override
   Future<Result<List<ExerciseProgram>>> getPrograms() async {
@@ -50,6 +65,7 @@ class InMemoryExerciseProgramRepository implements ExerciseProgramRepository {
       sessions: sessions,
     );
     _programs[id] = newProgram;
+    _notifyProgramsChanged();
     return Result.ok(newProgram);
   }
 
@@ -70,6 +86,7 @@ class InMemoryExerciseProgramRepository implements ExerciseProgramRepository {
     }
 
     _programs[program.id!] = program;
+    _notifyProgramsChanged();
     return Result.ok(program);
   }
 
@@ -77,6 +94,7 @@ class InMemoryExerciseProgramRepository implements ExerciseProgramRepository {
   Future<Result<ExerciseProgram>> deleteProgram(String id) async {
     if (_programs.containsKey(id)) {
       final program = _programs.remove(id);
+      _notifyProgramsChanged();
       return Result.ok(program!);
     }
     return Result.error(ExerciseNotFoundException('Program $id not found'));

@@ -1,4 +1,8 @@
-import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
+import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
+import 'package:exercise_management/presentation/widgets/active_program_widget.dart';
 import 'package:exercise_management/presentation/widgets/average_weekly_statistics_widget.dart';
 import 'package:exercise_management/presentation/widgets/exercise_volume_statistic_widget.dart';
 import 'package:exercise_management/presentation/widgets/weekly_progress_statistic_widget.dart';
@@ -19,35 +23,7 @@ class HomePage extends StatelessWidget {
         children: [
           _buildCallToAction(context),
           const SizedBox(height: 24),
-          Consumer<ExerciseProgramsViewModel>(
-              builder: (context, viewModel, child) {
-            final activeProgram = viewModel.activeProgram;
-            if (activeProgram == null) {
-              return const SizedBox.shrink();
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSectionTitle(context, 'Active Program'),
-                const SizedBox(height: 8),
-                _buildStatCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(activeProgram.name,
-                          style: Theme.of(context).textTheme.titleMedium),
-                      if (activeProgram.description != null)
-                        Text(activeProgram.description!),
-                      const SizedBox(height: 8),
-                      Text('${activeProgram.sessions.length} sessions',
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            );
-          }),
+          const ActiveProgramWidget(),
           _buildSectionTitle(context, 'Weekly Progress'),
           const SizedBox(height: 8),
           _buildStatCard(
@@ -80,7 +56,40 @@ class HomePage extends StatelessWidget {
     return SizedBox(
       height: 60,
       child: ElevatedButton.icon(
-        onPressed: onNavigateToSets,
+        onPressed: () async {
+          final progressionViewModel = context.read<ProgramProgressionViewModel>();
+          final setsViewModel = context.read<ExerciseSetsViewModel>();
+          
+          if (progressionViewModel.activeProgram != null && progressionViewModel.nextSession != null) {
+            final historicalSets = await progressionViewModel.getLatestSetsForNextSession();
+            final now = DateTime.now();
+            
+            if (historicalSets != null && historicalSets.isNotEmpty) {
+              await setsViewModel.progressSets.execute(historicalSets, now);
+            } else {
+              // Creating 4 sets per template with 0 weight, using min reps
+              final newSets = <ExerciseSet>[];
+              for (var template in progressionViewModel.nextSession!.exercises) {
+                final templateId = template.id;
+                if (templateId == null) continue;
+                for (int i = 0; i < 4; i++) {
+                   newSets.add(ExerciseSet(
+                     exerciseTemplateId: templateId,
+                     dateTime: now,
+                     equipmentWeight: 0,
+                     platesWeight: 0,
+                     repetitions: template.repetitionsRangeTarget.range.min,
+                   ));
+                }
+              }
+              await setsViewModel.addExerciseSets.execute(newSets);
+            }
+          }
+          
+          if (onNavigateToSets != null) {
+            onNavigateToSets!();
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,

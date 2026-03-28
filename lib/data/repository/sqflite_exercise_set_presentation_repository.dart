@@ -100,4 +100,67 @@ class SqfliteExerciseSetPresentationRepository
           ExerciseDatabaseException('Failed to fetch exercise set: $e'));
     }
   }
+
+  @override
+  Future<Result<DateTime?>> getMostRecentCompletionDate(List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok(null);
+
+    try {
+      final placeholders = List.filled(templateIds.length, '?').join(', ');
+      
+      final List<Map<String, dynamic>> result = await database.rawQuery('''
+      SELECT DATE(date_time) as exercise_date
+      FROM ${SqfliteExerciseSetsRepository.tableName}
+      WHERE exercise_template_id IN ($placeholders)
+      GROUP BY DATE(date_time)
+      HAVING COUNT(DISTINCT exercise_template_id) = ?
+      ORDER BY DATE(date_time) DESC
+      LIMIT 1
+      ''', [...templateIds, templateIds.length]);
+
+      if (result.isEmpty) {
+        return Result.ok(null);
+      }
+
+      final dateStr = result.first['exercise_date'] as String;
+      return Result.ok(DateTime.parse(dateStr));
+    } catch (e) {
+      return Result.error(ExerciseDatabaseException('Failed to get most recent completion date: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(DateTime date, List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok([]);
+
+    try {
+      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final placeholders = List.filled(templateIds.length, '?').join(', ');
+      
+      final List<Map<String, dynamic>> maps = await database.rawQuery('''
+      SELECT 
+        es.id AS id,
+        et.id AS exercise_template_id,
+        es.date_time AS date_time,
+        es.equipment_weight AS equipment_weight,
+        es.plates_weight AS plates_weight,
+        es.repetitions AS repetitions,
+        et.name AS display_name,
+        et.repetitions_range AS repetitions_range,
+        es.completed_at AS completed_at
+      FROM ${SqfliteExerciseSetsRepository.tableName} es
+      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      WHERE DATE(es.date_time) = ? AND et.id IN ($placeholders)
+      ORDER BY es.id ASC
+      ''', [dateStr, ...templateIds]);
+
+      final exerciseSetPresentations = maps
+          .map((map) => ExerciseSetPresentationMapper.fromMap(map))
+          .toList();
+      return Result.ok(exerciseSetPresentations);
+    } catch (e) {
+      return Result.error(
+          ExerciseDatabaseException('Failed to fetch exercise sets by date and templates: $e'));
+    }
+  }
 }

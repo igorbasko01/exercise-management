@@ -14,6 +14,7 @@ class ExerciseProgramsViewModel extends ChangeNotifier {
     updateProgram = Command1(_updateProgram);
     deleteProgram = Command1(_deleteProgram);
     setActiveProgram = Command1(_setActiveProgram);
+    deactivateProgram = Command1(_deactivateProgram);
   }
 
   late Command0<List<ExerciseProgram>> fetchPrograms;
@@ -21,6 +22,7 @@ class ExerciseProgramsViewModel extends ChangeNotifier {
   late Command1<ExerciseProgram, ExerciseProgram> updateProgram;
   late Command1<ExerciseProgram, String> deleteProgram;
   late Command1<ExerciseProgram, ExerciseProgram> setActiveProgram;
+  late Command1<ExerciseProgram, ExerciseProgram> deactivateProgram;
 
   List<ExerciseProgram> _programs = [];
   List<ExerciseProgram> get programs => _programs;
@@ -72,6 +74,13 @@ class ExerciseProgramsViewModel extends ChangeNotifier {
       ExerciseProgram program) async {
     if (program.isActive) return Result.ok(program);
     final updatedProgram = program.copyWith(isActive: true);
+    return await _updateProgram(updatedProgram);
+  }
+
+  Future<Result<ExerciseProgram>> _deactivateProgram(
+      ExerciseProgram program) async {
+    if (!program.isActive) return Result.ok(program);
+    final updatedProgram = program.copyWith(isActive: false);
     return await _updateProgram(updatedProgram);
   }
 }

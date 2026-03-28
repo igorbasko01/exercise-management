@@ -141,7 +141,7 @@ void main() {
 
   test('getCurrentWeekExerciseDays should return correct days', () async {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday % 7));
 
     // Add exercise sets on Monday, Wednesday, and Friday
     final daysToAdd = [1, 3, 5];
@@ -196,7 +196,7 @@ void main() {
       'getCurrentWeekExerciseDays with Monday as start should return correct days',
       () async {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
 
     // Add exercise sets on Monday, Wednesday, and Friday
     final daysToAdd = [0, 2, 4];

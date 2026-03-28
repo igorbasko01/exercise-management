@@ -99,5 +99,22 @@ void main() {
        expect(updatedArg.isActive, isTrue);
        expect(updatedArg.id, '1');
     });
+
+    test('deactivateProgram deactivates program and updates repository', () async {
+       final program1Active = ExerciseProgram(id: '1', name: 'Program 1', sessions: [], isActive: true);
+       final program1Inactive = program1Active.copyWith(isActive: false);
+
+       when(() => mockRepository.updateProgram(any()))
+          .thenAnswer((_) async => Result.ok(program1Inactive));
+       when(() => mockRepository.getPrograms())
+          .thenAnswer((_) async => Result.ok([program1Inactive]));
+
+       await viewModel.deactivateProgram.execute(program1Active);
+
+       final captured = verify(() => mockRepository.updateProgram(captureAny())).captured;
+       final updatedArg = captured.first as ExerciseProgram;
+       expect(updatedArg.isActive, isFalse);
+       expect(updatedArg.id, '1');
+    });
   });
 }

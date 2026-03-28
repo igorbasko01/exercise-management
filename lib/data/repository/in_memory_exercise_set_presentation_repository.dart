@@ -104,4 +104,56 @@ class InMemoryExerciseSetPresentationRepository
 
     return exerciseSetsPresentation;
   }
+
+  @override
+  Future<Result<DateTime?>> getMostRecentCompletionDate(List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok(null);
+
+    final result = await _exerciseSetRepository.getExercises();
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        final sets = result.value;
+        final groupedSets = <String, Set<String>>{};
+        
+        for (var set in sets) {
+          final dateStr = '${set.dateTime.year}-${set.dateTime.month.toString().padLeft(2, '0')}-${set.dateTime.day.toString().padLeft(2, '0')}';
+          groupedSets.putIfAbsent(dateStr, () => {}).add(set.exerciseTemplateId);
+        }
+
+        final sortedDates = groupedSets.keys.toList()
+          ..sort((a, b) => b.compareTo(a));
+
+        for (var dateStr in sortedDates) {
+          final templatesOnDate = groupedSets[dateStr]!;
+          if (templateIds.every((id) => templatesOnDate.contains(id))) {
+            return Result.ok(DateTime.parse(dateStr));
+          }
+        }
+        return Result.ok(null);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  @override
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(DateTime date, List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok([]);
+
+    final result = await _exerciseSetRepository.getExercises();
+
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        final targetDateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+        final matchingSets = result.value.where((set) {
+          final setDateStr = '${set.dateTime.year}-${set.dateTime.month.toString().padLeft(2, '0')}-${set.dateTime.day.toString().padLeft(2, '0')}';
+          return setDateStr == targetDateStr && templateIds.contains(set.exerciseTemplateId);
+        }).toList();
+
+        final exerciseSetsPresentation = await _processExerciseSets(matchingSets);
+        return Result.ok(exerciseSetsPresentation);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
 }
