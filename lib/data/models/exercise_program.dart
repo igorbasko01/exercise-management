@@ -43,12 +43,15 @@ class ExerciseProgram {
 
   factory ExerciseProgram.fromMap(Map<String, dynamic> map,
       [List<ExerciseProgramSession>? sessions]) {
+    final isActiveValue = map['is_active'];
     return ExerciseProgram(
       id: map['id']?.toString(),
       name: map['name'],
       description: map['description'],
       sessions: sessions ?? [],
-      isActive: (map['is_active'] as int?) == 1,
+      isActive: isActiveValue is int
+          ? isActiveValue == 1
+          : int.tryParse(isActiveValue?.toString() ?? '0') == 1,
     );
   }
 

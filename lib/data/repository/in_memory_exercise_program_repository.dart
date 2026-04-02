@@ -91,6 +91,13 @@ class InMemoryExerciseProgramRepository implements ExerciseProgramRepository {
   }
 
   @override
+  Future<Result<void>> clearAll() async {
+    _programs.clear();
+    _notifyProgramsChanged();
+    return Result.ok(null);
+  }
+
+  @override
   Future<Result<ExerciseProgram>> deleteProgram(String id) async {
     if (_programs.containsKey(id)) {
       final program = _programs.remove(id);

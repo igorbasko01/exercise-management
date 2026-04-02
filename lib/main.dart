@@ -77,6 +77,7 @@ void main() async {
           create: (context) => SettingsViewModel(
                 templatesRepository: context.read(),
                 setsRepository: context.read(),
+                programsRepository: context.read(),
               )),
       ChangeNotifierProvider(
           create: (context) => ExerciseProgramsViewModel(
