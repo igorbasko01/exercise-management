@@ -374,7 +374,7 @@ Future<File> _createValidZipFileWithPrograms(Directory tempDir) async {
 
   // Create programs
   final programsMaps = [
-    {'id': '1', 'name': 'Strength Program', 'description': 'A strength training program', 'is_active': 1},
+    {'id': '1', 'name': 'Strength Program', 'description': 'A strength training program', 'is_active': '1'},
   ];
   final programsCSV = CsvSerializer.toCSV(programsMaps);
   archive.addFile(ArchiveFile(
