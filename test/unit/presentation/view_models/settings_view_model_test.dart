@@ -5,9 +5,11 @@ import 'package:exercise_management/core/csv_serializer.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
+import 'package:exercise_management/data/repository/exercise_program_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
@@ -20,11 +22,15 @@ class MockExerciseTemplateRepository extends Mock
 
 class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
 
+class MockExerciseProgramRepository extends Mock
+    implements ExerciseProgramRepository {}
+
 void main() {
   group('SettingsViewModel importDataCommand', () {
     late SettingsViewModel viewModel;
     late MockExerciseTemplateRepository mockTemplateRepository;
     late MockExerciseSetRepository mockSetRepository;
+    late MockExerciseProgramRepository mockProgramRepository;
     late Directory tempDir;
 
     final dummyTemplate = ExerciseTemplate(
@@ -42,17 +48,25 @@ void main() {
         platesWeight: 0.0,
         repetitions: 0);
 
+    final dummyProgram = ExerciseProgram(
+        id: 'fallback',
+        name: 'fallback',
+        sessions: []);
+
     setUpAll(() {
       registerFallbackValue(dummyTemplate);
       registerFallbackValue(dummySet);
+      registerFallbackValue(dummyProgram);
     });
 
     setUp(() async {
       mockTemplateRepository = MockExerciseTemplateRepository();
       mockSetRepository = MockExerciseSetRepository();
+      mockProgramRepository = MockExerciseProgramRepository();
       viewModel = SettingsViewModel(
         templatesRepository: mockTemplateRepository,
         setsRepository: mockSetRepository,
+        programsRepository: mockProgramRepository,
       );
       tempDir = await Directory.systemTemp.createTemp('test_import_');
     });
@@ -67,6 +81,10 @@ void main() {
         () async {
       final zipFile = await _createValidZipFile(tempDir);
 
+      when(() => mockProgramRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
       when(() => mockTemplateRepository.clearAll())
           .thenAnswer((invocation) async {
         return Result.ok(null);
@@ -86,10 +104,49 @@ void main() {
       await viewModel.importDataCommand.execute(zipFile.path);
 
       expect(viewModel.importDataCommand.result, isA<Ok<void>>());
+      verify(() => mockProgramRepository.clearAll()).called(1);
       verify(() => mockTemplateRepository.clearAll()).called(1);
       verify(() => mockSetRepository.clearAll()).called(1);
       verify(() => mockTemplateRepository.addExercise(any())).called(2);
       verify(() => mockSetRepository.addExercise(any())).called(2);
+    });
+
+    test('should successfully import valid zip file with programs', () async {
+      final zipFile = await _createValidZipFileWithPrograms(tempDir);
+
+      when(() => mockProgramRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockTemplateRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockSetRepository.clearAll()).thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockTemplateRepository.addExercise(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(dummyTemplate);
+      });
+      when(() => mockSetRepository.addExercise(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(dummySet);
+      });
+      when(() => mockProgramRepository.addProgram(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(dummyProgram);
+      });
+
+      await viewModel.importDataCommand.execute(zipFile.path);
+
+      expect(viewModel.importDataCommand.result, isA<Ok<void>>());
+      verify(() => mockProgramRepository.clearAll()).called(1);
+      verify(() => mockTemplateRepository.clearAll()).called(1);
+      verify(() => mockSetRepository.clearAll()).called(1);
+      verify(() => mockTemplateRepository.addExercise(any())).called(2);
+      verify(() => mockSetRepository.addExercise(any())).called(2);
+      verify(() => mockProgramRepository.addProgram(any())).called(1);
     });
 
     test('should return error when zip file does not exist', () async {
@@ -98,10 +155,12 @@ void main() {
       await viewModel.importDataCommand.execute(nonExistentFilePath);
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verifyNever(() => mockProgramRepository.clearAll());
       verifyNever(() => mockTemplateRepository.clearAll());
       verifyNever(() => mockSetRepository.clearAll());
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
     });
 
     test('should return error when zip file is invalid', () async {
@@ -111,15 +170,21 @@ void main() {
       await viewModel.importDataCommand.execute(invalidZipFile.path);
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verifyNever(() => mockProgramRepository.clearAll());
       verifyNever(() => mockTemplateRepository.clearAll());
       verifyNever(() => mockSetRepository.clearAll());
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
     });
 
     test('should return error when clearing templates fails', () async {
       final zipFile = await _createValidZipFile(tempDir);
 
+      when(() => mockProgramRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
       when(() => mockSetRepository.clearAll()).thenAnswer((invocation) async {
         return Result.ok(null);
       });
@@ -132,15 +197,21 @@ void main() {
       await viewModel.importDataCommand.execute(zipFile.path);
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verify(() => mockProgramRepository.clearAll()).called(1);
       verify(() => mockTemplateRepository.clearAll()).called(1);
       verify(() => mockSetRepository.clearAll()).called(1);
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
     });
 
     test('should return error when clearing sets fails', () async {
       final zipFile = await _createValidZipFile(tempDir);
 
+      when(() => mockProgramRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
       when(() => mockTemplateRepository.clearAll())
           .thenAnswer((invocation) async {
         return Result.ok(null);
@@ -152,10 +223,32 @@ void main() {
       await viewModel.importDataCommand.execute(zipFile.path);
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verify(() => mockProgramRepository.clearAll()).called(1);
       verifyNever(() => mockTemplateRepository.clearAll());
       verify(() => mockSetRepository.clearAll()).called(1);
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
+    });
+
+    test('should return error when clearing programs fails', () async {
+      final zipFile = await _createValidZipFile(tempDir);
+
+      when(() => mockProgramRepository.clearAll())
+          .thenAnswer((invocation) async {
+        return Result.error(
+            ExerciseDatabaseException('Failed to clear programs'));
+      });
+
+      await viewModel.importDataCommand.execute(zipFile.path);
+
+      expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verify(() => mockProgramRepository.clearAll()).called(1);
+      verifyNever(() => mockSetRepository.clearAll());
+      verifyNever(() => mockTemplateRepository.clearAll());
+      verifyNever(() => mockTemplateRepository.addExercise(any()));
+      verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
     });
 
     test('should return error when template has invalid enum value', () async {
@@ -164,10 +257,12 @@ void main() {
       await viewModel.importDataCommand.execute(zipFile.path);
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
+      verifyNever(() => mockProgramRepository.clearAll());
       verifyNever(() => mockTemplateRepository.clearAll());
       verifyNever(() => mockSetRepository.clearAll());
       verifyNever(() => mockTemplateRepository.addExercise(any()));
       verifyNever(() => mockSetRepository.addExercise(any()));
+      verifyNever(() => mockProgramRepository.addProgram(any()));
     });
   });
 }
@@ -223,6 +318,87 @@ Future<File> _createValidZipFile(Directory tempDir) async {
       ArchiveFile('exercise_sets.csv', setsCSV.length, setsCSV.codeUnits));
 
   final zipFile = File(path.join(tempDir.path, 'test_data.zip'));
+  await zipFile.writeAsBytes(ZipEncoder().encode(archive));
+  return zipFile;
+}
+
+Future<File> _createValidZipFileWithPrograms(Directory tempDir) async {
+  final archive = Archive();
+
+  // Create templates
+  final templates = [
+    ExerciseTemplate(
+      id: '1',
+      name: 'Push-up',
+      muscleGroup: MuscleGroup.chest,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+      description: 'Basic push-up exercise',
+    ),
+    ExerciseTemplate(
+      id: '2',
+      name: 'Squat',
+      muscleGroup: MuscleGroup.quadriceps,
+      repetitionsRangeTarget: RepetitionsRange.medium,
+      description: null,
+    ),
+  ];
+  final templatesCSV =
+      CsvSerializer.toCSV(templates.map((t) => t.toMap()).toList());
+  archive.addFile(ArchiveFile(
+      'exercise_templates.csv', templatesCSV.length, templatesCSV.codeUnits));
+
+  // Create sets
+  final sets = [
+    ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: DateTime.parse('2023-01-01T10:00:00.000Z'),
+      equipmentWeight: 0.0,
+      platesWeight: 20.0,
+      repetitions: 10,
+      completedAt: null,
+    ),
+    ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '2',
+      dateTime: DateTime.parse('2023-01-02T11:00:00.000Z'),
+      equipmentWeight: 0.0,
+      platesWeight: 30.0,
+      repetitions: 15,
+      completedAt: DateTime.parse('2023-01-02T11:30:00.000Z'),
+    ),
+  ];
+  final setsCSV = CsvSerializer.toCSV(sets.map((s) => s.toMap()).toList());
+  archive.addFile(
+      ArchiveFile('exercise_sets.csv', setsCSV.length, setsCSV.codeUnits));
+
+  // Create programs
+  final programsMaps = [
+    {'id': '1', 'name': 'Strength Program', 'description': 'A strength training program', 'is_active': '1'},
+  ];
+  final programsCSV = CsvSerializer.toCSV(programsMaps);
+  archive.addFile(ArchiveFile(
+      'exercise_programs.csv', programsCSV.length, programsCSV.codeUnits));
+
+  // Create program sessions
+  final sessionsMaps = [
+    {'id': '10', 'program_id': '1', 'name': 'Day 1 - Upper Body', 'description': 'Upper body workout'},
+    {'id': '11', 'program_id': '1', 'name': 'Day 2 - Lower Body', 'description': null},
+  ];
+  final sessionsCSV = CsvSerializer.toCSV(sessionsMaps);
+  archive.addFile(ArchiveFile('exercise_program_sessions.csv',
+      sessionsCSV.length, sessionsCSV.codeUnits));
+
+  // Create session exercises links
+  final linksMaps = [
+    {'session_id': '10', 'exercise_template_id': '1', 'ordering': 0},
+    {'session_id': '11', 'exercise_template_id': '2', 'ordering': 0},
+  ];
+  final linksCSV = CsvSerializer.toCSV(linksMaps);
+  archive.addFile(ArchiveFile(
+      'session_exercises.csv', linksCSV.length, linksCSV.codeUnits));
+
+  final zipFile = File(path.join(tempDir.path, 'test_data_with_programs.zip'));
   await zipFile.writeAsBytes(ZipEncoder().encode(archive));
   return zipFile;
 }

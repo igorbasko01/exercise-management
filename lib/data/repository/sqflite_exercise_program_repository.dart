@@ -261,6 +261,20 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
   }
 
   @override
+  Future<Result<void>> clearAll() async {
+    try {
+      await database.delete(linkTable);
+      await database.delete(sessionTable);
+      await database.delete(programTable);
+      _notifyProgramsChanged();
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(
+          ExerciseDatabaseException("Failed to clear programs: $e"));
+    }
+  }
+
+  @override
   Future<Result<ExerciseProgram>> deleteProgram(String id) async {
     try {
       // Fetch before delete to return

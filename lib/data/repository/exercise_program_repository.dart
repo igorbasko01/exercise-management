@@ -8,4 +8,5 @@ abstract class ExerciseProgramRepository {
   Future<Result<ExerciseProgram>> addProgram(ExerciseProgram program);
   Future<Result<ExerciseProgram>> updateProgram(ExerciseProgram program);
   Future<Result<ExerciseProgram>> deleteProgram(String id);
+  Future<Result<void>> clearAll();
 }
