@@ -65,7 +65,7 @@ class HomePage extends StatelessWidget {
             final now = DateTime.now();
             
             if (historicalSets != null && historicalSets.isNotEmpty) {
-              await setsViewModel.progressSets.execute(historicalSets, now);
+              await setsViewModel.progressSets.execute(historicalSets, now, progressionViewModel.activeProgram!.progressionType);
             } else {
               // Creating 4 sets per template with 0 weight, using min reps
               final newSets = <ExerciseSet>[];

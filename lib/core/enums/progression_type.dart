@@ -1,0 +1,1 @@
+enum ProgressionType { standard, positiveOnly }

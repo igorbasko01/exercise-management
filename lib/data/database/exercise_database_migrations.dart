@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class ExerciseDatabaseMigrations extends DatabaseMigrations {
   @override
-  int get latestVersion => 3;
+  int get latestVersion => 4;
 
   @override
   Map<int, Future<void> Function(Database db)> get upgradeSteps => {
@@ -36,6 +36,10 @@ class ExerciseDatabaseMigrations extends DatabaseMigrations {
               PRIMARY KEY (session_id, ordering)
             )
           ''');
+        },
+        4: (db) async {
+          await db.execute(
+              'ALTER TABLE exercise_programs ADD COLUMN progression_type INTEGER NOT NULL DEFAULT 0');
         },
       };
 }

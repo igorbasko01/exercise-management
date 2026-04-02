@@ -1,10 +1,11 @@
 import 'package:exercise_management/core/command.dart';
+import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
-import 'package:exercise_management/data/models/progression_strategy.dart';
+import 'package:exercise_management/data/models/session_progression_algorithm.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -39,7 +40,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     preloadExercises = Command0<void>(_preloadExercises)
       ..addListener(_onCommandExecuted);
     progressSets =
-        Command2<void, List<ExerciseSetPresentation>, DateTime>(_progressSets)
+        Command3<void, List<ExerciseSetPresentation>, DateTime, ProgressionType>(_progressSets)
           ..addListener(_onCommandExecuted);
     fetchMoreExerciseSets =
         Command0<List<ExerciseSetPresentation>>(_fetchMoreExerciseSets)
@@ -58,7 +59,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command1<ExerciseSet, ExerciseSet> updateExerciseSet;
   late final Command0<List<ExerciseTemplate>> fetchExerciseTemplates;
   late final Command0<void> preloadExercises;
-  late final Command2<void, List<ExerciseSetPresentation>, DateTime>
+  late final Command3<void, List<ExerciseSetPresentation>, DateTime, ProgressionType>
       progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
 
@@ -196,12 +197,13 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   Future<Result<void>> _progressSets(
-      List<ExerciseSetPresentation> sets, DateTime newDate) async {
+      List<ExerciseSetPresentation> sets, DateTime newDate, ProgressionType progressionType) async {
     final groupedSets = _groupSetsByTemplate(sets);
+    final algorithm = SessionProgressionAlgorithm.fromType(progressionType);
 
     List<ExerciseSet> newSets = [];
     for (var entry in groupedSets.entries) {
-      final progressedSets = _progressSetsGroup(entry.value)
+      final progressedSets = _progressSetsGroup(entry.value, algorithm)
           .map((set) =>
               set.copyWith(dateTime: newDate, completedAt: const Value(null)))
           .toList();
@@ -218,8 +220,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     }
   }
 
-  List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets) {
-    return ProgressionStrategy.determineFrom(sets).apply(sets);
+  List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets, SessionProgressionAlgorithm algorithm) {
+    return algorithm.determineFrom(sets).apply(sets);
   }
 
   Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(

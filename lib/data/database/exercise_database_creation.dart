@@ -24,7 +24,8 @@ CREATE TABLE exercise_programs (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
-  is_active INTEGER NOT NULL DEFAULT 0
+  is_active INTEGER NOT NULL DEFAULT 0,
+  progression_type INTEGER NOT NULL DEFAULT 0
 )
 ''',
   '''

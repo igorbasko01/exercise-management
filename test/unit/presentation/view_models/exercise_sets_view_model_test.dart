@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
+import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
@@ -138,7 +139,7 @@ void main() {
     });
 
     test('returns cloned set if provided only single set', () async {
-      await viewModel.progressSets.execute([chestSet1], fixedDate);
+      await viewModel.progressSets.execute([chestSet1], fixedDate, ProgressionType.standard);
 
       final chestSet1New = chestSet1
           .copyWith(setId: Value(null), completedAt: const Value(null))
@@ -148,7 +149,7 @@ void main() {
     });
 
     test('returns cloned sets if provided 2 sets of same exercise', () async {
-      await viewModel.progressSets.execute([chestSet1, chestSet2], fixedDate);
+      await viewModel.progressSets.execute([chestSet1, chestSet2], fixedDate, ProgressionType.standard);
 
       final chestSet2New = chestSet2
           .copyWith(setId: Value(null), completedAt: const Value(null))
@@ -165,7 +166,7 @@ void main() {
         'returns progressed repetition sets when provided 3 sets of same exercise',
         () async {
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3], fixedDate);
+          .execute([chestSet1, chestSet2, chestSet3], fixedDate, ProgressionType.standard);
 
       final chestSet3New = chestSet3
           .copyWith(setId: Value(null), repetitions: 8)
@@ -186,7 +187,7 @@ void main() {
         () async {
       final chestSet3DifferentReps = chestSet3.copyWith(repetitions: 4);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3DifferentReps], fixedDate);
+          .execute([chestSet1, chestSet2, chestSet3DifferentReps], fixedDate, ProgressionType.standard);
 
       final chestSet3New = chestSet3DifferentReps
           .copyWith(
@@ -217,7 +218,7 @@ void main() {
       final chestSet4 =
           chestSet3.copyWith(setId: const Value('4'), repetitions: 6);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate, ProgressionType.standard);
 
       final chestSet4New = chestSet4
           .copyWith(
@@ -254,7 +255,7 @@ void main() {
       final chestSet4 =
           chestSet3.copyWith(setId: const Value('4'), repetitions: 8);
       await viewModel.progressSets
-          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate);
+          .execute([chestSet1, chestSet2, chestSet3, chestSet4], fixedDate, ProgressionType.standard);
 
       final chestSet4New = chestSet4
           .copyWith(
@@ -297,7 +298,7 @@ void main() {
       final chestSet4 = chestSet3.copyWith(
           setId: const Value('4'), repetitions: 4, platesWeight: 25);
       await viewModel.progressSets.execute(
-          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate, ProgressionType.standard);
 
       final chestSet4New = chestSet4
           .copyWith(
@@ -341,7 +342,7 @@ void main() {
       final chestSet4 = chestSet3.copyWith(
           setId: const Value('4'), repetitions: 4, platesWeight: 25);
       await viewModel.progressSets.execute(
-          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate, ProgressionType.standard);
 
       final chestSet4New = chestSet4
           .copyWith(
@@ -385,7 +386,7 @@ void main() {
       final chestSet4 = chestSet3.copyWith(
           setId: const Value('4'), repetitions: 4, platesWeight: 25);
       await viewModel.progressSets.execute(
-          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate);
+          [chestSet1max, chestSet2max, chestSet3max, chestSet4], fixedDate, ProgressionType.standard);
 
       final chestSet4New = chestSet4
           .copyWith(
@@ -425,7 +426,7 @@ void main() {
         () async {
       await viewModel.progressSets.execute(
           [chestSet1, chestSet2, chestSet3, backSet1, backSet2, backSet3],
-          fixedDate);
+          fixedDate, ProgressionType.standard);
 
       final chestSet3New = chestSet3
           .copyWith(
