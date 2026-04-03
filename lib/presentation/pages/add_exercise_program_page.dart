@@ -109,7 +109,7 @@ class _AddExerciseProgramPageState extends State<AddExerciseProgramPage> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<ProgressionType>(
-              value: _selectedProgressionType,
+              initialValue: _selectedProgressionType,
               decoration:
                   const InputDecoration(labelText: 'Progression Algorithm'),
               items: ProgressionType.values.map((type) {
