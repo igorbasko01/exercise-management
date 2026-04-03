@@ -89,7 +89,8 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       date(s.date_time), 
       s.exercise_template_id, 
       t.name, 
-      sum((s.equipment_weight + s.plates_weight) * s.repetitions) as total_volume
+      sum((s.equipment_weight + s.plates_weight) * s.repetitions) as total_volume,
+      count(*) as sets_count
     from ${SqfliteExerciseSetsRepository.tableName} s
     left join ${SqfliteExerciseTemplateRepository.tableName} t on t.id = s.exercise_template_id
     group by date(s.date_time), s.exercise_template_id, t.name
@@ -98,25 +99,36 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
     ''');
 
       final exerciseVolumeStats = <int, ExerciseVolumeStatistics>{};
+      final setsCountMap = <int, int>{};
 
       for (var row in result) {
         final exerciseTemplateId = row['exercise_template_id'] as int;
         final exerciseName = row['name'] as String? ?? 'Unknown';
         final totalVolume = (row['total_volume'] as num).toInt();
+        final setsCount = (row['sets_count'] as num).toInt();
 
         if (!exerciseVolumeStats.containsKey(exerciseTemplateId)) {
           exerciseVolumeStats[exerciseTemplateId] = ExerciseVolumeStatistics(
             exerciseName: exerciseName,
             volumePerDay: [],
           );
+          setsCountMap[exerciseTemplateId] = 0;
         }
 
         final stat = exerciseVolumeStats[exerciseTemplateId]!;
         stat.volumePerDay.add(totalVolume);
+        setsCountMap[exerciseTemplateId] = setsCountMap[exerciseTemplateId]! + setsCount;
       }
 
-      return Result.ok(
-          exerciseVolumeStats.values.take(numberOfExercises).toList());
+      final sortedKeys = exerciseVolumeStats.keys.toList()
+        ..sort((a, b) => setsCountMap[b]!.compareTo(setsCountMap[a]!));
+
+      final sortedStats = sortedKeys
+          .take(numberOfExercises)
+          .map((k) => exerciseVolumeStats[k]!)
+          .toList();
+
+      return Result.ok(sortedStats);
     } catch (e) {
       return Result.error(ExerciseDatabaseException(
           'Failed to fetch exercise volume statistics: $e'));
