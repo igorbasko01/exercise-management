@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/igorbasko01/exercise-management/compare/v1.1.0...v1.2.0) (2026-04-03)
+
+
+### Features
+
+* Add Training Programs and Sessions to data export/import ([#62](https://github.com/igorbasko01/exercise-management/issues/62)) ([e0bdab0](https://github.com/igorbasko01/exercise-management/commit/e0bdab0b95d7ee3b35cb61dc257e21fd2f3e8c33))
+* enhance exercise volume stats with sparklines and set-based sorting ([#67](https://github.com/igorbasko01/exercise-management/issues/67)) ([db4fd62](https://github.com/igorbasko01/exercise-management/commit/db4fd622cc3b7ca35a472c030f589e8792a535cb))
+* Implement Strategy Pattern for session progression algorithms ([#64](https://github.com/igorbasko01/exercise-management/issues/64)) ([31de455](https://github.com/igorbasko01/exercise-management/commit/31de45586cbdf2b97521291fe77e8aee1c886bd6))
+
 ## [1.1.0](https://github.com/igorbasko01/exercise-management/compare/v1.0.1...v1.1.0) (2026-03-28)
 
 
