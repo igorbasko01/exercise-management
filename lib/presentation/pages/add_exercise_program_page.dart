@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_program_session.dart';
@@ -21,6 +22,7 @@ class _AddExerciseProgramPageState extends State<AddExerciseProgramPage> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late List<ExerciseProgramSession> _sessions;
+  late ProgressionType _selectedProgressionType;
 
   @override
   void initState() {
@@ -29,6 +31,8 @@ class _AddExerciseProgramPageState extends State<AddExerciseProgramPage> {
     _descriptionController =
         TextEditingController(text: widget.program?.description ?? '');
     _sessions = widget.program?.sessions.toList() ?? [];
+    _selectedProgressionType =
+        widget.program?.progressionType ?? ProgressionType.standard;
   }
 
   @override
@@ -48,6 +52,7 @@ class _AddExerciseProgramPageState extends State<AddExerciseProgramPage> {
             : _descriptionController.text,
         sessions: _sessions,
         isActive: widget.program?.isActive ?? false,
+        progressionType: _selectedProgressionType,
       );
 
       final viewModel = context.read<ExerciseProgramsViewModel>();
@@ -101,6 +106,21 @@ class _AddExerciseProgramPageState extends State<AddExerciseProgramPage> {
               controller: _descriptionController,
               decoration: const InputDecoration(labelText: 'Description'),
               maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<ProgressionType>(
+              value: _selectedProgressionType,
+              decoration:
+                  const InputDecoration(labelText: 'Progression Algorithm'),
+              items: ProgressionType.values.map((type) {
+                return DropdownMenuItem(
+                    value: type, child: Text(type.displayName));
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedProgressionType = newValue!;
+                });
+              },
             ),
             const SizedBox(height: 24),
             Row(
