@@ -68,69 +68,94 @@ class _WeeklyProgressStatisticWidgetState
           ? (viewModel.fetchCurrentWeekExerciseDaysStatistic.result as Ok).value
           : List.filled(viewModel.daysInWeek, false);
 
-      return _buildUI(daysExercised);
+      return _buildUI(context, daysExercised);
     });
   }
 
-  Widget _buildUI(List<bool> daysExercised) {
-    return Column(
+  Widget _buildUI(BuildContext context, List<bool> daysExercised) {
+    final completedDays = daysExercised.where((e) => e).length;
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          'Weekly Progress',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: _days
-              .sublist(0, 5)
-              .asMap()
-              .entries
-              .map((entry) => _DayIndicator(
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _days.asMap().entries.map((entry) {
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: entry.key == 0 ? 0 : 2.0,
+                    right: entry.key == 6 ? 0 : 2.0,
+                  ),
+                  child: _DaySegment(
                     day: entry.value,
                     exercised: daysExercised[entry.key],
-                  ))
-              .toList(),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: _days
-              .sublist(5)
-              .asMap()
-              .entries
-              .map((entry) => _DayIndicator(
-                    day: entry.value,
-                    exercised: daysExercised[entry.key + 5],
-                  ))
-              .toList(),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          '${daysExercised.where((e) => e).length}',
-          style: const TextStyle(fontSize: 38),
+        const SizedBox(width: 24),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              '$completedDays/7',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            Text(
+              'Days',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _DayIndicator extends StatelessWidget {
+class _DaySegment extends StatelessWidget {
   final String day;
   final bool exercised;
 
-  const _DayIndicator({
+  const _DaySegment({
     required this.day,
     required this.exercised,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Container(
+          height: 12,
+          decoration: BoxDecoration(
+            color: exercised 
+                ? theme.colorScheme.primary 
+                : theme.colorScheme.primary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 8),
         Text(
-          day,
-          style: TextStyle(
-            color: exercised ? Colors.green : Colors.grey,
+          day.substring(0, 1),
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: exercised ? FontWeight.bold : FontWeight.normal,
+            color: exercised 
+                ? theme.colorScheme.primary 
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
