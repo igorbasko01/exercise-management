@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/igorbasko01/exercise-management/compare/v1.2.0...v1.3.0) (2026-04-03)
+
+
+### Features
+
+* Update weekly progress statistic presentation and fix deprecations ([#68](https://github.com/igorbasko01/exercise-management/issues/68)) ([1760440](https://github.com/igorbasko01/exercise-management/commit/176044062f62eb49d87613154b14a5597919a878))
+
 ## [1.2.0](https://github.com/igorbasko01/exercise-management/compare/v1.1.0...v1.2.0) (2026-04-03)
 
 
