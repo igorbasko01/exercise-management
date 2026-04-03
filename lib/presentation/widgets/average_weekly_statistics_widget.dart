@@ -80,66 +80,51 @@ class _AverageWeeklyStatisticsWidgetState extends State<AverageWeeklyStatisticsW
   }
 
   Widget _buildUI(double avg30Days, double avg90Days, double avgHalfYear, double avgYear) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
       children: [
-        const Text(
-          'Average Weekly Exercise Days',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 15),
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _StatisticRow(
-                period: '30 days',
-                average: avg30Days,
-              ),
-              _StatisticRow(
-                period: '90 days',
-                average: avg90Days,
-              ),
-              _StatisticRow(
-                period: '6 months',
-                average: avgHalfYear,
-              ),
-              _StatisticRow(
-                period: '1 year',
-                average: avgYear,
-              ),
-            ],
-          ),
-        ),
+        _StatisticCard(period: '30 days', average: avg30Days),
+        _StatisticCard(period: '90 days', average: avg90Days),
+        _StatisticCard(period: '6 months', average: avgHalfYear),
+        _StatisticCard(period: '1 year', average: avgYear),
       ],
     );
   }
 }
 
-class _StatisticRow extends StatelessWidget {
+class _StatisticCard extends StatelessWidget {
   final String period;
   final double average;
 
-  const _StatisticRow({
+  const _StatisticCard({
     required this.period,
     required this.average,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          period,
-          style: const TextStyle(fontSize: 12),
+    return Expanded(
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                average.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                period,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
-        Text(
-          average.toStringAsFixed(1),
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-      ],
+      ),
     );
   }
 }

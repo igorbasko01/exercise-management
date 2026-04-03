@@ -32,12 +32,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'Average Weekly Stats'),
           const SizedBox(height: 8),
-          _buildStatCard(
-            child: const SizedBox(
-              height: 200,
-              child: AverageWeeklyStatisticsWidget(),
-            ),
-          ),
+          const AverageWeeklyStatisticsWidget(),
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'Exercise Volume'),
           const SizedBox(height: 8),
