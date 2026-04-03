@@ -153,7 +153,7 @@ void main() {
     expect(find.text('Weekly Progress'), findsWidgets);
     expect(find.text('Average Weekly Stats'), findsOneWidget);
     expect(find.text('Exercise Volume'), findsWidgets);
-    expect(find.byType(Card), findsNWidgets(3));
+    expect(find.byType(Card), findsNWidgets(6));
 
     // Tap CTA and verify callback
     await tester.tap(find.text('EXERCISE NOW'));
