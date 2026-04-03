@@ -19,7 +19,7 @@ void main() {
   });
 
   setUp(() async {
-    database = await openDatabase(inMemoryDatabasePath, version: 3,
+    database = await openDatabase(inMemoryDatabasePath, version: 4,
         onCreate: (db, version) async {
       await db.execute('''
         CREATE TABLE exercise_templates (
@@ -35,7 +35,8 @@ void main() {
           id INTEGER PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT,
-          is_active INTEGER NOT NULL DEFAULT 0
+          is_active INTEGER NOT NULL DEFAULT 0,
+          progression_type INTEGER NOT NULL DEFAULT 0
         )
       ''');
       await db.execute('''

@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/core/value.dart';
@@ -345,7 +346,7 @@ class ExerciseSetsPage extends StatelessWidget {
 
   void _progressSets(
       List<ExerciseSetPresentation> sets, ExerciseSetsViewModel viewModel) {
-    viewModel.progressSets.execute(sets, DateTime.now());
+    viewModel.progressSets.execute(sets, DateTime.now(), ProgressionType.standard);
   }
 
   DateTime? _latestCompletedAt(List<ExerciseSetPresentation> sets) {
