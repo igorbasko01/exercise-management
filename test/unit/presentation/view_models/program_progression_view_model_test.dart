@@ -54,7 +54,7 @@ void main() {
       when(() => mockProgramRepository.getPrograms())
           .thenAnswer((_) async => Result.ok([activeProgram]));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(any()))
-          .thenAnswer((_) async => Result.ok(null));
+          .thenAnswer((_) async => Result.ok({}));
 
       await viewModel.fetchProgressionData.execute();
 
@@ -71,9 +71,9 @@ void main() {
           .thenAnswer((_) async => Result.ok([activeProgram]));
           
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t1', 't2']))
-          .thenAnswer((_) async => Result.ok(completionDate));
+          .thenAnswer((_) async => Result.ok({'t1': completionDate, 't2': completionDate}));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t3']))
-          .thenAnswer((_) async => Result.ok(null));
+          .thenAnswer((_) async => Result.ok({}));
 
       await viewModel.fetchProgressionData.execute();
 
@@ -89,9 +89,9 @@ void main() {
           
       // 't1' and 't2' were not completed on the same date, so it returns null
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t1', 't2']))
-          .thenAnswer((_) async => Result.ok(null));
+          .thenAnswer((_) async => Result.ok({}));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t3']))
-          .thenAnswer((_) async => Result.ok(null));
+          .thenAnswer((_) async => Result.ok({}));
 
       await viewModel.fetchProgressionData.execute();
 
@@ -108,9 +108,9 @@ void main() {
           .thenAnswer((_) async => Result.ok([activeProgram]));
           
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t1', 't2']))
-          .thenAnswer((_) async => Result.ok(null));
+          .thenAnswer((_) async => Result.ok({}));
       when(() => mockSetPresentationRepository.getMostRecentCompletionDate(['t3']))
-          .thenAnswer((_) async => Result.ok(completionDate));
+          .thenAnswer((_) async => Result.ok({'t3': completionDate}));
 
       await viewModel.fetchProgressionData.execute();
 
