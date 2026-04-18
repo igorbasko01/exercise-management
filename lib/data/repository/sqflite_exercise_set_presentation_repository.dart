@@ -38,7 +38,7 @@ class SqfliteExerciseSetPresentationRepository
       }
 
       // Get the oldest date from the last N days
-      final oldestDate = distinctDates.last['exercise_date'] as String;
+      final oldestDate = distinctDates.last['exercise_date'].toString();
 
       // Fetch all exercise sets from those N days
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
@@ -102,41 +102,49 @@ class SqfliteExerciseSetPresentationRepository
   }
 
   @override
-  Future<Result<DateTime?>> getMostRecentCompletionDate(List<String> templateIds) async {
-    if (templateIds.isEmpty) return Result.ok(null);
+  Future<Result<Map<String, DateTime>>> getMostRecentCompletionDate(List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok({});
 
     try {
       final placeholders = List.filled(templateIds.length, '?').join(', ');
       
       final List<Map<String, dynamic>> result = await database.rawQuery('''
-      SELECT DATE(date_time) as exercise_date
+      SELECT exercise_template_id, MAX(DATE(date_time)) as exercise_date
       FROM ${SqfliteExerciseSetsRepository.tableName}
       WHERE exercise_template_id IN ($placeholders)
-      GROUP BY DATE(date_time)
-      HAVING COUNT(DISTINCT exercise_template_id) = ?
-      ORDER BY DATE(date_time) DESC
-      LIMIT 1
-      ''', [...templateIds, templateIds.length]);
+      GROUP BY exercise_template_id
+      ''', templateIds);
 
-      if (result.isEmpty) {
-        return Result.ok(null);
+      final map = <String, DateTime>{};
+      for (var row in result) {
+        final templateId = row['exercise_template_id'].toString();
+        final dateStr = row['exercise_date'].toString();
+        map[templateId] = DateTime.parse(dateStr);
       }
 
-      final dateStr = result.first['exercise_date'] as String;
-      return Result.ok(DateTime.parse(dateStr));
+      return Result.ok(map);
     } catch (e) {
-      return Result.error(ExerciseDatabaseException('Failed to get most recent completion date: $e'));
+      return Result.error(ExerciseDatabaseException('Failed to get most recent completion dates: $e'));
     }
   }
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(DateTime date, List<String> templateIds) async {
-    if (templateIds.isEmpty) return Result.ok([]);
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(Map<String, DateTime> templateDates) async {
+    if (templateDates.isEmpty) return Result.ok([]);
 
     try {
-      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final placeholders = List.filled(templateIds.length, '?').join(', ');
+      final conditions = <String>[];
+      final args = <Object>[];
+
+      for (final entry in templateDates.entries) {
+        final dateStr = '${entry.value.year}-${entry.value.month.toString().padLeft(2, '0')}-${entry.value.day.toString().padLeft(2, '0')}';
+        conditions.add('(et.id = ? AND DATE(es.date_time) = ?)');
+        args.add(entry.key);
+        args.add(dateStr);
+      }
       
+      final whereClause = conditions.join(' OR ');
+
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
       SELECT 
         es.id AS id,
@@ -150,9 +158,9 @@ class SqfliteExerciseSetPresentationRepository
         es.completed_at AS completed_at
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      WHERE DATE(es.date_time) = ? AND et.id IN ($placeholders)
+      WHERE $whereClause
       ORDER BY es.id ASC
-      ''', [dateStr, ...templateIds]);
+      ''', args);
 
       final exerciseSetPresentations = maps
           .map((map) => ExerciseSetPresentationMapper.fromMap(map))
