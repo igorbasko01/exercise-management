@@ -513,14 +513,18 @@ void main() {
     await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
 
     final result = await presentationRepository.getMostRecentCompletionDate([t1.id!, t2.id!]);
-    expect(result, isA<Ok<DateTime?>>());
-    final d = (result as Ok<DateTime?>).value;
-    expect(d?.year, 2023);
-    expect(d?.month, 1);
-    expect(d?.day, 2);
+    expect(result, isA<Ok<Map<String, DateTime>>>());
+    final d = (result as Ok<Map<String, DateTime>>).value;
+    expect(d.length, 2);
+    expect(d[t1.id!]?.year, 2023);
+    expect(d[t1.id!]?.month, 1);
+    expect(d[t1.id!]?.day, 2);
+    expect(d[t2.id!]?.year, 2023);
+    expect(d[t2.id!]?.month, 1);
+    expect(d[t2.id!]?.day, 2);
   });
 
-  test('getMostRecentCompletionDate should return null if not all templates are present on the same day', () async {
+  test('getMostRecentCompletionDate should return separate dates for different completion dates', () async {
     final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
@@ -533,30 +537,75 @@ void main() {
     await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
 
     final result = await presentationRepository.getMostRecentCompletionDate([t1.id!, t2.id!]);
-    expect(result, isA<Ok<DateTime?>>());
-    final d = (result as Ok<DateTime?>).value;
-    expect(d, isNull);
+    expect(result, isA<Ok<Map<String, DateTime>>>());
+    final d = (result as Ok<Map<String, DateTime>>).value;
+    expect(d.length, 2);
+    expect(d[t1.id!]?.day, 1);
+    expect(d[t2.id!]?.day, 2);
   });
 
-  test('getExerciseSetsByDateAndTemplates should return correct sets', () async {
+  test('getExerciseSetsByDateAndTemplates should return correct sets for a map of templates and dates', () async {
     final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
     final t2 = (t2Result as Ok<ExerciseTemplate>).value;
 
-    final targetDate = DateTime(2023, 1, 1);
-    final otherDate = DateTime(2023, 1, 2);
+    final targetDate1 = DateTime(2023, 1, 1);
+    final targetDate2 = DateTime(2023, 1, 2);
 
-    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: targetDate, equipmentWeight: 10, platesWeight: 0, repetitions: 5));
-    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: targetDate, equipmentWeight: 20, platesWeight: 0, repetitions: 5));
-    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: otherDate, equipmentWeight: 30, platesWeight: 0, repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: targetDate1, equipmentWeight: 10, platesWeight: 0, repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: targetDate2, equipmentWeight: 15, platesWeight: 0, repetitions: 5));
 
-    final result = await presentationRepository.getExerciseSetsByDateAndTemplates(targetDate, [t1.id!, t2.id!]);
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: targetDate1, equipmentWeight: 20, platesWeight: 0, repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: targetDate2, equipmentWeight: 25, platesWeight: 0, repetitions: 5));
+
+    final result = await presentationRepository.getExerciseSetsByDateAndTemplates({
+      t1.id!: targetDate1,
+      t2.id!: targetDate2,
+    });
     expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
     final sets = (result as Ok<List<ExerciseSetPresentation>>).value;
     
     expect(sets.length, 2);
-    expect(sets.any((s) => s.exerciseTemplateId == t1.id! && s.equipmentWeight == 10), isTrue);
-    expect(sets.any((s) => s.exerciseTemplateId == t2.id! && s.equipmentWeight == 20), isTrue);
+    expect(sets.any((s) => s.exerciseTemplateId == t1.id! && s.equipmentWeight == 10 && s.dateTime.day == 1), isTrue);
+    expect(sets.any((s) => s.exerciseTemplateId == t2.id! && s.equipmentWeight == 25 && s.dateTime.day == 2), isTrue);
+  });
+
+  test('getStrictMostRecentRoutineCompletionDate should return date when all templates exist on same date', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getStrictMostRecentRoutineCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d, isNotNull);
+    expect(d!.day, 2);
+  });
+
+  test('getStrictMostRecentRoutineCompletionDate should return null when templates not done on same date', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getStrictMostRecentRoutineCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d, isNull);
   });
 }

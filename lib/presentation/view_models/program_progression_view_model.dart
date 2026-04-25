@@ -92,12 +92,12 @@ class ProgramProgressionViewModel extends ChangeNotifier {
       final templateIds = session.exercises.map((e) => e.id).whereType<String>().toList();
       if (templateIds.isEmpty) continue;
 
-      final completionResult = await _setPresentationRepository.getMostRecentCompletionDate(templateIds);
+      final completionResult = await _setPresentationRepository.getStrictMostRecentRoutineCompletionDate(templateIds);
       if (completionResult is Ok<DateTime?>) {
-        final date = completionResult.value;
-        if (date != null) {
-          if (mostRecentCompletionDate == null || date.isAfter(mostRecentCompletionDate)) {
-            mostRecentCompletionDate = date;
+        final sessionDate = completionResult.value;
+        if (sessionDate != null) {
+          if (mostRecentCompletionDate == null || sessionDate.isAfter(mostRecentCompletionDate)) {
+            mostRecentCompletionDate = sessionDate;
             mostRecentlyCompletedSession = session;
           }
         }
@@ -130,10 +130,10 @@ class ProgramProgressionViewModel extends ChangeNotifier {
     final completionResult = await _setPresentationRepository.getMostRecentCompletionDate(templateIds);
     if (completionResult is Error) return null;
 
-    if (completionResult is Ok<DateTime?>) {
-      final date = completionResult.value;
-      if (date != null) {
-        final setsResult = await _setPresentationRepository.getExerciseSetsByDateAndTemplates(date, templateIds);
+    if (completionResult is Ok<Map<String, DateTime>>) {
+      final templateDates = completionResult.value;
+      if (templateDates.isNotEmpty) {
+        final setsResult = await _setPresentationRepository.getExerciseSetsByDateAndTemplates(templateDates);
         if (setsResult is Error) return null;
 
         if (setsResult is Ok<List<ExerciseSetPresentation>>) {
