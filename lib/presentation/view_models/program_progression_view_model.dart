@@ -92,13 +92,12 @@ class ProgramProgressionViewModel extends ChangeNotifier {
       final templateIds = session.exercises.map((e) => e.id).whereType<String>().toList();
       if (templateIds.isEmpty) continue;
 
-      final completionResult = await _setPresentationRepository.getMostRecentCompletionDate(templateIds);
-      if (completionResult is Ok<Map<String, DateTime>>) {
-        final datesMap = completionResult.value;
-        if (datesMap.length == templateIds.length) {
-          final maxDate = datesMap.values.reduce((a, b) => a.isAfter(b) ? a : b);
-          if (mostRecentCompletionDate == null || maxDate.isAfter(mostRecentCompletionDate)) {
-            mostRecentCompletionDate = maxDate;
+      final completionResult = await _setPresentationRepository.getStrictMostRecentRoutineCompletionDate(templateIds);
+      if (completionResult is Ok<DateTime?>) {
+        final sessionDate = completionResult.value;
+        if (sessionDate != null) {
+          if (mostRecentCompletionDate == null || sessionDate.isAfter(mostRecentCompletionDate)) {
+            mostRecentCompletionDate = sessionDate;
             mostRecentlyCompletedSession = session;
           }
         }

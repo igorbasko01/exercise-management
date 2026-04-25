@@ -129,6 +129,39 @@ class InMemoryExerciseSetPresentationRepository
   }
 
   @override
+  Future<Result<DateTime?>> getStrictMostRecentRoutineCompletionDate(List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok(null);
+
+    final result = await _exerciseSetRepository.getExercises();
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        final sets = result.value.where((s) => templateIds.contains(s.exerciseTemplateId)).toList();
+        
+        // Group by date (ignoring time)
+        final setsByDate = <DateTime, Set<String>>{};
+        for (var set in sets) {
+          final date = DateTime(set.dateTime.year, set.dateTime.month, set.dateTime.day);
+          setsByDate.putIfAbsent(date, () => {}).add(set.exerciseTemplateId);
+        }
+        
+        // Find dates that have all templates
+        final validDates = setsByDate.entries
+            .where((entry) => entry.value.length == templateIds.length)
+            .map((e) => e.key)
+            .toList();
+            
+        if (validDates.isEmpty) return Result.ok(null);
+        
+        // Return most recent valid date
+        validDates.sort((a, b) => b.compareTo(a));
+        return Result.ok(validDates.first);
+        
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  @override
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(Map<String, DateTime> templateDates) async {
     if (templateDates.isEmpty) return Result.ok([]);
 

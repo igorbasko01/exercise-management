@@ -570,4 +570,42 @@ void main() {
     expect(sets.any((s) => s.exerciseTemplateId == t1.id! && s.equipmentWeight == 10 && s.dateTime.day == 1), isTrue);
     expect(sets.any((s) => s.exerciseTemplateId == t2.id! && s.equipmentWeight == 25 && s.dateTime.day == 2), isTrue);
   });
+
+  test('getStrictMostRecentRoutineCompletionDate should return date when all templates exist on same date', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getStrictMostRecentRoutineCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d, isNotNull);
+    expect(d!.day, 2);
+  });
+
+  test('getStrictMostRecentRoutineCompletionDate should return null when templates not done on same date', () async {
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1 = (t1Result as Ok<ExerciseTemplate>).value;
+    final t2 = (t2Result as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t1.id!, dateTime: date1, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+    await setsRepository.addExercise(ExerciseSet(exerciseTemplateId: t2.id!, dateTime: date2, equipmentWeight: 0, platesWeight: 0, repetitions: 0));
+
+    final result = await presentationRepository.getStrictMostRecentRoutineCompletionDate([t1.id!, t2.id!]);
+    expect(result, isA<Ok<DateTime?>>());
+    final d = (result as Ok<DateTime?>).value;
+    expect(d, isNull);
+  });
 }
