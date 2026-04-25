@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/igorbasko01/exercise-management/compare/v1.2.0...v1.3.0) (2026-04-25)
+
+
+### Features
+
+* Update weekly progress statistic presentation and fix deprecations ([#68](https://github.com/igorbasko01/exercise-management/issues/68)) ([1760440](https://github.com/igorbasko01/exercise-management/commit/176044062f62eb49d87613154b14a5597919a878))
+
+
+### Bug Fixes
+
+* **progression:** Refactor/template specific progression ([#71](https://github.com/igorbasko01/exercise-management/issues/71)) ([19e088c](https://github.com/igorbasko01/exercise-management/commit/19e088cc5caf06e35434e6f4417c63757819f2e4))
+* **progression:** support template-specific completion dates and fix … ([#70](https://github.com/igorbasko01/exercise-management/issues/70)) ([b6d97b2](https://github.com/igorbasko01/exercise-management/commit/b6d97b2fcdc470bea26e0f33a0bd5266521756b1))
+
 ## [1.2.0](https://github.com/igorbasko01/exercise-management/compare/v1.1.0...v1.2.0) (2026-04-03)
 
 
