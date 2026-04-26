@@ -1,6 +1,7 @@
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/widgets/active_program_widget.dart';
 import 'package:exercise_management/presentation/widgets/average_weekly_statistics_widget.dart';
@@ -48,8 +49,18 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildCallToAction(BuildContext context) {
-    return SizedBox(
+    final programsViewModel = context.watch<ExerciseProgramsViewModel>();
+    final progressionViewModel = context.watch<ProgramProgressionViewModel>();
+    final programs = programsViewModel.programs;
+
+    String? currentDropdownValue = progressionViewModel.selectedProgramId ?? programsViewModel.activeProgram?.id;
+    if (currentDropdownValue != null && !programs.any((p) => p.id == currentDropdownValue)) {
+      currentDropdownValue = null;
+    }
+
+    Widget actionButton = SizedBox(
       height: 60,
+      width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
           final progressionViewModel = context.read<ProgramProgressionViewModel>();
@@ -103,6 +114,40 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (programs.length <= 1) {
+      return actionButton;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InputDecorator(
+          decoration: const InputDecoration(
+            labelText: 'Select Program',
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: currentDropdownValue,
+              items: programs.map((p) {
+                return DropdownMenuItem(
+                  value: p.id,
+                  child: Text(p.name + (p.isActive ? ' (Active)' : '')),
+                );
+              }).toList(),
+              onChanged: (value) {
+                context.read<ProgramProgressionViewModel>().selectProgram(value);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        actionButton,
+      ],
     );
   }
 

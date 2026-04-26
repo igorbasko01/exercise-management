@@ -65,7 +65,9 @@ void main() {
     when(() => mockSetsViewModel.removeListener(any())).thenReturn(null);
 
     // Mock activeProgram to return null (no active program)
+    when(() => mockProgramsViewModel.programs).thenReturn([]);
     when(() => mockProgramsViewModel.activeProgram).thenReturn(null);
+    when(() => mockProgressionViewModel.selectedProgramId).thenReturn(null);
     when(() => mockProgressionViewModel.activeProgram).thenReturn(null);
     when(() => mockProgressionViewModel.nextSession).thenReturn(null);
 
