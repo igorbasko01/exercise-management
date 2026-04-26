@@ -44,6 +44,17 @@ class ProgramProgressionViewModel extends ChangeNotifier {
   ExerciseProgram? _activeProgram;
   ExerciseProgram? get activeProgram => _activeProgram;
 
+  String? _selectedProgramId;
+  String? get selectedProgramId => _selectedProgramId;
+
+  void selectProgram(String? programId) {
+    if (_selectedProgramId == programId) return;
+    _selectedProgramId = programId;
+    if (!fetchProgressionData.running) {
+      fetchProgressionData.execute();
+    }
+  }
+
   ExerciseProgramSession? _nextSession;
   ExerciseProgramSession? get nextSession => _nextSession;
 
@@ -66,7 +77,11 @@ class ProgramProgressionViewModel extends ChangeNotifier {
     
     final programs = (programsResult as Ok<List<ExerciseProgram>>).value;
     try {
-      _activeProgram = programs.firstWhere((p) => p.isActive);
+      if (_selectedProgramId != null) {
+        _activeProgram = programs.firstWhere((p) => p.id == _selectedProgramId);
+      } else {
+        _activeProgram = programs.firstWhere((p) => p.isActive);
+      }
     } catch (_) {
       _activeProgram = null;
       _nextSession = null;
