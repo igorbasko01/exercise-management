@@ -14,19 +14,23 @@ import 'package:exercise_management/presentation/pages/exercise_sets_page.dart';
 import 'package:exercise_management/presentation/pages/exercise_templates_page.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
-import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
+import 'package:exercise_management/presentation/pages/rest_timer_page.dart';
+import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
+import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 import 'data/database/exercise_database_creation.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 
 Future<String> getDatabasePath() async {
   final databasesPath = await getDatabasesPath();
@@ -36,12 +40,17 @@ Future<String> getDatabasePath() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  tz.initializeTimeZones();
+  final notificationService = LocalRestTimerNotificationService();
+  await notificationService.init();
+
   final path = await getDatabasePath();
   final database = await AppDatabaseFactory.createDatabase(
       path, createStatements, ExerciseDatabaseMigrations());
 
   runApp(MultiProvider(
     providers: [
+      Provider<RestTimerNotificationService>.value(value: notificationService),
       Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
         create: (_) => SqfliteExerciseTemplateRepository(database),
@@ -88,6 +97,9 @@ void main() async {
               programRepository: context.read(),
               setPresentationRepository: context.read(),
               exerciseSetRepository: context.read())),
+      ChangeNotifierProvider(
+          create: (context) => RestTimerViewModel(
+              notificationService: context.read())),
     ],
     child: const MyApp(),
   ));
@@ -132,6 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
         HomePage(onNavigateToSets: () => _onItemTapped(1)),
         const ExerciseSetsPage(),
         const ExerciseTemplatesPage(),
+        const RestTimerPage(),
         const SettingsPage(),
       ];
 
@@ -150,6 +163,8 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: Icon(Icons.fitness_center), label: 'Sets'),
           BottomNavigationBarItem(
               icon: Icon(Icons.library_books), label: 'Exercises'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.timer), label: 'Rest'),
           BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
