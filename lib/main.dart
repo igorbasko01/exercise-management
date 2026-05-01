@@ -170,7 +170,16 @@ class _MyHomePageState extends State<MyHomePage> {
           BottomNavigationBarItem(
               icon: Icon(Icons.library_books), label: 'Exercises'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Rest'),
+              icon: Consumer<RestTimerViewModel>(
+                builder: (context, viewModel, child) {
+                  return Badge(
+                    label: Text('${viewModel.remainingSeconds}'),
+                    isLabelVisible: viewModel.isRunning,
+                    child: const Icon(Icons.timer),
+                  );
+                },
+              ),
+              label: 'Rest'),
           BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
