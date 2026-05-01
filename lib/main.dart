@@ -163,11 +163,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          const BottomNavigationBarItem(
               icon: Icon(Icons.fitness_center), label: 'Sets'),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
               icon: Icon(Icons.library_books), label: 'Exercises'),
           BottomNavigationBarItem(
               icon: Consumer<RestTimerViewModel>(
@@ -180,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
               label: 'Rest'),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
