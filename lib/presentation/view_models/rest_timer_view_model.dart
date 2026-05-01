@@ -40,7 +40,8 @@ class RestTimerViewModel extends ChangeNotifier {
   }
 
   void startTimer() {
-    if (_isRunning) return;
+    _timer?.cancel();
+    _notificationService.cancelNotification(_notificationId);
 
     _isRunning = true;
     _endTime = clock.now().add(Duration(seconds: _selectedDuration));
