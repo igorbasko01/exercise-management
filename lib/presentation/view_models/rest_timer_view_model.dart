@@ -1,16 +1,24 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:clock/clock.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/rest_timer_notification_service.dart';
 
 class RestTimerViewModel extends ChangeNotifier {
   final RestTimerNotificationService _notificationService;
+  final SharedPreferences _prefs;
   static const int _notificationId = 888;
+  static const String _durationPrefsKey = 'rest_timer_duration';
 
-  RestTimerViewModel({required RestTimerNotificationService notificationService})
-      : _notificationService = notificationService;
+  RestTimerViewModel({
+    required RestTimerNotificationService notificationService,
+    required SharedPreferences prefs,
+  })  : _notificationService = notificationService,
+        _prefs = prefs {
+    _selectedDuration = _prefs.getInt(_durationPrefsKey) ?? 60;
+  }
 
-  int _selectedDuration = 60;
+  late int _selectedDuration;
   Timer? _timer;
   bool _isRunning = false;
   DateTime? _endTime;
@@ -27,6 +35,7 @@ class RestTimerViewModel extends ChangeNotifier {
   void setSelectedDuration(int duration) {
     if (_isRunning) return;
     _selectedDuration = duration;
+    _prefs.setInt(_durationPrefsKey, duration);
     notifyListeners();
   }
 

@@ -23,6 +23,7 @@ import 'package:exercise_management/presentation/view_models/exercise_templates_
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -44,12 +45,15 @@ void main() async {
   final notificationService = LocalRestTimerNotificationService();
   await notificationService.init();
 
+  final prefs = await SharedPreferences.getInstance();
+
   final path = await getDatabasePath();
   final database = await AppDatabaseFactory.createDatabase(
       path, createStatements, ExerciseDatabaseMigrations());
 
   runApp(MultiProvider(
     providers: [
+      Provider<SharedPreferences>.value(value: prefs),
       Provider<RestTimerNotificationService>.value(value: notificationService),
       Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
@@ -99,7 +103,9 @@ void main() async {
               exerciseSetRepository: context.read())),
       ChangeNotifierProvider(
           create: (context) => RestTimerViewModel(
-              notificationService: context.read())),
+              notificationService: context.read(),
+              prefs: context.read(),
+          )),
     ],
     child: const MyApp(),
   ));

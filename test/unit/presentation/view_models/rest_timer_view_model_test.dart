@@ -5,11 +5,15 @@ import 'package:fake_async/fake_async.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
 import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class MockRestTimerNotificationService extends Mock implements RestTimerNotificationService {}
+class MockSharedPreferences extends Mock implements SharedPreferences {}
 
 void main() {
   late RestTimerViewModel viewModel;
   late MockRestTimerNotificationService mockNotificationService;
+  late MockSharedPreferences mockSharedPreferences;
 
   setUpAll(() {
     registerFallbackValue(DateTime.now());
@@ -17,7 +21,11 @@ void main() {
 
   setUp(() {
     mockNotificationService = MockRestTimerNotificationService();
+    mockSharedPreferences = MockSharedPreferences();
     
+    when(() => mockSharedPreferences.getInt('rest_timer_duration')).thenReturn(60);
+    when(() => mockSharedPreferences.setInt('rest_timer_duration', any())).thenAnswer((_) async => true);
+
     when(() => mockNotificationService.scheduleNotification(
           id: any(named: 'id'),
           title: any(named: 'title'),
@@ -28,7 +36,10 @@ void main() {
     when(() => mockNotificationService.cancelNotification(any()))
         .thenAnswer((_) async {});
 
-    viewModel = RestTimerViewModel(notificationService: mockNotificationService);
+    viewModel = RestTimerViewModel(
+      notificationService: mockNotificationService,
+      prefs: mockSharedPreferences,
+    );
   });
 
   test('Initial state is correct', () {
