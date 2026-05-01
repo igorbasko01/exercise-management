@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
+import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
 
 class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
 
@@ -21,12 +22,15 @@ class MockExerciseTemplateRepository extends Mock
 class MockExerciseSetPresentationRepository extends Mock
     implements ExerciseSetPresentationRepository {}
 
+class MockRestTimerViewModel extends Mock implements RestTimerViewModel {}
+
 void main() {
   group('ExerciseSetsPage Ranking', () {
     late MockExerciseSetRepository mockExerciseSetRepository;
     late MockExerciseTemplateRepository mockExerciseTemplateRepository;
     late MockExerciseSetPresentationRepository
         mockExerciseSetPresentationRepository;
+    late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
     late ExerciseRankingManager rankingManager;
 
@@ -51,6 +55,8 @@ void main() {
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
+      mockRestTimerViewModel = MockRestTimerViewModel();
+      when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
       rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
@@ -150,6 +156,9 @@ void main() {
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -214,6 +223,9 @@ void main() {
             ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
             ),
           ],
           child: const MaterialApp(
@@ -288,6 +300,7 @@ void main() {
     late MockExerciseTemplateRepository mockExerciseTemplateRepository;
     late MockExerciseSetPresentationRepository
         mockExerciseSetPresentationRepository;
+    late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
     late ExerciseRankingManager rankingManager;
 
@@ -310,6 +323,8 @@ void main() {
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
+      mockRestTimerViewModel = MockRestTimerViewModel();
+      when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
       rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
@@ -389,6 +404,9 @@ void main() {
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
             ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -426,6 +444,7 @@ void main() {
     late MockExerciseTemplateRepository mockExerciseTemplateRepository;
     late MockExerciseSetPresentationRepository
         mockExerciseSetPresentationRepository;
+    late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
     late ExerciseRankingManager rankingManager;
 
@@ -448,6 +467,8 @@ void main() {
       mockExerciseTemplateRepository = MockExerciseTemplateRepository();
       mockExerciseSetPresentationRepository =
           MockExerciseSetPresentationRepository();
+      mockRestTimerViewModel = MockRestTimerViewModel();
+      when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
       rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
@@ -504,6 +525,9 @@ void main() {
             ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
             ),
           ],
           child: const MaterialApp(
@@ -576,6 +600,9 @@ void main() {
             ),
             Provider<ExerciseRankingManager>.value(
               value: rankingManager,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
             ),
           ],
           child: const MaterialApp(

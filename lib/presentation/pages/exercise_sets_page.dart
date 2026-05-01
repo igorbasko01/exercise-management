@@ -6,6 +6,7 @@ import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/presentation/pages/add_exercise_set_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
+import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -289,7 +290,7 @@ class ExerciseSetsPage extends StatelessWidget {
       subtitle: Text(_buildExerciseSubtitle(exercise)),
       onTap: () => _navigateToEditExerciseSet(context, exercise),
       onLongPress: () => exercise.setId != null
-          ? _toggleSetCompletion(exercise, viewModel)
+          ? _toggleSetCompletion(context, exercise, viewModel)
           : null,
       trailing: _buildActionButtons(exercise, viewModel),
     );
@@ -332,6 +333,7 @@ class ExerciseSetsPage extends StatelessWidget {
   }
 
   void _toggleSetCompletion(
+      BuildContext context,
       ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
     final isCurrentlyCompleted = exercise.completedAt != null;
     final exerciseSet = exercise.toExerciseSet();
@@ -342,6 +344,10 @@ class ExerciseSetsPage extends StatelessWidget {
           isCurrentlyCompleted ? const Value(null) : Value(DateTime.now()),
     );
     viewModel.updateExerciseSet.execute(updatedSet);
+
+    if (!isCurrentlyCompleted) {
+      context.read<RestTimerViewModel>().startTimer();
+    }
   }
 
   void _progressSets(
