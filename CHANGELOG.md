@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/igorbasko01/exercise-management/compare/v1.3.0...v1.4.0) (2026-05-01)
+
+
+### Features
+
+* **home:** allow selecting program for exercise now ([#72](https://github.com/igorbasko01/exercise-management/issues/72)) ([5bc817e](https://github.com/igorbasko01/exercise-management/commit/5bc817eeeab23fc2cec49a5e09fecab72a1f8994))
+* invoke rest timer when marking a set as complete ([#75](https://github.com/igorbasko01/exercise-management/issues/75)) ([e745646](https://github.com/igorbasko01/exercise-management/commit/e7456469c31f29e2c5cda9a55595f067529a1478))
+* **timer:** implement robust rest timer with MVVM, notifications, and persistence ([#74](https://github.com/igorbasko01/exercise-management/issues/74)) ([32b2273](https://github.com/igorbasko01/exercise-management/commit/32b22736ad0d002c3307fd225ae42d8230951902))
+
 ## [1.3.0](https://github.com/igorbasko01/exercise-management/compare/v1.2.0...v1.3.0) (2026-04-25)
 
 
