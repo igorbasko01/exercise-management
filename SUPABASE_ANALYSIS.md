@@ -23,11 +23,13 @@ The core philosophy is that the app reads from and writes to the local SQLite da
     - The Supabase schema must mirror the SQLite schema (e.g., `exercise_templates`, `exercise_sets`, `exercise_programs`, etc.).
     - Every table in Supabase needs a `user_id` column to associate records with the authenticated user.
     - Every table needs a `last_updated_at` timestamp column to handle conflict resolution.
-    - Every table needs to have a stable UUID identifier, which is mostly handled by the current design, though the ID type may need careful mapping (currently some IDs appear to be autoincrement integers which might complicate multi-device sync unless changed to UUID strings).
+    - Every table needs a stable string UUID identifier. We should use UUID v4 (using the Dart `uuid` package) generated on the client device when a record is created. Because UUID v4 is highly random, it guarantees that an ID generated offline on Device A will not collide with an ID generated on Device B.
+    - Every table needs a `deleted_at` timestamp or `is_deleted` boolean column to support "soft deletes" (see below).
 
-2.  **Sync Mechanism:**
-    - **Writes (Local -> Remote):** When a repository writes to SQLite, it should either immediately attempt to push the change to Supabase (if online) or queue the operation locally to be synced later. A local "sync_queue" table or a boolean flag like `is_synced` on each record can track pending changes.
-    - **Reads (Remote -> Local):** When the app comes online, it can poll Supabase for records where `last_updated_at` is greater than the last sync timestamp, pulling those changes into SQLite.
+2.  **Sync Mechanism & Status:**
+    - **Writes (Local -> Remote):** When a repository writes to SQLite, it updates the local record. To track sync state, we should add a `sync_status` column (e.g., 'synced', 'pending_insert', 'pending_update', 'pending_delete') to the SQLite tables. A background worker will look for 'pending' records and push them to Supabase, updating the status to 'synced' upon success.
+    - **Deletes:** In an offline-first app, you cannot permanently delete a row locally if it hasn't synced yet, otherwise the sync engine won't know to tell Supabase to delete it. Instead, we perform a "soft delete" by setting `deleted_at = NOW()` locally and marking `sync_status = 'pending_delete'`. The sync engine pushes this soft delete to Supabase. Local queries must be updated to filter out records where `deleted_at IS NOT NULL`.
+    - **Reads (Remote -> Local):** When the app comes online, it can poll Supabase for records where `last_updated_at` is greater than the last local sync timestamp, pulling those changes into SQLite.
 
 3.  **Conflict Resolution:**
     - In an offline-first app, a user might edit the same record on two different devices while offline. When both connect, a conflict occurs.
@@ -50,21 +52,21 @@ class SyncingExerciseTemplateRepository implements ExerciseTemplateRepository {
   final SupabaseClient remoteDb;
 
   // Implementation overrides:
-  // 1. Write to localDb
-  // 2. Attempt to write to remoteDb (or queue it)
+  // 1. Write to localDb and set sync_status to pending
+  // 2. Attempt to write to remoteDb (or let a background worker do it)
   // 3. Return localDb result
 }
 ```
 
 ### Steps to Implement
 
-1. **UUID Migration:** Migrate current integer IDs to string UUIDs in SQLite to prevent primary key collisions when syncing across multiple devices.
-2. **Setup Supabase Project:** Create the project, setup tables mirroring SQLite, add `user_id` and `last_updated_at`, and configure Row Level Security (RLS).
-3. **Add Dependencies:** Add `supabase_flutter` to `pubspec.yaml`.
+1. **UUID Migration:** Create a database migration script within the app (e.g., in `DatabaseMigrations`). The script will: add new string columns for IDs, generate a v4 UUID for every existing record, update all foreign key references to use the new UUIDs, and finally drop the old integer ID columns.
+2. **Setup Supabase Project:** This happens outside the app. You will use the Supabase web dashboard or Supabase CLI to create the project, define the tables mirroring SQLite, add `user_id`, and configure Row Level Security (RLS).
+3. **Add Dependencies:** Add `supabase_flutter` and `uuid` to `pubspec.yaml`.
 4. **Implement Authentication:** Create login/signup flows and manage the user session.
-5. **Update Local Schema:** Add `is_synced` (or similar tracking mechanism) to the SQLite schema and migrations.
-6. **Create Sync Logic:** Develop the syncing engine or update the repositories to handle the dual-write and background sync processes.
+5. **Update Local Schema:** Update the SQLite schema via a migration script to add `sync_status`, `last_updated_at`, and `deleted_at`. Update all repository read queries to ignore soft-deleted records.
+6. **Create Sync Logic:** Develop the background syncing engine to push pending changes and pull remote updates.
 
 ### Conclusion
 
-Connecting the current architecture to Supabase while maintaining a local-first approach is **highly feasible**. The existing use of the Repository pattern and Provider for dependency injection provides the perfect foundation. The primary complexities will not be refactoring the UI, but rather migrating the database primary keys to UUIDs and implementing a robust bidirectional sync engine.
+Connecting the current architecture to Supabase while maintaining a local-first approach is **highly feasible**. The existing use of the Repository pattern provides the perfect foundation. The primary complexities will be migrating the database primary keys to UUIDs, implementing soft deletes, and building the bidirectional sync engine. A `user_id` is absolutely crucial for this to work, as Supabase requires it to enforce Row Level Security and ensure users only sync and access their own data.
