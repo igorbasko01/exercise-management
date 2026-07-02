@@ -27,7 +27,8 @@ The core philosophy is that the app reads from and writes to the local SQLite da
     - Every table needs a `deleted_at` timestamp or `is_deleted` boolean column to support "soft deletes" (see below).
 
 2.  **Sync Mechanism & Status:**
-    - **Writes (Local -> Remote):** When a repository writes to SQLite, it updates the local record. To track sync state, we should add a `sync_status` column (e.g., 'synced', 'pending_insert', 'pending_update', 'pending_delete') to the SQLite tables. A background worker will look for 'pending' records and push them to Supabase, updating the status to 'synced' upon success.
+    - **Configurable Sync:** The syncing mechanism should be configurable via user settings, defaulting to "off". This ensures that even logged-in users have explicit control over when and if their data leaves the device.
+    - **Writes (Local -> Remote):** When a repository writes to SQLite, it updates the local record. To track sync state, we should add a `sync_status` column (e.g., 'synced', 'pending_insert', 'pending_update', 'pending_delete') to the SQLite tables. If sync is enabled, a background worker will look for 'pending' records and push them to Supabase, updating the status to 'synced' upon success.
     - **Deletes:** In an offline-first app, you cannot permanently delete a row locally if it hasn't synced yet, otherwise the sync engine won't know to tell Supabase to delete it. Instead, we perform a "soft delete" by setting `deleted_at = NOW()` locally and marking `sync_status = 'pending_delete'`. The sync engine pushes this soft delete to Supabase. Local queries must be updated to filter out records where `deleted_at IS NOT NULL`.
     - **Reads (Remote -> Local):** When the app comes online, it can poll Supabase for records where `last_updated_at` is greater than the last local sync timestamp, pulling those changes into SQLite.
 
@@ -65,7 +66,7 @@ class SyncingExerciseTemplateRepository implements ExerciseTemplateRepository {
 3. **Add Dependencies:** Add `supabase_flutter` and `uuid` to `pubspec.yaml`.
 4. **Implement Authentication:** Create login/signup flows and manage the user session.
 5. **Update Local Schema:** Update the SQLite schema via a migration script to add `sync_status`, `last_updated_at`, and `deleted_at`. Update all repository read queries to ignore soft-deleted records.
-6. **Create Sync Logic:** Develop the background syncing engine to push pending changes and pull remote updates.
+6. **Create Sync Logic:** Develop the background syncing engine to push pending changes and pull remote updates, respecting the user's config preference.
 
 ### Conclusion
 
