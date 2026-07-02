@@ -28,7 +28,8 @@ The core philosophy is that the app reads from and writes to the local SQLite da
 
 2.  **Sync Mechanism & Status:**
     - **Configurable Sync:** The syncing mechanism should be configurable via user settings, defaulting to "off". This ensures that even logged-in users have explicit control over when and if their data leaves the device.
-    - **Writes (Local -> Remote):** When a repository writes to SQLite, it updates the local record. To track sync state, we should add a `sync_status` column (e.g., 'synced', 'pending_insert', 'pending_update', 'pending_delete') to the SQLite tables. If sync is enabled, a mechanism (e.g., a background isolate, the `workmanager` package, or an in-app listener loop) will look for 'pending' records and push them to Supabase, updating the status to 'synced' upon success.
+    - **Writes (Local -> Remote):** When a repository writes to SQLite, it updates the local record. To track sync state, we should add a `sync_status` column (e.g., 'synced', 'pending_insert', 'pending_update', 'pending_delete') to the SQLite tables. If sync is enabled, we will use the **`workmanager` package** for background syncing.
+        - **Why `workmanager`?** It allows us to register a background task that OS schedules (using JobScheduler on Android, BGTaskScheduler on iOS). This ensures that even if the user closes the app, pending syncs will eventually be pushed to Supabase without draining the battery excessively. It is more robust than a simple isolate or listener loop.
     - **Deletes:** In an offline-first app, you cannot permanently delete a row locally if it hasn't synced yet, otherwise the sync engine won't know to tell Supabase to delete it. Instead, we perform a "soft delete" by setting `deleted_at = NOW()` locally and marking `sync_status = 'pending_delete'`. The sync engine pushes this soft delete to Supabase. Local queries must be updated to filter out records where `deleted_at IS NOT NULL`.
     - **Reads (Remote -> Local):** When the app comes online, it can poll Supabase for records where `last_updated_at` is greater than the last local sync timestamp, pulling those changes into SQLite.
 
@@ -63,10 +64,10 @@ class SyncingExerciseTemplateRepository implements ExerciseTemplateRepository {
 
 1. **UUID Migration:** Create a database migration script within the app (e.g., in `DatabaseMigrations`). The script will: add new string columns for IDs, generate a v4 UUID for every existing record, update all foreign key references to use the new UUIDs, and finally drop the old integer ID columns.
 2. **Setup Supabase Project:** This happens outside the app. You will use the Supabase web dashboard or Supabase CLI to create the project, define the tables mirroring SQLite, add `user_id`, and configure Row Level Security (RLS).
-3. **Add Dependencies:** Add `supabase_flutter` and `uuid` to `pubspec.yaml`.
+3. **Add Dependencies:** Add `supabase_flutter`, `uuid`, and `workmanager` to `pubspec.yaml`.
 4. **Implement Authentication:** Create login/signup screens and manage the user session.
 5. **Update Local Schema:** Update the SQLite schema via a migration script to add `sync_status`, `last_updated_at`, and `deleted_at`. Update all repository read queries to ignore soft-deleted records.
-6. **Create Sync Logic:** Develop the background syncing mechanism to push pending changes and pull remote updates, respecting the user's config preference.
+6. **Create Sync Logic:** Develop the background syncing mechanism using `workmanager` to push pending changes and pull remote updates, respecting the user's config preference.
 
 ### Conclusion
 
