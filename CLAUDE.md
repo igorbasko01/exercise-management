@@ -44,6 +44,20 @@ Dependency injection happens in `lib/main.dart` via `MultiProvider`: the
 `Database`, each repository, and each view model are wired there. View models
 `..execute()` their initial-load command at creation time.
 
+### Guiding principles
+
+- **Program to interfaces.** Depend on abstractions, not concretions.
+  Repositories are abstract classes; consumers (view models, other services)
+  receive them through constructor parameters and never `new` up a concrete
+  impl. Widgets receive view models via `Provider`, not by constructing them.
+  This keeps every seam swappable and mockable.
+- **Keep logic out of the presentation layer.** Pages and widgets should be
+  thin: render state and forward user intent to a view model command. Business
+  rules, data transformation, progression algorithms, statistics, and
+  persistence belong in `core/`, `data/`, or a view model — never inline in a
+  widget's `build`. If you're tempted to compute something in a widget, push it
+  down a layer so it can be unit-tested without the widget tree.
+
 ### Key patterns — follow these
 
 - **Result type, not exceptions across boundaries.** Repositories and commands
@@ -76,8 +90,21 @@ migration step — always add a new version.
 
 Tests mirror `lib/` under `test/` (`test/unit/...`, `test/widget/...`). Use
 `mocktail` for mocks, `sqflite_common_ffi` for DB tests, and `fake_async`/
-`clock` for time-dependent logic (e.g. the rest timer). Prefer the
-`in_memory_*` repositories for view-model tests.
+`clock` for time-dependent logic (e.g. the rest timer).
+
+Test at the right seam — this is why interfaces matter:
+
+- **Core / data logic** — unit-test directly. It has no Flutter dependency, so
+  most of the app's behavior should be verifiable here.
+- **View models** — unit-test against the `in_memory_*` repositories (or
+  `mocktail` mocks of the abstract repository), asserting on state and command
+  `completed`/`error`.
+- **Widgets** — widget-test them too. Because pages consume view models through
+  `Provider`, wrap the widget under test in a `ChangeNotifierProvider` (or
+  `Provider`) supplying a `mocktail` mock of the view model, stub its getters
+  and commands, and pump. See `test/widget/presentation/pages/` for the
+  pattern. Keeping widgets thin (above) is what makes this cheap — the widget
+  test only verifies rendering and intent forwarding, not business rules.
 
 ## Conventions
 
