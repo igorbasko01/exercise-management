@@ -28,7 +28,7 @@ class SqfliteExerciseSetPresentationRepository
           await database.rawQuery('''
       SELECT DISTINCT DATE(date_time) as exercise_date
       FROM ${SqfliteExerciseSetsRepository.tableName} es
-      WHERE 1=1 $templateFilter
+      WHERE es.deleted_at IS NULL $templateFilter
       ORDER BY DATE(date_time) DESC
       LIMIT ?
       ''', [...templateParams, lastNDays]);
@@ -54,7 +54,7 @@ class SqfliteExerciseSetPresentationRepository
         es.completed_at AS completed_at
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      WHERE DATE(es.date_time) >= ? $templateFilter
+      WHERE es.deleted_at IS NULL AND DATE(es.date_time) >= ? $templateFilter
       ORDER BY es.id DESC
       ''', [oldestDate, ...templateParams]);
 
@@ -111,7 +111,7 @@ class SqfliteExerciseSetPresentationRepository
       final List<Map<String, dynamic>> result = await database.rawQuery('''
       SELECT exercise_template_id, MAX(DATE(date_time)) as exercise_date
       FROM ${SqfliteExerciseSetsRepository.tableName}
-      WHERE exercise_template_id IN ($placeholders)
+      WHERE deleted_at IS NULL AND exercise_template_id IN ($placeholders)
       GROUP BY exercise_template_id
       ''', templateIds);
 
@@ -138,7 +138,7 @@ class SqfliteExerciseSetPresentationRepository
       final List<Map<String, dynamic>> result = await database.rawQuery('''
       SELECT DATE(date_time) as exercise_date
       FROM ${SqfliteExerciseSetsRepository.tableName}
-      WHERE exercise_template_id IN ($placeholders)
+      WHERE deleted_at IS NULL AND exercise_template_id IN ($placeholders)
       GROUP BY DATE(date_time)
       HAVING COUNT(DISTINCT exercise_template_id) = ?
       ORDER BY DATE(date_time) DESC
@@ -186,7 +186,7 @@ class SqfliteExerciseSetPresentationRepository
         es.completed_at AS completed_at
       FROM ${SqfliteExerciseSetsRepository.tableName} es
       LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      WHERE $whereClause
+      WHERE es.deleted_at IS NULL AND ($whereClause)
       ORDER BY es.id ASC
       ''', args);
 

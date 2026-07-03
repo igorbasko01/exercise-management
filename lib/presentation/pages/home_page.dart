@@ -9,6 +9,9 @@ import 'package:exercise_management/presentation/widgets/exercise_volume_statist
 import 'package:exercise_management/presentation/widgets/weekly_progress_statistic_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
+import 'package:exercise_management/core/services/auth_service.dart';
+import 'package:exercise_management/presentation/pages/auth_page.dart';
 
 class HomePage extends StatelessWidget {
   final VoidCallback? onNavigateToSets;
@@ -22,6 +25,53 @@ class HomePage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Consumer<AuthService>(
+            builder: (context, auth, _) {
+              if (auth.currentUser == null) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 24.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Not logged in', style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        const Text('Sign in to sync your data across devices.'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
+                          },
+                          child: const Text('Login / Register'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 24.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Logged in as ${auth.currentUser?.email}', style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            auth.signOut();
+                          },
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
           _buildCallToAction(context),
           const SizedBox(height: 24),
           const ActiveProgramWidget(),

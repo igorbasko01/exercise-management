@@ -15,7 +15,13 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> addExercise(
       ExerciseTemplate exercise) async {
     try {
-      final id = await database.insert(tableName, exercise.toMap(),
+      final map = exercise.toMap();
+      final id = exercise.id ?? DateTime.now().millisecondsSinceEpoch.toString() + 'temp';
+      map['id'] = id;
+      map['sync_status'] = 'pending_insert';
+      map['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+      await database.insert(tableName, map,
           conflictAlgorithm: ConflictAlgorithm.rollback);
       return Result.ok(exercise.copyWith(id: Value(id.toString())));
     } catch (e) {
@@ -27,7 +33,7 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   @override
   Future<Result<List<ExerciseTemplate>>> getExercises() async {
     final List<Map<String, dynamic>> maps =
-        await database.query(tableName, orderBy: 'id');
+        await database.query(tableName, where: 'deleted_at IS NULL', orderBy: 'id');
     return Result.ok(maps.map((e) => ExerciseTemplate.fromMap(e)).toList());
   }
 
@@ -35,7 +41,7 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> getExercise(String id) async {
     final List<Map<String, dynamic>> maps = await database.query(
       tableName,
-      where: 'id = ?',
+      where: 'id = ? AND deleted_at IS NULL',
       whereArgs: [id],
     );
     if (maps.isEmpty) {
@@ -48,9 +54,13 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
   Future<Result<ExerciseTemplate>> updateExercise(
       ExerciseTemplate exercise) async {
     try {
+      final map = exercise.toMap();
+      map['sync_status'] = 'pending_update';
+      map['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
       int count = await database.update(
         tableName,
-        exercise.toMap(),
+        map,
         where: 'id = ?',
         whereArgs: [exercise.id],
       );
@@ -80,8 +90,13 @@ class SqfliteExerciseTemplateRepository implements ExerciseTemplateRepository {
 
       final exercise = ExerciseTemplate.fromMap(maps.first);
 
-      final int count = await database.delete(
+      final int count = await database.update(
         tableName,
+        {
+          'deleted_at': DateTime.now().toUtc().toIso8601String(),
+          'sync_status': 'pending_delete',
+          'last_updated_at': DateTime.now().toUtc().toIso8601String()
+        },
         where: 'id = ?',
         whereArgs: [id],
       );

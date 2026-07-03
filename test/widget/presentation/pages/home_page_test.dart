@@ -10,9 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
+import 'package:exercise_management/core/services/auth_service.dart';
 
 class MockExerciseStatisticsViewModel extends Mock
     implements ExerciseStatisticsViewModel {}
+
+class MockAuthService extends Mock implements AuthService {}
 
 class MockExerciseProgramsViewModel extends Mock
     implements ExerciseProgramsViewModel {}
@@ -30,6 +33,7 @@ void main() {
   late MockExerciseProgramsViewModel mockProgramsViewModel;
   late MockProgramProgressionViewModel mockProgressionViewModel;
   late MockExerciseSetsViewModel mockSetsViewModel;
+  late MockAuthService mockAuthService;
 
   late MockCommand0<List<bool>> mockFetchCurrentWeek;
   late MockCommand0<double> mockFetchAvg30;
@@ -44,6 +48,8 @@ void main() {
     mockProgramsViewModel = MockExerciseProgramsViewModel();
     mockProgressionViewModel = MockProgramProgressionViewModel();
     mockSetsViewModel = MockExerciseSetsViewModel();
+    mockAuthService = MockAuthService();
+    when(() => mockAuthService.currentUser).thenReturn(null);
 
     mockFetchCurrentWeek = MockCommand0<List<bool>>();
     mockFetchAvg30 = MockCommand0<double>();
@@ -125,6 +131,7 @@ void main() {
   Widget createWidgetUnderTest({VoidCallback? onNavigateToSets}) {
     return MultiProvider(
       providers: [
+        Provider<AuthService>.value(value: mockAuthService),
         ChangeNotifierProvider<ExerciseStatisticsViewModel>.value(
             value: mockStatsViewModel),
         ChangeNotifierProvider<ExerciseProgramsViewModel>.value(
@@ -155,7 +162,8 @@ void main() {
     expect(find.text('Weekly Progress'), findsWidgets);
     expect(find.text('Average Weekly Stats'), findsOneWidget);
     expect(find.text('Exercise Volume'), findsWidgets);
-    expect(find.byType(Card), findsNWidgets(6));
+    // Because we added an Auth Card, there are now 7 cards
+    expect(find.byType(Card), findsNWidgets(7));
 
     // Tap CTA and verify callback
     await tester.tap(find.text('EXERCISE NOW'));

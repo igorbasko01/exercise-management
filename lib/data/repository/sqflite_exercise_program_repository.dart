@@ -36,7 +36,7 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
   Future<Result<List<ExerciseProgram>>> getPrograms() async {
     try {
       final List<Map<String, dynamic>> programMaps =
-          await database.query(programTable);
+          await database.query(programTable, where: 'deleted_at IS NULL');
 
       List<ExerciseProgram> programs = [];
       for (var map in programMaps) {
@@ -60,7 +60,7 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
     try {
       final List<Map<String, dynamic>> maps = await database.query(
         programTable,
-        where: 'id = ?',
+        where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [id],
       );
 
@@ -81,7 +81,7 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
       String programId) async {
     final List<Map<String, dynamic>> sessionMaps = await database.query(
       sessionTable,
-      where: 'program_id = ?',
+      where: 'program_id = ? AND deleted_at IS NULL',
       whereArgs: [programId],
       orderBy:
           'id', // Assuming insertion order or id order corresponds to creation
@@ -103,7 +103,7 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
       SELECT e.* 
       FROM $exerciseTable e
       INNER JOIN $linkTable l ON e.id = l.exercise_template_id
-      WHERE l.session_id = ?
+      WHERE l.session_id = ? AND l.deleted_at IS NULL AND e.deleted_at IS NULL
       ORDER BY l.ordering
     ''', [sessionId]);
 
@@ -122,25 +122,36 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
             }
 
             // Insert Program
-            final programId = await txn.insert(programTable, program.toMap());
-            final String programIdStr = programId.toString();
+            final programMap = program.toMap();
+            final String programIdStr = program.id ?? DateTime.now().millisecondsSinceEpoch.toString() + 'temp';
+            programMap['id'] = programIdStr;
+            programMap['sync_status'] = 'pending_insert';
+            programMap['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+            await txn.insert(programTable, programMap);
 
             List<ExerciseProgramSession> savedSessions = [];
 
             for (var session in program.sessions) {
               // Insert Session
               final sessionMap = session.toMap();
-              sessionMap['program_id'] = programId;
-              final sessionId = await txn.insert(sessionTable, sessionMap);
-              final String sessionIdStr = sessionId.toString();
+              final String sessionIdStr = session.id ?? DateTime.now().millisecondsSinceEpoch.toString() + 'temp' + session.hashCode.toString();
+              sessionMap['id'] = sessionIdStr;
+              sessionMap['program_id'] = programIdStr;
+              sessionMap['sync_status'] = 'pending_insert';
+              sessionMap['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+              await txn.insert(sessionTable, sessionMap);
 
               // Insert Link/Exercises
               int order = 0;
               for (var exercise in session.exercises) {
                 await txn.insert(linkTable, {
-                  'session_id': sessionId,
+                  'session_id': sessionIdStr,
                   'exercise_template_id': exercise.id,
                   'ordering': order++,
+                  'sync_status': 'pending_insert',
+                  'last_updated_at': DateTime.now().toUtc().toIso8601String()
                 });
               }
 
@@ -178,9 +189,13 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
             }
 
             // Update Program details
+            final programMap = program.toMap();
+            programMap['sync_status'] = 'pending_update';
+            programMap['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
             int count = await txn.update(
               programTable,
-              program.toMap(),
+              programMap,
               where: 'id = ?',
               whereArgs: [program.id],
             );
@@ -190,56 +205,48 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
                   'Program ${program.id} not found');
             }
 
-            // Simplest strategy for deep update: Delete existing sessions (cascade deletes links) and re-create.
-            // Identify existing sessions to potentially keep IDs vs full replace?
-            // Full replace of children is safer for consistency unless ID persistence is critical for logs.
-            // However, exercise logs reference templates, not session items, so it should be fine.
-
-            // Delete old sessions
-            await txn.delete(
+            // Soft Delete old sessions and links
+            await txn.update(
               sessionTable,
+              {
+                'deleted_at': DateTime.now().toUtc().toIso8601String(),
+                'sync_status': 'pending_delete',
+                'last_updated_at': DateTime.now().toUtc().toIso8601String()
+              },
               where: 'program_id = ?',
               whereArgs: [program.id],
             );
-            // Note: Casade delete on DB schema 'ON DELETE CASCADE' only works for foreign keys if enabled.
-            // Sqflite specifically: "Foreign key constraints are disabled by default (for backward compatibility),
-            // so must be enabled manually."
-            // We cannot guarantee they are enabled here without checking database config.
-            // Safest is to manually delete or ensure cascade is on.
-            // Let's assume we need to handle it or rely on cascade.
-            // Actually, let's just re-insert.
-            // But if we deleted sessions, we also need to delete links if cascade isn't on.
-            // To be safe in simple update, let's delete sessions. If cascade is off, we might have orphan links?
-            // NO, the schema defined 'ON DELETE CASCADE' in migrations.
-            // We should ensure `PRAGMA foreign_keys = ON;` is set in database opening.
-            // Assuming it's handled or we do manual cleanup.
-            // Let's manually clean up links to be robust irrespective of Pragma.
-            // Wait, to delete links we need session IDs.
-            // Actually, if we delete sessions, and cascade is NOT on, links remain with invalid session_id.
-            // Let's rely on standard sqflite usage where we trust the setup or do manual delete.
 
-            // Re-insert sessions
+            await txn.rawUpdate('''
+              UPDATE $linkTable
+              SET deleted_at = ?, sync_status = 'pending_delete', last_updated_at = ?
+              WHERE session_id IN (SELECT id FROM $sessionTable WHERE program_id = ?)
+            ''', [DateTime.now().toUtc().toIso8601String(), DateTime.now().toUtc().toIso8601String(), program.id]);
+
+            // Re-insert sessions (treating as new inserts)
             List<ExerciseProgramSession> savedSessions = [];
             for (var session in program.sessions) {
               final sessionMap = session.toMap();
+              final sessionIdStr = DateTime.now().millisecondsSinceEpoch.toString() + 'temp' + session.hashCode.toString();
+              sessionMap['id'] = sessionIdStr;
               sessionMap['program_id'] = program.id;
-              // If session had ID, we might ideally respect it or just treat as new.
-              // Treating as new (new ID) is easiest but changes IDs.
-              // If we want to keep IDs, we'd need valid IDs.
-              // For now, simple "Replace All Children" strategy.
-              sessionMap.remove('id'); // Ensure new ID generation
-              final sessionId = await txn.insert(sessionTable, sessionMap);
+              sessionMap['sync_status'] = 'pending_insert';
+              sessionMap['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+              await txn.insert(sessionTable, sessionMap);
 
               int order = 0;
               for (var exercise in session.exercises) {
                 await txn.insert(linkTable, {
-                  'session_id': sessionId,
+                  'session_id': sessionIdStr,
                   'exercise_template_id': exercise.id,
                   'ordering': order++,
+                  'sync_status': 'pending_insert',
+                  'last_updated_at': DateTime.now().toUtc().toIso8601String()
                 });
               }
               savedSessions.add(session.copyWith(
-                id: Value(sessionId.toString()),
+                id: Value(sessionIdStr),
                 programId: Value(program.id),
               ));
             }
@@ -282,12 +289,35 @@ class SqfliteExerciseProgramRepository implements ExerciseProgramRepository {
       if (result is Error) return result;
       final program = (result as Ok<ExerciseProgram>).value;
 
-      await database.delete(
+      final now = DateTime.now().toUtc().toIso8601String();
+
+      await database.update(
         programTable,
+        {
+          'deleted_at': now,
+          'sync_status': 'pending_delete',
+          'last_updated_at': now
+        },
         where: 'id = ?',
         whereArgs: [id],
       );
-      // Relying on ON DELETE CASCADE for sessions and links.
+
+      await database.update(
+        sessionTable,
+        {
+          'deleted_at': now,
+          'sync_status': 'pending_delete',
+          'last_updated_at': now
+        },
+        where: 'program_id = ?',
+        whereArgs: [id],
+      );
+
+      await database.rawUpdate('''
+        UPDATE $linkTable
+        SET deleted_at = ?, sync_status = 'pending_delete', last_updated_at = ?
+        WHERE session_id IN (SELECT id FROM $sessionTable WHERE program_id = ?)
+      ''', [now, now, id]);
 
       _notifyProgramsChanged();
 

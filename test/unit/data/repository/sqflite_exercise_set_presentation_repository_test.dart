@@ -239,6 +239,7 @@ void main() {
     // Arrange
     final benchPressTemplateResult = await templatesRepository.addExercise(
         ExerciseTemplate(
+            id: '9',
             name: 'Bench Press',
             muscleGroup: MuscleGroup.chest,
             repetitionsRangeTarget: RepetitionsRange.medium));
@@ -247,6 +248,7 @@ void main() {
 
     final squatTemplateResult = await templatesRepository.addExercise(
         ExerciseTemplate(
+            id: '10',
             name: 'Squat',
             muscleGroup: MuscleGroup.quadriceps,
             repetitionsRangeTarget: RepetitionsRange.medium));
@@ -322,6 +324,7 @@ void main() {
     // Arrange
     final benchPressTemplateResult = await templatesRepository.addExercise(
         ExerciseTemplate(
+            id: '11',
             name: 'Bench Press',
             muscleGroup: MuscleGroup.chest,
             repetitionsRangeTarget: RepetitionsRange.medium));
@@ -330,6 +333,7 @@ void main() {
 
     final squatTemplateResult = await templatesRepository.addExercise(
         ExerciseTemplate(
+            id: '12',
             name: 'Squat',
             muscleGroup: MuscleGroup.quadriceps,
             repetitionsRangeTarget: RepetitionsRange.medium));
@@ -525,8 +529,8 @@ void main() {
   });
 
   test('getMostRecentCompletionDate should return separate dates for different completion dates', () async {
-    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
-    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(id: '1', name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(id: '2', name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
     final t2 = (t2Result as Ok<ExerciseTemplate>).value;
 
@@ -545,8 +549,8 @@ void main() {
   });
 
   test('getExerciseSetsByDateAndTemplates should return correct sets for a map of templates and dates', () async {
-    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
-    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(id: '900', name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(id: '901', name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
     final t2 = (t2Result as Ok<ExerciseTemplate>).value;
 
@@ -572,8 +576,8 @@ void main() {
   });
 
   test('getStrictMostRecentRoutineCompletionDate should return date when all templates exist on same date', () async {
-    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
-    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(id: '7', name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(id: '8', name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
     final t2 = (t2Result as Ok<ExerciseTemplate>).value;
 
@@ -592,8 +596,8 @@ void main() {
   });
 
   test('getStrictMostRecentRoutineCompletionDate should return null when templates not done on same date', () async {
-    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
-    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t1Result = await templatesRepository.addExercise(ExerciseTemplate(id: '902', name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
+    final t2Result = await templatesRepository.addExercise(ExerciseTemplate(id: '903', name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t1 = (t1Result as Ok<ExerciseTemplate>).value;
     final t2 = (t2Result as Ok<ExerciseTemplate>).value;
 

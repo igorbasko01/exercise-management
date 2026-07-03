@@ -22,7 +22,7 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       final result = await database.rawQuery('''
         SELECT DISTINCT DATE(date_time) as exercise_date
         FROM $tableName
-        WHERE DATE(date_time) BETWEEN ? AND ?
+        WHERE DATE(date_time) BETWEEN ? AND ? AND deleted_at IS NULL
         ''', [
         startOfWeek.toIso8601String().substring(0, 10),
         endOfWeek.toIso8601String().substring(0, 10)
@@ -53,7 +53,7 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       final result = await database.rawQuery('''
         SELECT DISTINCT DATE(date_time) as exercise_date
         FROM $tableName
-        WHERE DATE(date_time) BETWEEN ? AND ?
+        WHERE DATE(date_time) BETWEEN ? AND ? AND deleted_at IS NULL
         ORDER BY exercise_date
         ''', [
         startDate.toIso8601String().substring(0, 10),
@@ -93,16 +93,17 @@ class SqfliteExerciseStatisticsRepository extends ExerciseStatisticsRepository {
       count(*) as sets_count
     from ${SqfliteExerciseSetsRepository.tableName} s
     left join ${SqfliteExerciseTemplateRepository.tableName} t on t.id = s.exercise_template_id
+    where s.deleted_at IS NULL
     group by date(s.date_time), s.exercise_template_id, t.name
     having date(s.date_time) >= date('now', '-180 days')
     order by s.date_time asc
     ''');
 
-      final exerciseVolumeStats = <int, ExerciseVolumeStatistics>{};
-      final setsCountMap = <int, int>{};
+      final exerciseVolumeStats = <String, ExerciseVolumeStatistics>{};
+      final setsCountMap = <String, int>{};
 
       for (var row in result) {
-        final exerciseTemplateId = row['exercise_template_id'] as int;
+        final exerciseTemplateId = row['exercise_template_id'].toString();
         final exerciseName = row['name'] as String? ?? 'Unknown';
         final totalVolume = (row['total_volume'] as num).toInt();
         final setsCount = (row['sets_count'] as num).toInt();

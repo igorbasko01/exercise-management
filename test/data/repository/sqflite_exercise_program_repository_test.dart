@@ -19,39 +19,55 @@ void main() {
   });
 
   setUp(() async {
-    database = await openDatabase(inMemoryDatabasePath, version: 4,
+    database = await openDatabase(inMemoryDatabasePath, version: 5,
         onCreate: (db, version) async {
       await db.execute('''
         CREATE TABLE exercise_templates (
-          id INTEGER PRIMARY KEY,
+          id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           muscle_group INTEGER NOT NULL,
           repetitions_range INTEGER NOT NULL,
-          description TEXT
+          description TEXT,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT
         )
       ''');
       await db.execute('''
         CREATE TABLE exercise_programs (
-          id INTEGER PRIMARY KEY,
+          id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT,
           is_active INTEGER NOT NULL DEFAULT 0,
-          progression_type INTEGER NOT NULL DEFAULT 0
+          progression_type INTEGER NOT NULL DEFAULT 0,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT
         )
       ''');
       await db.execute('''
         CREATE TABLE exercise_program_sessions (
-          id INTEGER PRIMARY KEY,
-          program_id INTEGER NOT NULL REFERENCES exercise_programs(id) ON DELETE CASCADE,
+          id TEXT PRIMARY KEY,
+          program_id TEXT NOT NULL REFERENCES exercise_programs(id) ON DELETE CASCADE,
           name TEXT NOT NULL,
-          description TEXT
+          description TEXT,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT
         )
       ''');
       await db.execute('''
         CREATE TABLE session_exercises (
-          session_id INTEGER NOT NULL REFERENCES exercise_program_sessions(id) ON DELETE CASCADE,
-          exercise_template_id INTEGER NOT NULL REFERENCES exercise_templates(id),
+          session_id TEXT NOT NULL REFERENCES exercise_program_sessions(id) ON DELETE CASCADE,
+          exercise_template_id TEXT NOT NULL REFERENCES exercise_templates(id),
           ordering INTEGER NOT NULL,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT,
           PRIMARY KEY (session_id, ordering)
         )
       ''');
@@ -68,12 +84,16 @@ void main() {
   test('should insert and retrieve a program with sessions and exercises',
       () async {
     // 1. Create Exercise Templates
-    final exercise1Id = await database.insert('exercise_templates', {
+    final String exercise1Id = '1';
+    final String exercise2Id = '2';
+    await database.insert('exercise_templates', {
+      'id': exercise1Id,
       'name': 'Bench Press',
       'muscle_group': MuscleGroup.quadriceps.index,
       'repetitions_range': RepetitionsRange.medium.index,
     });
-    final exercise2Id = await database.insert('exercise_templates', {
+    await database.insert('exercise_templates', {
+      'id': exercise2Id,
       'name': 'Squat',
       'muscle_group': MuscleGroup.quadriceps.index,
       'repetitions_range': RepetitionsRange.medium.index,
@@ -120,13 +140,15 @@ void main() {
 
   test('should update a program and its sessions', () async {
     // Setup initial data
-    final exercise1Id = await database.insert('exercise_templates', {
+    final String exercise1Id = '3';
+    await database.insert('exercise_templates', {
+      'id': exercise1Id,
       'name': 'Bench Press',
       'muscle_group': MuscleGroup.quadriceps.index,
       'repetitions_range': RepetitionsRange.medium.index,
     });
     final exercise1 = ExerciseTemplate(
-        id: exercise1Id.toString(),
+        id: exercise1Id,
         name: 'Bench Press',
         muscleGroup: MuscleGroup.chest,
         repetitionsRangeTarget: RepetitionsRange.medium);

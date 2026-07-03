@@ -28,10 +28,34 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:exercise_management/core/services/sync_service.dart';
+import 'package:exercise_management/core/services/auth_service.dart';
 
 import 'data/database/exercise_database_creation.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Supabase.initialize(
+      url: 'https://placeholder.supabase.co',
+      anonKey: 'placeholder_anon_key',
+    );
+
+    final path = await getDatabasePath();
+    final database = await AppDatabaseFactory.createDatabase(
+        path, createStatements, ExerciseDatabaseMigrations());
+
+    final syncService = SyncService(database);
+    await syncService.sync();
+
+    return true;
+  });
+}
 
 Future<String> getDatabasePath() async {
   final databasesPath = await getDatabasesPath();
@@ -40,6 +64,22 @@ Future<String> getDatabasePath() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://placeholder.supabase.co',
+    anonKey: 'placeholder_anon_key',
+  );
+
+  Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: true,
+  );
+
+  Workmanager().registerPeriodicTask(
+    "1",
+    "backgroundSyncTask",
+    frequency: const Duration(minutes: 15),
+  );
 
   tz.initializeTimeZones();
   final notificationService = LocalRestTimerNotificationService();
@@ -55,6 +95,7 @@ void main() async {
     providers: [
       Provider<SharedPreferences>.value(value: prefs),
       Provider<RestTimerNotificationService>.value(value: notificationService),
+      Provider<AuthService>(create: (_) => AuthService()),
       Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
         create: (_) => SqfliteExerciseTemplateRepository(database),

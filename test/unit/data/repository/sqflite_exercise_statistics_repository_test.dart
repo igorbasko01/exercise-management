@@ -25,8 +25,37 @@ void main() {
   });
 
   setUp(() async {
-    db = await AppDatabaseFactory.createDatabase(
-        inMemoryDatabasePath, createStatements, ExerciseDatabaseMigrations());
+    db = await openDatabase(inMemoryDatabasePath, version: 5,
+        onCreate: (db, version) async {
+      await db.execute('''
+        CREATE TABLE exercise_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          muscle_group INTEGER NOT NULL,
+          repetitions_range INTEGER NOT NULL,
+          description TEXT,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE exercise_sets (
+          id TEXT PRIMARY KEY,
+          exercise_template_id TEXT NOT NULL REFERENCES exercise_templates(id),
+          date_time TEXT NOT NULL,
+          equipment_weight REAL NOT NULL,
+          plates_weight REAL NOT NULL,
+          repetitions INTEGER NOT NULL,
+          completed_at TEXT,
+          user_id TEXT,
+          sync_status TEXT DEFAULT 'pending_insert',
+          last_updated_at TEXT,
+          deleted_at TEXT
+        )
+      ''');
+    });
     setsRepository = SqfliteExerciseSetsRepository(db);
     templatesRepository = SqfliteExerciseTemplateRepository(db);
     statisticsRepository = SqfliteExerciseStatisticsRepository(db);

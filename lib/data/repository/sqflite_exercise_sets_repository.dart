@@ -22,7 +22,13 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   @override
   Future<Result<ExerciseSet>> addExercise(ExerciseSet exerciseSet) async {
     try {
-      final id = await database.insert(tableName, exerciseSet.toMap(),
+      final map = exerciseSet.toMap();
+      final id = exerciseSet.id ?? DateTime.now().millisecondsSinceEpoch.toString() + 'temp' + exerciseSet.hashCode.toString();
+      map['id'] = id;
+      map['sync_status'] = 'pending_insert';
+      map['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+      await database.insert(tableName, map,
           conflictAlgorithm: ConflictAlgorithm.rollback);
       _notify();
       return Result.ok(exerciseSet.copyWith(id: Value(id.toString())));
@@ -41,8 +47,13 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
 
     final exerciseSet = (exerciseSetResult as Ok<ExerciseSet>).value;
 
-    final count = await database.delete(
+    final count = await database.update(
       tableName,
+      {
+        'deleted_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_status': 'pending_delete',
+        'last_updated_at': DateTime.now().toUtc().toIso8601String()
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -57,7 +68,7 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   Future<Result<ExerciseSet>> getExercise(String id) async {
     final List<Map<String, dynamic>> maps = await database.query(
       tableName,
-      where: 'id = ?',
+      where: 'id = ? AND deleted_at IS NULL',
       whereArgs: [id],
     );
     if (maps.isEmpty) {
@@ -69,16 +80,20 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   @override
   Future<Result<List<ExerciseSet>>> getExercises() async {
     final List<Map<String, dynamic>> maps =
-        await database.query(tableName, orderBy: 'id');
+        await database.query(tableName, where: 'deleted_at IS NULL', orderBy: 'id');
     return Result.ok(maps.map((e) => ExerciseSet.fromMap(e)).toList());
   }
 
   @override
   Future<Result<ExerciseSet>> updateExercise(ExerciseSet exerciseSet) async {
     try {
+      final map = exerciseSet.toMap();
+      map['sync_status'] = 'pending_update';
+      map['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+
       int count = await database.update(
         tableName,
-        exerciseSet.toMap(),
+        map,
         where: 'id = ?',
         whereArgs: [exerciseSet.id],
       );
@@ -98,7 +113,12 @@ class SqfliteExerciseSetsRepository extends ExerciseSetRepository {
   Future<Result<void>> addExercises(List<ExerciseSet> exerciseSets) async {
     final batch = database.batch();
     for (var exerciseSet in exerciseSets) {
-      batch.insert(tableName, exerciseSet.toMap(),
+      final map = exerciseSet.toMap();
+      final id = exerciseSet.id ?? DateTime.now().millisecondsSinceEpoch.toString() + 'temp' + exerciseSet.hashCode.toString();
+      map['id'] = id;
+      map['sync_status'] = 'pending_insert';
+      map['last_updated_at'] = DateTime.now().toUtc().toIso8601String();
+      batch.insert(tableName, map,
           conflictAlgorithm: ConflictAlgorithm.rollback);
     }
     try {
