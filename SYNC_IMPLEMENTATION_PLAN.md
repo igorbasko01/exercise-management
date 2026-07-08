@@ -10,7 +10,18 @@ PR). Its code is preserved in git history at commit `99bde79` (and its
 ancestors), reachable via the commit list of PR #78. Useful for lifting
 interface shapes and tests; the plan below supersedes its structure.
 
-Companion analysis: [`SUPABASE_ANALYSIS.md`](SUPABASE_ANALYSIS.md).
+---
+
+## Background
+
+The goal is to move from a purely local, single-user app to a cloud-backed,
+multi-user one while staying **local-first** (SQLite remains the primary data
+source; Supabase is a backup/sync layer). This is feasible with relatively low
+churn because the app already uses the **repository pattern** behind explicit
+interfaces (e.g. `ExerciseTemplateRepository`) with **Provider** dependency
+injection, so remote/sync behaviour can be layered in without changing the UI or
+view models. Authentication is a strict prerequisite for multi-user sync
+(Supabase Row Level Security keys off a `user_id`).
 
 ---
 
