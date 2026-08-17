@@ -1,0 +1,119 @@
+name: Build Test APK
+
+# Pick the branch to test in the "Run workflow" dialog. The APK always lands on
+# the rolling `test-builds` prerelease, so its download URL is stable enough to
+# bookmark on the phone.
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: 'Short build label, e.g. pr94 (defaults to the branch name)'
+        required: false
+        default: ''
+
+env:
+  RELEASE_TAG: test-builds
+  APK_NAME: exercise-management-test.apk
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            echo "KEYSTORE_FILE=upload-keystore.jks" >> $GITHUB_ENV
+          else
+            echo "No KEYSTORE_BASE64 secret - the APK will be debug-signed."
+          fi
+
+      - name: Resolve Build Name
+        env:
+          INPUT_LABEL: ${{ inputs.label }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          VERSION=$(grep 'version: ' pubspec.yaml | head -1 | awk '{print $2}' | cut -d '+' -f 1)
+          LABEL="$INPUT_LABEL"
+          if [ -z "$LABEL" ]; then
+            LABEL=$(echo "$REF_NAME" | tr -c 'A-Za-z0-9' '-' | cut -c1-24 | sed 's/-*$//')
+          fi
+          echo "BUILD_NAME=$VERSION-$LABEL.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Build APK
+        env:
+          APP_ID_SUFFIX: .test
+          APP_LABEL: IronLog Test
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          flutter build apk --release \
+            --build-name="$BUILD_NAME" \
+            --build-number=${{ github.run_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exercise-management-test-${{ env.BUILD_NAME }}
+          path: ${{ env.APK_NAME }}
+
+      - name: Publish to Rolling Test Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
+          gh release create "$RELEASE_TAG" \
+            --prerelease \
+            --target "$COMMIT_SHA" \
+            --title "Test build - $BUILD_NAME" \
+            --notes "Side-by-side test build (application id \`com.baskorp.exercise_management.test\`).
+
+          | | |
+          |---|---|
+          | Branch | \`$REF_NAME\` |
+          | Commit | \`$COMMIT_SHA\` |
+          | Version | \`$BUILD_NAME\` |
+
+          Installs next to the production app as **IronLog Test** with its own
+          empty data. To test against real data, export a backup from the
+          production app and import it here.
+
+          This release is replaced by every run - the download URL stays the same." \
+            "$APK_NAME"
+
+      - name: Summary
+        env:
+          URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/test-builds/exercise-management-test.apk
+        run: |
+          echo "### Test build \`$BUILD_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install on the phone from: $URL" >> $GITHUB_STEP_SUMMARY

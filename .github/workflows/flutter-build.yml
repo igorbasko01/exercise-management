@@ -7,6 +7,8 @@ on:
 
 jobs:
   build:
+    # Keeps a production APK off the rolling `test-builds` prerelease.
+    if: github.event_name != 'release' || github.event.release.prerelease == false
     runs-on: ubuntu-latest
     permissions:
       contents: write
