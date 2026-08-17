@@ -51,6 +51,14 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        // Set only by the Build Test APK workflow, so a test build installs
+        // alongside the production app instead of replacing it.
+        def appIdSuffix = System.getenv("APP_ID_SUFFIX")
+        if (appIdSuffix != null && !appIdSuffix.isEmpty()) {
+            applicationIdSuffix appIdSuffix
+        }
+        manifestPlaceholders.put("appLabel", System.getenv("APP_LABEL") ?: "IronLog")
     }
 
     signingConfigs {
