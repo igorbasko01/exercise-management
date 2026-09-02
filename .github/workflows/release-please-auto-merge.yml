@@ -1,0 +1,68 @@
+name: Release Please Auto-merge
+
+on:
+  schedule:
+    # 04:00 Israel time on Sundays. Cron is UTC-only; this is 04:00 IDT
+    # (UTC+3, summer) and drifts to 03:00 IST (UTC+2, winter) — accepted
+    # drift for a weekly release train rather than a DST-aware double cron.
+    - cron: '0 1 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+    steps:
+      - name: Find open release-please PR
+        id: find-pr
+        run: |
+          pr_number=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --label "autorelease: pending" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: No release PR to merge
+        if: steps.find-pr.outputs.number == ''
+        run: echo "No open release-please PR found — nothing to do." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check release PR status
+        if: steps.find-pr.outputs.number != ''
+        id: pr-status
+        run: |
+          state=$(gh pr view "${{ steps.find-pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --json statusCheckRollup \
+            --jq '
+              [.statusCheckRollup[].state] as $states |
+              if ($states | length) == 0 then "PENDING"
+              elif ($states | any(. == "FAILURE" or . == "ERROR" or . == "CANCELLED" or . == "TIMED_OUT" or . == "ACTION_REQUIRED")) then "FAILURE"
+              elif ($states | all(. == "SUCCESS" or . == "SKIPPED" or . == "NEUTRAL")) then "SUCCESS"
+              else "PENDING"
+              end
+            ')
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+
+      - name: Merge release PR
+        if: steps.find-pr.outputs.number != '' && steps.pr-status.outputs.state == 'SUCCESS'
+        run: |
+          gh pr merge "${{ steps.find-pr.outputs.number }}" --repo "${{ github.repository }}" --squash
+          echo "Merged release PR #${{ steps.find-pr.outputs.number }}." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enable auto-merge while checks are pending
+        if: steps.find-pr.outputs.number != '' && steps.pr-status.outputs.state == 'PENDING'
+        run: |
+          gh pr merge "${{ steps.find-pr.outputs.number }}" --repo "${{ github.repository }}" --squash --auto
+          echo "Checks still pending on release PR #${{ steps.find-pr.outputs.number }} — auto-merge enabled, it will merge once green." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report failing checks
+        if: steps.find-pr.outputs.number != '' && steps.pr-status.outputs.state == 'FAILURE'
+        run: |
+          echo "Release PR #${{ steps.find-pr.outputs.number }} has failing checks — not merging this week." >> "$GITHUB_STEP_SUMMARY"
