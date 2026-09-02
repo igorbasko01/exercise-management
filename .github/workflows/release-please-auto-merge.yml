@@ -8,6 +8,9 @@ on:
     - cron: '0 1 * * 0'
   workflow_dispatch:
 
+# These are the default GITHUB_TOKEN permissions. Every `gh` call below
+# authenticates as RELEASE_PLEASE_TOKEN instead (see GH_TOKEN below), so the
+# job's real authorization boundary is whatever that PAT grants, not this.
 permissions:
   contents: read
   pull-requests: read
@@ -41,9 +44,9 @@ jobs:
             --repo "${{ github.repository }}" \
             --json statusCheckRollup \
             --jq '
-              [.statusCheckRollup[].state] as $states |
-              if ($states | length) == 0 then "PENDING"
-              elif ($states | any(. == "FAILURE" or . == "ERROR" or . == "CANCELLED" or . == "TIMED_OUT" or . == "ACTION_REQUIRED")) then "FAILURE"
+              [.statusCheckRollup[] | ((.conclusion // .state // "") | ascii_upcase)] as $states |
+              if ($states | length) == 0 or ($states | any(. == "")) then "PENDING"
+              elif ($states | any(. == "FAILURE" or . == "ERROR" or . == "CANCELLED" or . == "TIMED_OUT" or . == "ACTION_REQUIRED" or . == "STARTUP_FAILURE" or . == "STALE")) then "FAILURE"
               elif ($states | all(. == "SUCCESS" or . == "SKIPPED" or . == "NEUTRAL")) then "SUCCESS"
               else "PENDING"
               end
