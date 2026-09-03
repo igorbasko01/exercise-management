@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
@@ -744,6 +745,218 @@ void main() {
       expect(value, equals(updatedExerciseSet));
       expect(exerciseSets.length, 1);
       expect(exerciseSets[0], equals(updatedExerciseSet));
+    });
+  });
+
+  group('ExerciseSetsViewModel completion toggling', () {
+    late InMemoryExerciseRepository exerciseTemplateRepository;
+    late InMemoryExerciseSetRepository exerciseSetRepository;
+    late InMemoryExerciseSetPresentationRepository
+        exerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    setUp(() {
+      exerciseTemplateRepository = InMemoryExerciseRepository();
+      exerciseSetRepository = InMemoryExerciseSetRepository();
+      exerciseSetPresentationRepository =
+          InMemoryExerciseSetPresentationRepository(
+              exerciseSetRepository: exerciseSetRepository,
+              exerciseTemplateRepository: exerciseTemplateRepository);
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: exerciseSetRepository,
+          exerciseSetPresentationRepository: exerciseSetPresentationRepository,
+          exerciseTemplateRepository: exerciseTemplateRepository,
+          rankingManager: ExerciseRankingManager());
+      exerciseTemplateRepository.addExercise(exerciseTemplate);
+    });
+
+    test(
+        'marks a set from today complete with now, and reports a live completion',
+        () async {
+      final now = DateTime(2026, 9, 3, 18, 0);
+      await withClock(Clock.fixed(now), () async {
+        final set = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: now,
+        );
+        await exerciseSetRepository.addExercise(set);
+        await viewModel.fetchExerciseSets.execute();
+        final presentation = viewModel.exerciseSets.single;
+
+        await viewModel.toggleSetCompletion.execute(presentation);
+
+        final result = viewModel.toggleSetCompletion.result;
+        expect((result as Ok<bool>).value, isTrue);
+
+        final stored =
+            (await exerciseSetRepository.getExercise('1') as Ok<ExerciseSet>)
+                .value;
+        expect(stored.completedAt, now);
+      });
+    });
+
+    test(
+        'un-marking a completed set clears completedAt and reports no live completion',
+        () async {
+      final completedAt = DateTime(2026, 9, 3, 18, 0);
+      final set = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        repetitions: 5,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: completedAt,
+        completedAt: completedAt,
+      );
+      await exerciseSetRepository.addExercise(set);
+      await viewModel.fetchExerciseSets.execute();
+      final presentation = viewModel.exerciseSets.single;
+
+      await viewModel.toggleSetCompletion.execute(presentation);
+
+      final result = viewModel.toggleSetCompletion.result;
+      expect((result as Ok<bool>).value, isFalse);
+
+      final stored =
+          (await exerciseSetRepository.getExercise('1') as Ok<ExerciseSet>)
+              .value;
+      expect(stored.completedAt, isNull);
+    });
+
+    test(
+        'derives completion time for a past-day set from its latest completed sibling, and reports no live completion',
+        () async {
+      final now = DateTime(2026, 9, 5, 10, 0);
+      await withClock(Clock.fixed(now), () async {
+        final pastDay = DateTime(2026, 9, 1, 18, 0);
+        final completedSibling = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+          completedAt: DateTime(2026, 9, 1, 18, 47),
+        );
+        final forgottenSet = ExerciseSet(
+          id: '2',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+        );
+        await exerciseSetRepository.addExercise(completedSibling);
+        await exerciseSetRepository.addExercise(forgottenSet);
+        await viewModel.fetchExerciseSets.execute();
+        final presentation =
+            viewModel.exerciseSets.firstWhere((s) => s.setId == '2');
+
+        await viewModel.toggleSetCompletion.execute(presentation);
+
+        final result = viewModel.toggleSetCompletion.result;
+        expect((result as Ok<bool>).value, isFalse);
+
+        final stored = (await exerciseSetRepository.getExercise('2')
+                as Ok<ExerciseSet>)
+            .value;
+        expect(stored.completedAt, DateTime(2026, 9, 1, 18, 48));
+      });
+    });
+
+    test(
+        'completeRemainingSetsForDay chains derived completions across the tail of a forgotten session',
+        () async {
+      final now = DateTime(2026, 9, 5, 10, 0);
+      await withClock(Clock.fixed(now), () async {
+        final pastDay = DateTime(2026, 9, 1, 18, 0);
+        final completed = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+          completedAt: DateTime(2026, 9, 1, 18, 47),
+        );
+        final forgotten1 = ExerciseSet(
+          id: '2',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+        );
+        final forgotten2 = ExerciseSet(
+          id: '3',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+        );
+        await exerciseSetRepository.addExercise(completed);
+        await exerciseSetRepository.addExercise(forgotten1);
+        await exerciseSetRepository.addExercise(forgotten2);
+        await viewModel.fetchExerciseSets.execute();
+
+        await viewModel.completeRemainingSetsForDay
+            .execute(viewModel.exerciseSets);
+
+        final set2 = (await exerciseSetRepository.getExercise('2')
+                as Ok<ExerciseSet>)
+            .value;
+        final set3 = (await exerciseSetRepository.getExercise('3')
+                as Ok<ExerciseSet>)
+            .value;
+        // completeRemainingSetsForDay processes forgotten1/forgotten2 in
+        // whatever order the repository returns them, so assert the set of
+        // derived timestamps rather than which id got which minute.
+        expect(
+            {set2.completedAt, set3.completedAt},
+            equals({
+              DateTime(2026, 9, 1, 18, 48),
+              DateTime(2026, 9, 1, 18, 49),
+            }));
+      });
+    });
+
+    test('completeRemainingSetsForDay leaves already-completed sets untouched',
+        () async {
+      final now = DateTime(2026, 9, 5, 10, 0);
+      await withClock(Clock.fixed(now), () async {
+        final pastDay = DateTime(2026, 9, 1, 18, 0);
+        final completedAt = DateTime(2026, 9, 1, 18, 10);
+        final completed = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+          completedAt: completedAt,
+        );
+        await exerciseSetRepository.addExercise(completed);
+        await viewModel.fetchExerciseSets.execute();
+
+        await viewModel.completeRemainingSetsForDay
+            .execute(viewModel.exerciseSets);
+
+        final stored = (await exerciseSetRepository.getExercise('1')
+                as Ok<ExerciseSet>)
+            .value;
+        expect(stored.completedAt, completedAt);
+      });
     });
   });
 }

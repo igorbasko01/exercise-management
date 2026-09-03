@@ -636,4 +636,181 @@ void main() {
       expect(capturedExerciseSet!.completedAt, isNull);
     });
   });
+
+  group('ExerciseSetsPage Complete Remaining Sets For Day', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late MockRestTimerViewModel mockRestTimerViewModel;
+    late ExerciseSetsViewModel viewModel;
+    late ExerciseRankingManager rankingManager;
+
+    final testDate = DateTime(2023, 1, 1);
+
+    setUpAll(() {
+      registerFallbackValue(<ExerciseSet>[]);
+      registerFallbackValue(ExerciseSet(
+        id: 'fallback',
+        exerciseTemplateId: 'fallback',
+        repetitions: 0,
+        platesWeight: 0,
+        equipmentWeight: 0,
+        dateTime: DateTime(2023, 1, 1),
+      ));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      mockRestTimerViewModel = MockRestTimerViewModel();
+      when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
+      rankingManager = ExerciseRankingManager();
+
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: rankingManager);
+
+      when(() => mockExerciseSetRepository.addExercises(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockExerciseTemplateRepository.getExercises())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+    });
+
+    testWidgets(
+        'shows a "mark remaining complete" action on a day with unfinished sets',
+        (WidgetTester tester) async {
+      final sets = [
+        ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 20,
+          dateTime: testDate,
+          displayName: 'Bench Press',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: DateTime(2023, 1, 1, 10, 0),
+        ),
+        ExerciseSetPresentation(
+          setId: '2',
+          exerciseTemplateId: 'template1',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 20,
+          dateTime: testDate,
+          displayName: 'Bench Press',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: null,
+        ),
+      ];
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
+
+      ExerciseSet? capturedExerciseSet;
+      when(() => mockExerciseSetRepository.updateExercise(any()))
+          .thenAnswer((invocation) async {
+        capturedExerciseSet = invocation.positionalArguments[0] as ExerciseSet;
+        return Result.ok(capturedExerciseSet!);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            Provider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      final markRemainingButton = find.byIcon(Icons.done_all);
+      expect(markRemainingButton, findsOneWidget);
+
+      await tester.tap(markRemainingButton);
+      await tester.pumpAndSettle();
+
+      expect(capturedExerciseSet, isNotNull);
+      expect(capturedExerciseSet!.id, '2');
+      expect(capturedExerciseSet!.completedAt, isNotNull);
+    });
+
+    testWidgets('hides the action when every set in the day is complete',
+        (WidgetTester tester) async {
+      final sets = [
+        ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 20,
+          dateTime: testDate,
+          displayName: 'Bench Press',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: DateTime(2023, 1, 1, 10, 0),
+        ),
+      ];
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            Provider<ExerciseRankingManager>.value(
+              value: rankingManager,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.done_all), findsNothing);
+    });
+  });
 }

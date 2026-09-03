@@ -141,9 +141,21 @@ class ExerciseSetsPage extends StatelessWidget {
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
       title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
-      trailing: IconButton(
-        icon: const Icon(Icons.copy_all),
-        onPressed: () => _progressSets(exercises, viewModel),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!allCompleted)
+            IconButton(
+              icon: const Icon(Icons.done_all),
+              tooltip: 'Mark remaining sets complete',
+              onPressed: () => viewModel.completeRemainingSetsForDay
+                  .execute(exercises),
+            ),
+          IconButton(
+            icon: const Icon(Icons.copy_all),
+            onPressed: () => _progressSets(exercises, viewModel),
+          ),
+        ],
       ),
       children:
           _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
@@ -332,20 +344,13 @@ class ExerciseSetsPage extends StatelessWidget {
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
-  void _toggleSetCompletion(
-      BuildContext context,
-      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    final isCurrentlyCompleted = exercise.completedAt != null;
-    final exerciseSet = exercise.toExerciseSet();
+  Future<void> _toggleSetCompletion(BuildContext context,
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) async {
+    await viewModel.toggleSetCompletion.execute(exercise);
 
-    // Use the new copyWith with Value wrapper to handle nullability explicitly
-    final updatedSet = exerciseSet.copyWith(
-      completedAt:
-          isCurrentlyCompleted ? const Value(null) : Value(DateTime.now()),
-    );
-    viewModel.updateExerciseSet.execute(updatedSet);
-
-    if (!isCurrentlyCompleted) {
+    final result = viewModel.toggleSetCompletion.result;
+    final startTimer = result is Ok<bool> && result.value;
+    if (startTimer && context.mounted) {
       context.read<RestTimerViewModel>().startTimer();
     }
   }
