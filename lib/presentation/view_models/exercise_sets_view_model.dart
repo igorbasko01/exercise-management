@@ -283,6 +283,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           siblings.add(set.copyWith(completedAt: Value(resolution.completedAt)));
           break;
         case Error():
+          // Refresh so the sets that did succeed before this failure aren't
+          // reprocessed (and re-derived to a new timestamp) on a retry.
+          await _fetchExerciseSets();
           return Result.error(result.error);
       }
     }
@@ -296,12 +299,8 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return _exerciseSets
         .where((set) =>
             set.setId != exercise.setId &&
-            _isSameDay(set.dateTime, exercise.dateTime))
+            CompletionTimeResolver.isSameDay(set.dateTime, exercise.dateTime))
         .toList();
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets, SessionProgressionAlgorithm algorithm) {

@@ -346,6 +346,11 @@ class ExerciseSetsPage extends StatelessWidget {
 
   Future<void> _toggleSetCompletion(BuildContext context,
       ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) async {
+    // toggleSetCompletion is one Command shared by every list tile: if it's
+    // already running, a second call would no-op without updating `result`,
+    // so reading `result` afterwards could reflect an unrelated prior call.
+    if (viewModel.toggleSetCompletion.running) return;
+
     await viewModel.toggleSetCompletion.execute(exercise);
 
     final result = viewModel.toggleSetCompletion.result;

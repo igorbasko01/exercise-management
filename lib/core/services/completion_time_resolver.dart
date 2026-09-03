@@ -18,7 +18,7 @@ class CompletionTimeResolver {
     List<ExerciseSetPresentation> siblingsOnSameDay,
   ) {
     final now = clock.now();
-    if (_isSameDay(set.dateTime, now)) {
+    if (isSameDay(set.dateTime, now)) {
       return (completedAt: now, isDerived: false);
     }
 
@@ -35,7 +35,7 @@ class CompletionTimeResolver {
     return (completedAt: completedAt, isDerived: true);
   }
 
-  static bool _isSameDay(DateTime a, DateTime b) {
+  static bool isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
