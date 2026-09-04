@@ -290,11 +290,11 @@ void main() {
         'returns progressed sets with higher plates weight (10%) when provided 3 sets of highest repetitions for exercise',
         () async {
       final chestSet1max =
-          chestSet1.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet1.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet2max =
-          chestSet2.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet2.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet3max =
-          chestSet3.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet3.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet4 = chestSet3.copyWith(
           setId: const Value('4'), repetitions: 4, platesWeight: 25);
       await viewModel.progressSets.execute(
@@ -347,28 +347,28 @@ void main() {
       final chestSet4New = chestSet4
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
@@ -391,28 +391,28 @@ void main() {
       final chestSet4New = chestSet4
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
