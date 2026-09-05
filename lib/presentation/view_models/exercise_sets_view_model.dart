@@ -102,10 +102,23 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     switch (result) {
       case Ok<List<ExerciseSetPresentation>>():
         _exerciseSets = result.value;
-        _rankingManager.calculateRanks(_exerciseSets, _formatDate);
+        await _refreshRanks();
         return Result.ok(_exerciseSets);
       case Error():
         return Result.error(result.error);
+    }
+  }
+
+  /// Ranks are computed against the full set history, not just the loaded
+  /// window, so a session's rank stays stable as more history is paged in.
+  Future<void> _refreshRanks() async {
+    final allSetsResult = await _exerciseSetPresentationRepository
+        .getAllExerciseSets(exerciseTemplateId: _selectedExerciseTemplateId);
+    switch (allSetsResult) {
+      case Ok<List<ExerciseSetPresentation>>():
+        _rankingManager.calculateRanks(allSetsResult.value, _formatDate);
+      case Error():
+        _rankingManager.calculateRanks(_exerciseSets, _formatDate);
     }
   }
 

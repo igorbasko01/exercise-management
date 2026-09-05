@@ -136,6 +136,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([]);
       });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
     });
 
     test('returns cloned set if provided only single set', () async {
@@ -744,6 +749,79 @@ void main() {
       expect(value, equals(updatedExerciseSet));
       expect(exerciseSets.length, 1);
       expect(exerciseSets[0], equals(updatedExerciseSet));
+    });
+  });
+
+  group('ExerciseSetsViewModel All-Time Ranking', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final oldDate = DateTime(2023, 1, 1);
+    final recentDate = DateTime(2023, 6, 1);
+
+    final bestAllTimeSet = ExerciseSetPresentation(
+      setId: 'best',
+      exerciseTemplateId: '1',
+      repetitions: 10,
+      platesWeight: 100,
+      equipmentWeight: 0,
+      dateTime: oldDate,
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    final recentLowerVolumeSet = ExerciseSetPresentation(
+      setId: 'recent',
+      exerciseTemplateId: '1',
+      repetitions: 10,
+      platesWeight: 10,
+      equipmentWeight: 0,
+      dateTime: recentDate,
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository,
+          rankingManager: ExerciseRankingManager());
+
+      // Only the recent, lower-volume session is within the loaded window...
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([recentLowerVolumeSet]);
+      });
+
+      // ...but the all-time best session, from outside that window, still
+      // exists in the full history used for ranking.
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([bestAllTimeSet, recentLowerVolumeSet]);
+      });
+    });
+
+    test(
+        'ranks the loaded window against the full set history, not just what is loaded',
+        () async {
+      await viewModel.fetchExerciseSets.execute();
+
+      expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
+      // The only session actually loaded is ranked #2, because an
+      // unloaded-but-higher-volume session exists in the full history.
+      expect(viewModel.getRank('2023-06-01', '1'), equals(2));
     });
   });
 }

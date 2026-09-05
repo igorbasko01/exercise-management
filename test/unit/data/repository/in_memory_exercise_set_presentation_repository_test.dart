@@ -533,6 +533,100 @@ void main() {
     expect(exerciseSetPresentation.isEmpty, true);
   });
 
+  test('getAllExerciseSets should return sets regardless of how old they are',
+      () async {
+    final now = DateTime.now();
+    final old = now.subtract(const Duration(days: 400));
+
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Deadlift',
+        muscleGroup: MuscleGroup.hamstrings,
+        repetitionsRangeTarget: RepetitionsRange.low);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: old,
+      equipmentWeight: 0,
+      platesWeight: 50,
+      repetitions: 5,
+    ));
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 55,
+      repetitions: 5,
+    ));
+
+    final result =
+        await inMemoryExerciseSetPresentationRepository.getAllExerciseSets();
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    expect(exerciseSetPresentation.length, 2);
+    expect(exerciseSetPresentation.any((s) => s.setId == '1'), true);
+    expect(exerciseSetPresentation.any((s) => s.setId == '2'), true);
+  });
+
+  test('getAllExerciseSets should filter by exercise template ID', () async {
+    final now = DateTime.now();
+
+    final exerciseTemplate1 = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+    final exerciseTemplate2 = ExerciseTemplate(
+        id: '2',
+        name: 'Squat',
+        muscleGroup: MuscleGroup.quadriceps,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate1);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate2);
+
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 45,
+      repetitions: 10,
+    ));
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '2',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 100,
+      repetitions: 12,
+    ));
+
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getAllExerciseSets(exerciseTemplateId: '1');
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    expect(exerciseSetPresentation.length, 1);
+    expect(exerciseSetPresentation.first.exerciseTemplateId, '1');
+  });
+
+  test('getAllExerciseSets should return empty list when no sets are present',
+      () async {
+    final result =
+        await inMemoryExerciseSetPresentationRepository.getAllExerciseSets();
+
+    final exerciseSetPresentation =
+        (result as Ok<List<ExerciseSetPresentation>>).value;
+
+    expect(exerciseSetPresentation.isEmpty, true);
+  });
+
   test('getMostRecentCompletionDate should return correct date', () async {
     final t1 = ExerciseTemplate(id: 't1', name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium);
     final t2 = ExerciseTemplate(id: 't2', name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium);

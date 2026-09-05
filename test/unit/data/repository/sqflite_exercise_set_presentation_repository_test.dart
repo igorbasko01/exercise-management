@@ -496,6 +496,87 @@ void main() {
     expect(incompleteSet.completedAt, isNull);
   });
 
+  test('getAllExerciseSets should return sets regardless of how old they are',
+      () async {
+    // Arrange
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Deadlift',
+            muscleGroup: MuscleGroup.hamstrings,
+            repetitionsRangeTarget: RepetitionsRange.low));
+    final exerciseTemplate =
+        (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now().subtract(Duration(days: 400)),
+        equipmentWeight: 100,
+        platesWeight: 50,
+        repetitions: 5));
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 110,
+        platesWeight: 55,
+        repetitions: 5));
+
+    // Act
+    final result = await presentationRepository.getAllExerciseSets();
+
+    // Assert - both sets returned, unlike getExerciseSets which windows by day
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 2);
+  });
+
+  test('getAllExerciseSets should filter by exercise template ID', () async {
+    // Arrange
+    final benchPressTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Bench Press',
+            muscleGroup: MuscleGroup.chest,
+            repetitionsRangeTarget: RepetitionsRange.medium));
+    final benchPressTemplate =
+        (benchPressTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final squatTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Squat',
+            muscleGroup: MuscleGroup.quadriceps,
+            repetitionsRangeTarget: RepetitionsRange.medium));
+    final squatTemplate = (squatTemplateResult as Ok<ExerciseTemplate>).value;
+
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 25,
+        repetitions: 10));
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: squatTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 100,
+        repetitions: 12));
+
+    // Act
+    final result = await presentationRepository.getAllExerciseSets(
+        exerciseTemplateId: benchPressTemplate.id);
+
+    // Assert
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    final presentations = (result as Ok<List<ExerciseSetPresentation>>).value;
+    expect(presentations.length, 1);
+    expect(presentations.first.exerciseTemplateId, benchPressTemplate.id);
+  });
+
+  test('getAllExerciseSets should return empty list if no sets exist',
+      () async {
+    final result = await presentationRepository.getAllExerciseSets();
+
+    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+    expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+  });
+
   test('getMostRecentCompletionDate should return correct date', () async {
     final t1Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T1', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
     final t2Result = await templatesRepository.addExercise(ExerciseTemplate(name: 'T2', muscleGroup: MuscleGroup.chest, repetitionsRangeTarget: RepetitionsRange.medium));
