@@ -97,28 +97,34 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets(
       {int lastNDays = 7}) async {
-    final result = await _exerciseSetPresentationRepository.getExerciseSets(
-        lastNDays: lastNDays, exerciseTemplateId: _selectedExerciseTemplateId);
-    switch (result) {
+    // Captured once so a filter change mid-fetch can't apply to only one of
+    // the two calls below.
+    final templateId = _selectedExerciseTemplateId;
+
+    // Ranks are computed against the full set history (not just the loaded
+    // window) so a session's rank stays stable as more history is paged in.
+    // The two queries are independent, so they run concurrently.
+    final results = await Future.wait([
+      _exerciseSetPresentationRepository.getExerciseSets(
+          lastNDays: lastNDays, exerciseTemplateId: templateId),
+      _exerciseSetPresentationRepository.getAllExerciseSets(
+          exerciseTemplateId: templateId),
+    ]);
+    final windowResult = results[0];
+    final allSetsResult = results[1];
+
+    switch (windowResult) {
       case Ok<List<ExerciseSetPresentation>>():
-        _exerciseSets = result.value;
-        await _refreshRanks();
+        _exerciseSets = windowResult.value;
+        switch (allSetsResult) {
+          case Ok<List<ExerciseSetPresentation>>():
+            _rankingManager.calculateRanks(allSetsResult.value, _formatDate);
+          case Error():
+            _rankingManager.calculateRanks(_exerciseSets, _formatDate);
+        }
         return Result.ok(_exerciseSets);
       case Error():
-        return Result.error(result.error);
-    }
-  }
-
-  /// Ranks are computed against the full set history, not just the loaded
-  /// window, so a session's rank stays stable as more history is paged in.
-  Future<void> _refreshRanks() async {
-    final allSetsResult = await _exerciseSetPresentationRepository
-        .getAllExerciseSets(exerciseTemplateId: _selectedExerciseTemplateId);
-    switch (allSetsResult) {
-      case Ok<List<ExerciseSetPresentation>>():
-        _rankingManager.calculateRanks(allSetsResult.value, _formatDate);
-      case Error():
-        _rankingManager.calculateRanks(_exerciseSets, _formatDate);
+        return Result.error(windowResult.error);
     }
   }
 
