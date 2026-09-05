@@ -67,16 +67,23 @@ class ExerciseRankingManager {
           .add(entry);
     }
 
-    // Assign ranks per template
+    // Assign ranks per template, using standard competition ranking so that
+    // sessions tied on volume share the same rank (e.g. 1, 1, 3, 4, 4, 6...)
     final newRanks = <RankKey, int>{};
     for (var templateEntries in volumesByTemplate.values) {
       // Sort entries for this template by volume (descending)
       final sortedEntries = templateEntries.toList()
         ..sort((a, b) => b.volume.compareTo(a.volume));
-      
-      // Assign ranks within this template
+
+      int rank = 0;
+      double? previousVolume;
       for (var i = 0; i < sortedEntries.length; i++) {
-        newRanks[sortedEntries[i].key] = i + 1;
+        final entry = sortedEntries[i];
+        if (previousVolume == null || entry.volume < previousVolume) {
+          rank = i + 1;
+        }
+        newRanks[entry.key] = rank;
+        previousVolume = entry.volume;
       }
     }
 

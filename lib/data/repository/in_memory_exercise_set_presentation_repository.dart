@@ -66,6 +66,28 @@ class InMemoryExerciseSetPresentationRepository
   }
 
   @override
+  Future<Result<List<ExerciseSetPresentation>>> getAllExerciseSets(
+      {String? exerciseTemplateId}) async {
+    final result = await _exerciseSetRepository.getExercises();
+
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        var setsToProcess = result.value;
+        if (exerciseTemplateId != null) {
+          setsToProcess = setsToProcess
+              .where((set) => set.exerciseTemplateId == exerciseTemplateId)
+              .toList();
+        }
+
+        final exerciseSetsPresentation =
+            await _processExerciseSets(setsToProcess);
+        return Result.ok(exerciseSetsPresentation);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  @override
   Future<Result<ExerciseSetPresentation>> getExerciseSet(String setId) async {
     final result = await _exerciseSetRepository.getExercise(setId);
 

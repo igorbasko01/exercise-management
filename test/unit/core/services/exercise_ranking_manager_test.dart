@@ -452,6 +452,43 @@ void main() {
       expect(manager.getRank('2024-01-04', 'squat'), equals(2)); // 1400 volume
     });
 
+    test('should assign the same rank to sessions tied on volume', () {
+      final sets = [
+        // Session 1 (Jan 1): volume = 1000
+        _createExerciseSet(
+          templateId: 'template1',
+          date: DateTime(2024, 1, 1),
+          equipmentWeight: 20.0,
+          platesWeight: 80.0,
+          repetitions: 10,
+        ),
+        // Session 2 (Jan 2): volume = 1000 (tied with session 1)
+        _createExerciseSet(
+          templateId: 'template1',
+          date: DateTime(2024, 1, 2),
+          equipmentWeight: 20.0,
+          platesWeight: 80.0,
+          repetitions: 10,
+        ),
+        // Session 3 (Jan 3): volume = 800 (lowest)
+        _createExerciseSet(
+          templateId: 'template1',
+          date: DateTime(2024, 1, 3),
+          equipmentWeight: 20.0,
+          platesWeight: 80.0,
+          repetitions: 8,
+        ),
+      ];
+
+      manager.calculateRanks(sets, formatDate);
+
+      expect(manager.getRank('2024-01-01', 'template1'), equals(1));
+      expect(manager.getRank('2024-01-02', 'template1'), equals(1));
+      // Standard competition ranking: the next distinct volume skips to 3,
+      // reflecting the two sessions that share rank 1.
+      expect(manager.getRank('2024-01-03', 'template1'), equals(3));
+    });
+
     test('should handle fractional weights', () {
       final sets = [
         _createExerciseSet(

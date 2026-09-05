@@ -146,6 +146,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(allSets);
       });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(allSets);
+      });
 
       await tester.pumpWidget(
         MultiProvider(
@@ -214,6 +219,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(initialSets);
       });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(initialSets);
+      });
 
       await tester.pumpWidget(
         MultiProvider(
@@ -265,6 +275,11 @@ void main() {
 
       when(() => mockExerciseSetPresentationRepository.getExerciseSets(
               lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(updatedSets);
+      });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
         return Result.ok(updatedSets);
@@ -394,6 +409,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(sets);
       });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
 
       await tester.pumpWidget(
         MultiProvider(
@@ -509,6 +529,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([unmarkedSet]);
       });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([unmarkedSet]);
+      });
 
       ExerciseSet? capturedExerciseSet;
       when(() => mockExerciseSetRepository.updateExercise(any()))
@@ -580,6 +605,11 @@ void main() {
 
       when(() => mockExerciseSetPresentationRepository.getExerciseSets(
               lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([markedSet]);
+      });
+      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
         return Result.ok([markedSet]);
