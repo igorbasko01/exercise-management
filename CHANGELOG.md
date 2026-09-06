@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/igorbasko01/exercise-management/compare/v1.4.0...v1.5.0) (2026-09-02)
+
+
+### Features
+
+* **ci:** add workflow for side-by-side test APK builds ([#80](https://github.com/igorbasko01/exercise-management/issues/80)) ([87134ac](https://github.com/igorbasko01/exercise-management/commit/87134ace41d057b29fbc567ddfd2c87ef2916b0c))
+* **ci:** merge the release-please PR automatically every Sunday morning ([#94](https://github.com/igorbasko01/exercise-management/issues/94)) ([#95](https://github.com/igorbasko01/exercise-management/issues/95)) ([cad0102](https://github.com/igorbasko01/exercise-management/commit/cad0102128d08d77cd81379b567fc2a3f7eb58f9))
+
 ## [1.4.0](https://github.com/igorbasko01/exercise-management/compare/v1.3.0...v1.4.0) (2026-05-01)
 
 
