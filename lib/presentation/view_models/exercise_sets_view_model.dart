@@ -9,6 +9,7 @@ import 'package:exercise_management/data/models/session_progression_algorithm.da
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
+import 'package:exercise_management/core/services/completion_time_resolver.dart';
 import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -45,6 +46,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     fetchMoreExerciseSets =
         Command0<List<ExerciseSetPresentation>>(_fetchMoreExerciseSets)
           ..addListener(_onCommandExecuted);
+    toggleSetCompletion =
+        Command1<bool, ExerciseSetPresentation>(_toggleSetCompletion)
+          ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -62,6 +66,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   late final Command3<void, List<ExerciseSetPresentation>, DateTime, ProgressionType>
       progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
+  late final Command1<bool, ExerciseSetPresentation> toggleSetCompletion;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -220,6 +225,47 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     }
   }
 
+  /// Returns whether the completion was live (not derived from a past day),
+  /// so callers can decide whether to start the rest timer.
+  Future<Result<bool>> _toggleSetCompletion(
+      ExerciseSetPresentation exercise) async {
+    final isCurrentlyCompleted = exercise.completedAt != null;
+    final exerciseSet = exercise.toExerciseSet();
+
+    if (isCurrentlyCompleted) {
+      final result = await _exerciseSetRepository
+          .updateExercise(exerciseSet.copyWith(completedAt: const Value(null)));
+      switch (result) {
+        case Ok<ExerciseSet>():
+          await _fetchExerciseSets();
+          return Result.ok(false);
+        case Error():
+          return Result.error(result.error);
+      }
+    }
+
+    final resolution = CompletionTimeResolver.resolve(
+        exercise, _siblingsOnSameDay(exercise));
+    final result = await _exerciseSetRepository.updateExercise(
+        exerciseSet.copyWith(completedAt: Value(resolution.completedAt)));
+    switch (result) {
+      case Ok<ExerciseSet>():
+        await _fetchExerciseSets();
+        return Result.ok(!resolution.isDerived);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  List<ExerciseSetPresentation> _siblingsOnSameDay(
+      ExerciseSetPresentation exercise) {
+    return _exerciseSets
+        .where((set) =>
+            set.setId != exercise.setId &&
+            CompletionTimeResolver.isSameDay(set.dateTime, exercise.dateTime))
+        .toList();
+  }
+
   List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets, SessionProgressionAlgorithm algorithm) {
     return algorithm.determineFrom(sets).apply(sets);
   }
@@ -244,6 +290,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     preloadExercises.removeListener(_onCommandExecuted);
     progressSets.removeListener(_onCommandExecuted);
     fetchMoreExerciseSets.removeListener(_onCommandExecuted);
+    toggleSetCompletion.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -254,6 +301,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     preloadExercises.dispose();
     progressSets.dispose();
     fetchMoreExerciseSets.dispose();
+    toggleSetCompletion.dispose();
 
     super.dispose();
   }
