@@ -49,10 +49,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     toggleSetCompletion =
         Command1<bool, ExerciseSetPresentation>(_toggleSetCompletion)
           ..addListener(_onCommandExecuted);
-    completeRemainingSetsForDay =
-        Command1<void, List<ExerciseSetPresentation>>(
-            _completeRemainingSetsForDay)
-          ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -71,8 +67,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
   late final Command1<bool, ExerciseSetPresentation> toggleSetCompletion;
-  late final Command1<void, List<ExerciseSetPresentation>>
-      completeRemainingSetsForDay;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -263,37 +257,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     }
   }
 
-  /// [setsForDay] is all sets of one date-group. Each derived completion
-  /// chains off the ones already resolved, so the tail of a forgotten
-  /// session keeps its order.
-  Future<Result<void>> _completeRemainingSetsForDay(
-      List<ExerciseSetPresentation> setsForDay) async {
-    final siblings = setsForDay
-        .where((set) => set.completedAt != null)
-        .toList(growable: true);
-
-    for (final set in setsForDay) {
-      if (set.completedAt != null) continue;
-
-      final resolution = CompletionTimeResolver.resolve(set, siblings);
-      final result = await _exerciseSetRepository.updateExercise(
-          set.toExerciseSet().copyWith(completedAt: Value(resolution.completedAt)));
-      switch (result) {
-        case Ok<ExerciseSet>():
-          siblings.add(set.copyWith(completedAt: Value(resolution.completedAt)));
-          break;
-        case Error():
-          // Refresh so the sets that did succeed before this failure aren't
-          // reprocessed (and re-derived to a new timestamp) on a retry.
-          await _fetchExerciseSets();
-          return Result.error(result.error);
-      }
-    }
-
-    await _fetchExerciseSets();
-    return Result.ok(null);
-  }
-
   List<ExerciseSetPresentation> _siblingsOnSameDay(
       ExerciseSetPresentation exercise) {
     return _exerciseSets
@@ -328,7 +291,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.removeListener(_onCommandExecuted);
     fetchMoreExerciseSets.removeListener(_onCommandExecuted);
     toggleSetCompletion.removeListener(_onCommandExecuted);
-    completeRemainingSetsForDay.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -340,7 +302,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.dispose();
     fetchMoreExerciseSets.dispose();
     toggleSetCompletion.dispose();
-    completeRemainingSetsForDay.dispose();
 
     super.dispose();
   }

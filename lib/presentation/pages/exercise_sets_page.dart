@@ -141,21 +141,9 @@ class ExerciseSetsPage extends StatelessWidget {
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
       title: Text(date, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(_buildExerciseGroupSubtitle(exercises)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!allCompleted)
-            IconButton(
-              icon: const Icon(Icons.done_all),
-              tooltip: 'Mark remaining sets complete',
-              onPressed: () => viewModel.completeRemainingSetsForDay
-                  .execute(exercises),
-            ),
-          IconButton(
-            icon: const Icon(Icons.copy_all),
-            onPressed: () => _progressSets(exercises, viewModel),
-          ),
-        ],
+      trailing: IconButton(
+        icon: const Icon(Icons.copy_all),
+        onPressed: () => _progressSets(exercises, viewModel),
       ),
       children:
           _buildExerciseTemplateExpansionTiles(exercises, context, viewModel),
@@ -351,11 +339,22 @@ class ExerciseSetsPage extends StatelessWidget {
     // so reading `result` afterwards could reflect an unrelated prior call.
     if (viewModel.toggleSetCompletion.running) return;
 
+    final wasCompleted = exercise.completedAt != null;
     await viewModel.toggleSetCompletion.execute(exercise);
 
     final result = viewModel.toggleSetCompletion.result;
-    final startTimer = result is Ok<bool> && result.value;
-    if (startTimer && context.mounted) {
+    if (result is! Ok<bool>) return;
+    final isLive = result.value;
+
+    if (!wasCompleted && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isLive
+            ? 'Marked completed now'
+            : 'Marked completed for ${_formatDate(exercise.dateTime)}'),
+      ));
+    }
+
+    if (isLive && context.mounted) {
       context.read<RestTimerViewModel>().startTimer();
     }
   }
