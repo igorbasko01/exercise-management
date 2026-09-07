@@ -106,7 +106,7 @@ class _ExerciseAllTimeRanksWidgetState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(_formatDate(session.date),
+          Text(HomeExerciseRanksViewModel.formatDate(session.date),
               style: Theme.of(context).textTheme.bodyMedium),
           Text('${session.totalVolume.round()} kg',
               style: Theme.of(context).textTheme.bodyMedium),
@@ -121,16 +121,12 @@ class _ExerciseAllTimeRanksWidgetState
 
   Widget _buildBestRow(BuildContext context, ExerciseSessionSummary best) {
     return Text(
-      'Best: ${best.totalVolume.round()} kg  ·  ${_formatDate(best.date)}  ·  ${best.setsLabel}',
+      'Best: ${best.totalVolume.round()} kg  ·  ${HomeExerciseRanksViewModel.formatDate(best.date)}  ·  ${best.setsLabel}',
       style: Theme.of(context)
           .textTheme
           .labelLarge
           ?.copyWith(color: Theme.of(context).colorScheme.secondary),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {

@@ -1,17 +1,30 @@
+import 'dart:async';
+
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
+import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
+import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_template_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/in_memory_exercise_set_repository.dart';
 import 'package:exercise_management/presentation/view_models/home_exercise_ranks_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockExerciseSetPresentationRepository extends Mock
+    implements ExerciseSetPresentationRepository {}
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(<String>[]);
+  });
+
   group('HomeExerciseRanksViewModel', () {
     late InMemoryExerciseSetRepository setRepository;
     late ExerciseTemplateRepository templateRepository;
@@ -62,6 +75,7 @@ void main() {
         equipmentWeight: weight,
         platesWeight: 0,
         repetitions: reps,
+        completedAt: date,
       );
     }
 
@@ -187,6 +201,37 @@ void main() {
       expect(summary.bestSession!.date, earlier);
     });
 
+    test('excludes sets that have not been completed yet', () async {
+      final completedDate = DateTime(2026, 1, 1);
+      final uncompletedDate = DateTime(2026, 2, 1);
+
+      await setRepository.addExercises([
+        set(templateId: 't1', date: completedDate, weight: 100, reps: 5),
+        // Progression pre-creates the next session's sets before they're
+        // performed; those carry no completedAt yet.
+        ExerciseSet(
+          id: 'set-${nextSetId++}',
+          exerciseTemplateId: 't1',
+          dateTime: uncompletedDate,
+          equipmentWeight: 999,
+          platesWeight: 0,
+          repetitions: 5,
+        ),
+      ]);
+
+      final session = ExerciseProgramSession(
+          id: 's1', programId: 'p1', name: 'S1', exercises: [benchPress]);
+      final program =
+          ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
+
+      await viewModel.setActiveProgram(program);
+
+      final summary = viewModel.exerciseRankSummaries.first;
+      expect(summary.recentSessions, hasLength(1));
+      expect(summary.recentSessions.first.date, completedDate);
+      expect(summary.bestSession!.date, completedDate);
+    });
+
     test('formats a non-uniform session compactly', () async {
       final date = DateTime(2026, 1, 1);
       await setRepository.addExercises([
@@ -203,6 +248,30 @@ void main() {
 
       final summary = viewModel.exerciseRankSummaries.first;
       expect(summary.bestSession!.setsLabel, '100 kg x 5, 95 kg x 6');
+    });
+
+    test('completes a queued reload instead of hanging when disposed mid-flight', () async {
+      final mockRepository = MockExerciseSetPresentationRepository();
+      final neverResolves = Completer<Result<List<ExerciseSetPresentation>>>();
+      when(() => mockRepository.getExerciseSetsForTemplates(any()))
+          .thenAnswer((_) => neverResolves.future);
+
+      final slowViewModel = HomeExerciseRanksViewModel(
+        setPresentationRepository: mockRepository,
+        exerciseSetRepository: setRepository,
+      );
+
+      final session = ExerciseProgramSession(
+          id: 's1', programId: 'p1', name: 'S1', exercises: [benchPress]);
+      final program =
+          ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
+
+      slowViewModel.setActiveProgram(program); // starts and never finishes
+      final queued = slowViewModel.setActiveProgram(program); // queued behind it
+
+      slowViewModel.dispose();
+
+      await expectLater(queued, completes);
     });
   });
 }

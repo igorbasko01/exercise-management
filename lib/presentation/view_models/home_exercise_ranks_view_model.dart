@@ -77,7 +77,12 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
         await _setPresentationRepository.getExerciseSetsForTemplates(templateIds);
     switch (setsResult) {
       case Ok<List<ExerciseSetPresentation>>():
-        _exerciseRankSummaries = _buildSummaries(templates, setsResult.value);
+        // Progression pre-creates the next session's sets with completedAt
+        // still null; those haven't been performed yet and must not count
+        // as a ranked session.
+        final completedSets =
+            setsResult.value.where((set) => set.completedAt != null).toList();
+        _exerciseRankSummaries = _buildSummaries(templates, completedSets);
         return Result.ok(null);
       case Error():
         return Result.error(setsResult.error);
@@ -101,11 +106,11 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
 
   List<ExerciseRankSummary> _buildSummaries(
       List<ExerciseTemplate> templates, List<ExerciseSetPresentation> allSets) {
-    _rankingManager.calculateRanks(allSets, _formatDate);
+    _rankingManager.calculateRanks(allSets, formatDate);
 
     final setsByTemplateAndDate = <String, Map<String, List<ExerciseSetPresentation>>>{};
     for (var set in allSets) {
-      final date = _formatDate(set.dateTime);
+      final date = formatDate(set.dateTime);
       setsByTemplateAndDate
           .putIfAbsent(set.exerciseTemplateId, () => {})
           .putIfAbsent(date, () => [])
@@ -145,7 +150,7 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
     });
   }
 
-  String _formatDate(DateTime dateTime) {
+  static String formatDate(DateTime dateTime) {
     return '${dateTime.year}'
         '-${dateTime.month.toString().padLeft(2, '0')}'
         '-${dateTime.day.toString().padLeft(2, '0')}';
@@ -177,6 +182,8 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _setSubscription?.cancel();
+    // Nothing else will ever complete a queued reload once we unsubscribe below.
+    _pendingReload?.complete();
     loadRanks.removeListener(_onCommandExecuted);
     loadRanks.dispose();
     super.dispose();
