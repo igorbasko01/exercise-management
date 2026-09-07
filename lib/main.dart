@@ -20,6 +20,7 @@ import 'package:exercise_management/presentation/view_models/exercise_programs_v
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
+import 'package:exercise_management/presentation/view_models/home_exercise_ranks_view_model.dart';
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
@@ -99,6 +100,10 @@ void main() async {
       ChangeNotifierProvider(
           create: (context) => ProgramProgressionViewModel(
               programRepository: context.read(),
+              setPresentationRepository: context.read(),
+              exerciseSetRepository: context.read())),
+      ChangeNotifierProvider(
+          create: (context) => HomeExerciseRanksViewModel(
               setPresentationRepository: context.read(),
               exerciseSetRepository: context.read())),
       ChangeNotifierProvider(

@@ -189,4 +189,22 @@ class InMemoryExerciseSetPresentationRepository
         return Result.error(result.error);
     }
   }
+
+  @override
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsForTemplates(
+      List<String> templateIds) async {
+    if (templateIds.isEmpty) return Result.ok([]);
+
+    final result = await _exerciseSetRepository.getExercises();
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        final matchingSets = result.value
+            .where((set) => templateIds.contains(set.exerciseTemplateId))
+            .toList();
+        final exerciseSetsPresentation = await _processExerciseSets(matchingSets);
+        return Result.ok(exerciseSetsPresentation);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
 }

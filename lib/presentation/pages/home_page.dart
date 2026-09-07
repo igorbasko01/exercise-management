@@ -5,6 +5,7 @@ import 'package:exercise_management/presentation/view_models/exercise_programs_v
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/widgets/active_program_widget.dart';
 import 'package:exercise_management/presentation/widgets/average_weekly_statistics_widget.dart';
+import 'package:exercise_management/presentation/widgets/exercise_all_time_ranks_widget.dart';
 import 'package:exercise_management/presentation/widgets/exercise_volume_statistic_widget.dart';
 import 'package:exercise_management/presentation/widgets/weekly_progress_statistic_widget.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,7 @@ class HomePage extends StatelessWidget {
           _buildCallToAction(context),
           const SizedBox(height: 24),
           const ActiveProgramWidget(),
+          const ExerciseAllTimeRanksWidget(),
           _buildSectionTitle(context, 'Weekly Progress'),
           const SizedBox(height: 8),
           _buildStatCard(

@@ -7,4 +7,5 @@ abstract class ExerciseSetPresentationRepository {
   Future<Result<Map<String, DateTime>>> getMostRecentCompletionDate(List<String> templateIds);
   Future<Result<DateTime?>> getStrictMostRecentRoutineCompletionDate(List<String> templateIds);
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(Map<String, DateTime> templateDates);
+  Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsForTemplates(List<String> templateIds);
 }
