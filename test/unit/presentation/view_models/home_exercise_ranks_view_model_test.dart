@@ -46,12 +46,17 @@ void main() {
       );
     });
 
+    var nextSetId = 0;
     ExerciseSet set(
         {required String templateId,
         required DateTime date,
         required double weight,
         required int reps}) {
+      // Explicit ids: InMemoryExerciseSetRepository generates ids from the
+      // current millisecond, so two content-identical sets added back to back
+      // can collide and get silently rejected as duplicates.
       return ExerciseSet(
+        id: 'set-${nextSetId++}',
         exerciseTemplateId: templateId,
         dateTime: date,
         equipmentWeight: weight,
@@ -63,13 +68,13 @@ void main() {
     test('program with no exercises yields no summaries', () async {
       final program = ExerciseProgram(id: 'p1', name: 'P1', sessions: []);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       expect(viewModel.exerciseRankSummaries, isEmpty);
     });
 
     test('no active program yields no summaries', () async {
-      await viewModel.loadRanks.execute(null);
+      await viewModel.setActiveProgram(null);
 
       expect(viewModel.exerciseRankSummaries, isEmpty);
     });
@@ -80,7 +85,7 @@ void main() {
       final program =
           ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       expect(viewModel.exerciseRankSummaries, hasLength(1));
       final summary = viewModel.exerciseRankSummaries.first;
@@ -101,7 +106,7 @@ void main() {
       final program =
           ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       final summary = viewModel.exerciseRankSummaries.first;
       expect(summary.recentSessions, hasLength(1));
@@ -119,7 +124,7 @@ void main() {
       final program = ExerciseProgram(
           id: 'p1', name: 'P1', sessions: [session1, session2]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       expect(viewModel.exerciseRankSummaries, hasLength(2));
       expect(
@@ -144,7 +149,7 @@ void main() {
       final program =
           ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       final summary = viewModel.exerciseRankSummaries.first;
 
@@ -176,7 +181,7 @@ void main() {
       final program =
           ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       final summary = viewModel.exerciseRankSummaries.first;
       expect(summary.bestSession!.date, earlier);
@@ -194,7 +199,7 @@ void main() {
       final program =
           ExerciseProgram(id: 'p1', name: 'P1', sessions: [session]);
 
-      await viewModel.loadRanks.execute(program);
+      await viewModel.setActiveProgram(program);
 
       final summary = viewModel.exerciseRankSummaries.first;
       expect(summary.bestSession!.setsLabel, '100 kg x 5, 95 kg x 6');

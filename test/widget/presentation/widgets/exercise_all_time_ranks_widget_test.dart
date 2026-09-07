@@ -1,4 +1,3 @@
-import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_rank_summary.dart';
 import 'package:exercise_management/presentation/view_models/home_exercise_ranks_view_model.dart';
@@ -15,17 +14,13 @@ class MockProgramProgressionViewModel extends Mock
 class MockHomeExerciseRanksViewModel extends Mock
     implements HomeExerciseRanksViewModel {}
 
-class MockCommand1<T, A> extends Mock implements Command1<T, A> {}
-
 void main() {
   late MockProgramProgressionViewModel mockProgressionViewModel;
   late MockHomeExerciseRanksViewModel mockRanksViewModel;
-  late MockCommand1<void, ExerciseProgram?> mockLoadRanks;
 
   setUp(() {
     mockProgressionViewModel = MockProgramProgressionViewModel();
     mockRanksViewModel = MockHomeExerciseRanksViewModel();
-    mockLoadRanks = MockCommand1<void, ExerciseProgram?>();
 
     when(() => mockProgressionViewModel.addListener(any())).thenReturn(null);
     when(() => mockProgressionViewModel.removeListener(any()))
@@ -34,8 +29,8 @@ void main() {
 
     when(() => mockRanksViewModel.addListener(any())).thenReturn(null);
     when(() => mockRanksViewModel.removeListener(any())).thenReturn(null);
-    when(() => mockRanksViewModel.loadRanks).thenReturn(mockLoadRanks);
-    when(() => mockLoadRanks.execute(any())).thenAnswer((_) async {});
+    when(() => mockRanksViewModel.setActiveProgram(any()))
+        .thenAnswer((_) async {});
   });
 
   Widget createWidgetUnderTest() {
@@ -71,7 +66,7 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
 
-    verify(() => mockLoadRanks.execute(program)).called(1);
+    verify(() => mockRanksViewModel.setActiveProgram(program)).called(1);
   });
 
   testWidgets(

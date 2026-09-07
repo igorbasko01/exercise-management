@@ -1,6 +1,5 @@
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
-import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_volume_statistic.dart';
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
@@ -30,8 +29,6 @@ class MockHomeExerciseRanksViewModel extends Mock
 
 class MockCommand0<T> extends Mock implements Command0<T> {}
 
-class MockCommand1<T, A> extends Mock implements Command1<T, A> {}
-
 void main() {
   late MockExerciseStatisticsViewModel mockStatsViewModel;
   late MockExerciseProgramsViewModel mockProgramsViewModel;
@@ -46,7 +43,6 @@ void main() {
   late MockCommand0<double> mockFetchAvgYear;
   late MockCommand0<List<ExerciseVolumeStatistics>> mockFetchVolume;
   late MockCommand0<void> mockFetchProgressionData;
-  late MockCommand1<void, ExerciseProgram?> mockLoadRanks;
 
   setUp(() {
     mockStatsViewModel = MockExerciseStatisticsViewModel();
@@ -62,7 +58,6 @@ void main() {
     mockFetchAvgYear = MockCommand0<double>();
     mockFetchVolume = MockCommand0<List<ExerciseVolumeStatistics>>();
     mockFetchProgressionData = MockCommand0<void>();
-    mockLoadRanks = MockCommand1<void, ExerciseProgram?>();
 
     registerFallbackValue(() {});
 
@@ -77,8 +72,8 @@ void main() {
     when(() => mockRanksViewModel.addListener(any())).thenReturn(null);
     when(() => mockRanksViewModel.removeListener(any())).thenReturn(null);
     when(() => mockRanksViewModel.exerciseRankSummaries).thenReturn([]);
-    when(() => mockRanksViewModel.loadRanks).thenReturn(mockLoadRanks);
-    when(() => mockLoadRanks.execute(any())).thenAnswer((_) async {});
+    when(() => mockRanksViewModel.setActiveProgram(any()))
+        .thenAnswer((_) async {});
 
     // Mock activeProgram to return null (no active program)
     when(() => mockProgramsViewModel.programs).thenReturn([]);

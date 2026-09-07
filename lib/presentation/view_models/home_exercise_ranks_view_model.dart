@@ -19,14 +19,10 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
     required ExerciseSetPresentationRepository setPresentationRepository,
     required ExerciseSetRepository exerciseSetRepository,
   }) : _setPresentationRepository = setPresentationRepository {
-    loadRanks = Command1<void, ExerciseProgram?>(_loadRanks)
-      ..addListener(_onCommandExecuted);
+    loadRanks = Command0<void>(_loadRanks)..addListener(_onCommandExecuted);
 
-    _setSubscription = exerciseSetRepository.watchExerciseSets().listen((_) {
-      if (!loadRanks.running) {
-        loadRanks.execute(_activeProgram);
-      }
-    });
+    _setSubscription =
+        exerciseSetRepository.watchExerciseSets().listen((_) => _reload());
   }
 
   final ExerciseSetPresentationRepository _setPresentationRepository;
@@ -35,19 +31,41 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
   final ExerciseRankingManager _rankingManager = ExerciseRankingManager();
   StreamSubscription? _setSubscription;
   ExerciseProgram? _activeProgram;
+  Completer<void>? _pendingReload;
 
-  late final Command1<void, ExerciseProgram?> loadRanks;
+  late final Command0<void> loadRanks;
 
   List<ExerciseRankSummary> _exerciseRankSummaries = [];
   List<ExerciseRankSummary> get exerciseRankSummaries => _exerciseRankSummaries;
 
-  void _onCommandExecuted() {
-    notifyListeners();
+  Future<void> setActiveProgram(ExerciseProgram? program) {
+    _activeProgram = program;
+    return _reload();
   }
 
-  Future<Result<void>> _loadRanks(ExerciseProgram? program) async {
-    _activeProgram = program;
-    final templates = _dedupExerciseTemplates(program);
+  // Command.execute() silently no-ops while already running, so a set-changed
+  // event racing a program change could drop the request that carried the
+  // up-to-date _activeProgram. Queue one follow-up run instead, so every
+  // request eventually runs against the latest _activeProgram.
+  Future<void> _reload() {
+    if (!loadRanks.running) {
+      return loadRanks.execute();
+    }
+    final pending = _pendingReload ??= Completer<void>();
+    return pending.future;
+  }
+
+  void _onCommandExecuted() {
+    notifyListeners();
+    if (!loadRanks.running && _pendingReload != null) {
+      final pending = _pendingReload!;
+      _pendingReload = null;
+      loadRanks.execute().then((_) => pending.complete());
+    }
+  }
+
+  Future<Result<void>> _loadRanks() async {
+    final templates = _dedupExerciseTemplates(_activeProgram);
 
     if (templates.isEmpty) {
       _exerciseRankSummaries = [];

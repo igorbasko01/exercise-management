@@ -34,7 +34,7 @@ class _ExerciseAllTimeRanksWidgetState
 
     _loadedOnce = true;
     _loadedProgramId = activeProgram?.id;
-    context.read<HomeExerciseRanksViewModel>().loadRanks.execute(activeProgram);
+    context.read<HomeExerciseRanksViewModel>().setActiveProgram(activeProgram);
   }
 
   @override
