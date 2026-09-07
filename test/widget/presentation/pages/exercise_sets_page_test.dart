@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
@@ -634,6 +635,146 @@ void main() {
       // Verify updateExercise was called with completedAt set to null (unmarked)
       expect(capturedExerciseSet, isNotNull);
       expect(capturedExerciseSet!.completedAt, isNull);
+    });
+
+    testWidgets('shows a "marked completed now" toast for a live completion',
+        (WidgetTester tester) async {
+      final now = DateTime(2023, 1, 1, 18, 0);
+      await withClock(Clock.fixed(now), () async {
+        final unmarkedSet = ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 20,
+          dateTime: now,
+          displayName: 'Bench Press',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: null,
+        );
+
+        when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+                lastNDays: any(named: 'lastNDays'),
+                exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok([unmarkedSet]);
+        });
+
+        when(() => mockExerciseSetRepository.updateExercise(any()))
+            .thenAnswer((invocation) async {
+          return Result.ok(
+              invocation.positionalArguments[0] as ExerciseSet);
+        });
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+                value: viewModel,
+              ),
+              Provider<ExerciseRankingManager>.value(
+                value: rankingManager,
+              ),
+              ChangeNotifierProvider<RestTimerViewModel>.value(
+                value: mockRestTimerViewModel,
+              ),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(
+                body: ExerciseSetsPage(),
+              ),
+            ),
+          ),
+        );
+
+        await viewModel.fetchExerciseSets.execute();
+        await tester.pumpAndSettle();
+
+        final dateTile = find.text('2023-01-01');
+        await tester.tap(dateTile);
+        await tester.pumpAndSettle();
+
+        final templateTile = find.text('Bench Press').first;
+        await tester.tap(templateTile);
+        await tester.pumpAndSettle();
+
+        final exerciseTile = find.widgetWithText(ListTile, 'Bench Press').last;
+        await tester.longPress(exerciseTile);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Marked completed now'), findsOneWidget);
+      });
+    });
+
+    testWidgets(
+        'shows a "marked completed for" toast for a derived, past-date completion',
+        (WidgetTester tester) async {
+      final now = DateTime(2023, 1, 5, 10, 0);
+      await withClock(Clock.fixed(now), () async {
+        final pastDay = DateTime(2023, 1, 1);
+        final forgottenSet = ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 10,
+          platesWeight: 20,
+          equipmentWeight: 20,
+          dateTime: pastDay,
+          displayName: 'Bench Press',
+          repetitionsRange: RepetitionsRange.medium,
+          completedAt: null,
+        );
+
+        when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+                lastNDays: any(named: 'lastNDays'),
+                exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok([forgottenSet]);
+        });
+
+        when(() => mockExerciseSetRepository.updateExercise(any()))
+            .thenAnswer((invocation) async {
+          return Result.ok(
+              invocation.positionalArguments[0] as ExerciseSet);
+        });
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+                value: viewModel,
+              ),
+              Provider<ExerciseRankingManager>.value(
+                value: rankingManager,
+              ),
+              ChangeNotifierProvider<RestTimerViewModel>.value(
+                value: mockRestTimerViewModel,
+              ),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(
+                body: ExerciseSetsPage(),
+              ),
+            ),
+          ),
+        );
+
+        await viewModel.fetchExerciseSets.execute();
+        await tester.pumpAndSettle();
+
+        final dateTile = find.text('2023-01-01');
+        await tester.tap(dateTile);
+        await tester.pumpAndSettle();
+
+        final templateTile = find.text('Bench Press').first;
+        await tester.tap(templateTile);
+        await tester.pumpAndSettle();
+
+        final exerciseTile = find.widgetWithText(ListTile, 'Bench Press').last;
+        await tester.longPress(exerciseTile);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Marked completed for 2023-01-01'), findsOneWidget);
+      });
     });
   });
 }

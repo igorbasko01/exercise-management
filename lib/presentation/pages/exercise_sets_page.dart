@@ -332,20 +332,29 @@ class ExerciseSetsPage extends StatelessWidget {
     viewModel.addExerciseSet.execute(duplicatedSet);
   }
 
-  void _toggleSetCompletion(
-      BuildContext context,
-      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
-    final isCurrentlyCompleted = exercise.completedAt != null;
-    final exerciseSet = exercise.toExerciseSet();
+  Future<void> _toggleSetCompletion(BuildContext context,
+      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) async {
+    // toggleSetCompletion is one Command shared by every list tile: if it's
+    // already running, a second call would no-op without updating `result`,
+    // so reading `result` afterwards could reflect an unrelated prior call.
+    if (viewModel.toggleSetCompletion.running) return;
 
-    // Use the new copyWith with Value wrapper to handle nullability explicitly
-    final updatedSet = exerciseSet.copyWith(
-      completedAt:
-          isCurrentlyCompleted ? const Value(null) : Value(DateTime.now()),
-    );
-    viewModel.updateExerciseSet.execute(updatedSet);
+    final wasCompleted = exercise.completedAt != null;
+    await viewModel.toggleSetCompletion.execute(exercise);
 
-    if (!isCurrentlyCompleted) {
+    final result = viewModel.toggleSetCompletion.result;
+    if (result is! Ok<bool>) return;
+    final isLive = result.value;
+
+    if (!wasCompleted && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isLive
+            ? 'Marked completed now'
+            : 'Marked completed for ${_formatDate(exercise.dateTime)}'),
+      ));
+    }
+
+    if (isLive && context.mounted) {
       context.read<RestTimerViewModel>().startTimer();
     }
   }
