@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/igorbasko01/exercise-management/compare/v1.5.0...v1.6.0) (2026-09-07)
+
+
+### Features
+
+* **sets:** derive completion time when marking a past session's set complete ([#96](https://github.com/igorbasko01/exercise-management/issues/96)) ([#97](https://github.com/igorbasko01/exercise-management/issues/97)) ([f5da739](https://github.com/igorbasko01/exercise-management/commit/f5da739d78b62e506032b73a62a2b1a9506ea1cb))
+
+
+### Bug Fixes
+
+* change repetition range boundaries to medium 6-9, high 10-15 ([#98](https://github.com/igorbasko01/exercise-management/issues/98)) ([#99](https://github.com/igorbasko01/exercise-management/issues/99)) ([80ce99b](https://github.com/igorbasko01/exercise-management/commit/80ce99b2a2a07cb80054d89b2019166164055f19))
+
 ## [1.5.0](https://github.com/igorbasko01/exercise-management/compare/v1.4.0...v1.5.0) (2026-09-02)
 
 
