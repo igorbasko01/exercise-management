@@ -695,6 +695,12 @@ void main() {
             .thenAnswer((invocation) async {
           return Result.ok([unmarkedSet]);
         });
+        when(() => mockExerciseSetPresentationRepository
+                .getSessionVolumeRanks(
+                    exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok({});
+        });
 
         when(() => mockExerciseSetRepository.updateExercise(any()))
             .thenAnswer((invocation) async {
@@ -765,6 +771,12 @@ void main() {
                 exerciseTemplateId: any(named: 'exerciseTemplateId')))
             .thenAnswer((invocation) async {
           return Result.ok([forgottenSet]);
+        });
+        when(() => mockExerciseSetPresentationRepository
+                .getSessionVolumeRanks(
+                    exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok({});
         });
 
         when(() => mockExerciseSetRepository.updateExercise(any()))
