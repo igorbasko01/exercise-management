@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
@@ -63,6 +64,35 @@ class InMemoryExerciseSetPresentationRepository
       case Error():
         return Result.error(result.error);
     }
+  }
+
+  @override
+  Future<Result<Map<RankKey, int>>> getSessionVolumeRanks(
+      {String? exerciseTemplateId}) async {
+    final result = await _exerciseSetRepository.getExercises();
+
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        var setsToProcess = result.value;
+        if (exerciseTemplateId != null) {
+          setsToProcess = setsToProcess
+              .where((set) => set.exerciseTemplateId == exerciseTemplateId)
+              .toList();
+        }
+
+        final presentations = await _processExerciseSets(setsToProcess);
+        final ranks =
+            ExerciseRankingManager.calculateRanks(presentations, _formatDate);
+        return Result.ok(ranks);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   @override

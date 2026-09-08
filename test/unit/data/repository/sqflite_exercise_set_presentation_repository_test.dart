@@ -1,6 +1,7 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_creation.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
@@ -494,6 +495,142 @@ void main() {
     expect(completedSet.completedAt!.toIso8601String(),
         completedTime.toIso8601String());
     expect(incompleteSet.completedAt, isNull);
+  });
+
+  test(
+      'getSessionVolumeRanks should rank sessions regardless of how old they are',
+      () async {
+    // Arrange
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Deadlift',
+            muscleGroup: MuscleGroup.hamstrings,
+            repetitionsRangeTarget: RepetitionsRange.low));
+    final exerciseTemplate =
+        (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final oldDate = DateTime.now().subtract(Duration(days: 400));
+    final recentDate = DateTime.now();
+
+    // Old session: volume = (100 + 50) * 5 = 750 (higher)
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: oldDate,
+        equipmentWeight: 100,
+        platesWeight: 50,
+        repetitions: 5));
+    // Recent session: volume = (10 + 5) * 5 = 75 (lower)
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: recentDate,
+        equipmentWeight: 10,
+        platesWeight: 5,
+        repetitions: 5));
+
+    // Act - getExerciseSets(lastNDays: 1) would only see the recent session
+    final result = await presentationRepository.getSessionVolumeRanks();
+
+    // Assert - the old session still ranks #1, unlike getExerciseSets which
+    // windows by day
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    final oldDateStr =
+        '${oldDate.year}-${oldDate.month.toString().padLeft(2, '0')}-${oldDate.day.toString().padLeft(2, '0')}';
+    final recentDateStr =
+        '${recentDate.year}-${recentDate.month.toString().padLeft(2, '0')}-${recentDate.day.toString().padLeft(2, '0')}';
+    expect(ranks[RankKey(oldDateStr, exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey(recentDateStr, exerciseTemplate.id!)], 2);
+  });
+
+  test('getSessionVolumeRanks should give tied sessions the same rank',
+      () async {
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Deadlift',
+            muscleGroup: MuscleGroup.hamstrings,
+            repetitionsRangeTarget: RepetitionsRange.low));
+    final exerciseTemplate =
+        (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+    final date3 = DateTime(2023, 1, 3);
+
+    // date1 and date2 tie at volume 1000; date3 is lower at 800
+    for (final date in [date1, date2]) {
+      await setsRepository.addExercise(ExerciseSet(
+          exerciseTemplateId: exerciseTemplate.id!,
+          dateTime: date,
+          equipmentWeight: 20,
+          platesWeight: 80,
+          repetitions: 10));
+    }
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: date3,
+        equipmentWeight: 20,
+        platesWeight: 80,
+        repetitions: 8));
+
+    final result = await presentationRepository.getSessionVolumeRanks();
+
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    expect(ranks[RankKey('2023-01-01', exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey('2023-01-02', exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey('2023-01-03', exerciseTemplate.id!)], 3);
+  });
+
+  test('getSessionVolumeRanks should filter by exercise template ID',
+      () async {
+    // Arrange
+    final benchPressTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Bench Press',
+            muscleGroup: MuscleGroup.chest,
+            repetitionsRangeTarget: RepetitionsRange.medium));
+    final benchPressTemplate =
+        (benchPressTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final squatTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Squat',
+            muscleGroup: MuscleGroup.quadriceps,
+            repetitionsRangeTarget: RepetitionsRange.medium));
+    final squatTemplate = (squatTemplateResult as Ok<ExerciseTemplate>).value;
+
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: benchPressTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 45,
+        platesWeight: 25,
+        repetitions: 10));
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: squatTemplate.id!,
+        dateTime: DateTime.now(),
+        equipmentWeight: 0,
+        platesWeight: 100,
+        repetitions: 12));
+
+    // Act
+    final result = await presentationRepository.getSessionVolumeRanks(
+        exerciseTemplateId: benchPressTemplate.id);
+
+    // Assert
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    expect(ranks.keys.every((key) => key.templateId == benchPressTemplate.id),
+        isTrue);
+    expect(ranks.keys.any((key) => key.templateId == squatTemplate.id),
+        isFalse);
+  });
+
+  test('getSessionVolumeRanks should return empty map if no sets exist',
+      () async {
+    final result = await presentationRepository.getSessionVolumeRanks();
+
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    expect((result as Ok<Map<RankKey, int>>).value, isEmpty);
   });
 
   test('getMostRecentCompletionDate should return correct date', () async {

@@ -7,6 +7,7 @@ import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -124,8 +125,7 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -136,6 +136,11 @@ void main() {
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
         return Result.ok([]);
+      });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({});
       });
     });
 
@@ -495,8 +500,7 @@ void main() {
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: exerciseSetRepository,
           exerciseSetPresentationRepository: exerciseSetPresentationRepository,
-          exerciseTemplateRepository: exerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: exerciseTemplateRepository);
     });
 
     test(
@@ -748,6 +752,107 @@ void main() {
     });
   });
 
+  group('ExerciseSetsViewModel All-Time Ranking', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final recentDate = DateTime(2023, 6, 1);
+
+    final recentLowerVolumeSet = ExerciseSetPresentation(
+      setId: 'recent',
+      exerciseTemplateId: '1',
+      repetitions: 10,
+      platesWeight: 10,
+      equipmentWeight: 0,
+      dateTime: recentDate,
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
+
+      // Only the recent, lower-volume session is within the loaded window...
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([recentLowerVolumeSet]);
+      });
+
+      // ...but the repository ranks it against a higher-volume session from
+      // outside that window (e.g. an old best session), computed without
+      // this view model ever seeing that other session's raw data.
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({
+          RankKey('2023-01-01', '1'): 1,
+          RankKey('2023-06-01', '1'): 2,
+        });
+      });
+    });
+
+    test(
+        'uses the repository-computed all-time rank for the loaded window, not a rank derived from just what is loaded',
+        () async {
+      await viewModel.fetchExerciseSets.execute();
+
+      expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
+      // The only session actually loaded is ranked #2, per the repository's
+      // ranks map, even though ranking it locally from just this one loaded
+      // session would have produced #1.
+      expect(viewModel.getRank('2023-06-01', '1'), equals(2));
+      expect(viewModel.rankingDegraded, isFalse);
+    });
+
+    test(
+        'falls back to ranking the loaded window and flags rankingDegraded when the ranks query fails',
+        () async {
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.error(ExerciseDatabaseException('boom'));
+      });
+
+      await viewModel.fetchExerciseSets.execute();
+
+      expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
+      expect(viewModel.getRank('2023-06-01', '1'), equals(1));
+      expect(viewModel.rankingDegraded, isTrue);
+    });
+
+    test('clears rankingDegraded once a subsequent fetch succeeds', () async {
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.error(ExerciseDatabaseException('boom'));
+      });
+      await viewModel.fetchExerciseSets.execute();
+      expect(viewModel.rankingDegraded, isTrue);
+
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({RankKey('2023-06-01', '1'): 2});
+      });
+      await viewModel.fetchExerciseSets.execute();
+
+      expect(viewModel.rankingDegraded, isFalse);
+    });
+  });
+
   group('ExerciseSetsViewModel completion toggling', () {
     late InMemoryExerciseRepository exerciseTemplateRepository;
     late InMemoryExerciseSetRepository exerciseSetRepository;
@@ -771,8 +876,7 @@ void main() {
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: exerciseSetRepository,
           exerciseSetPresentationRepository: exerciseSetPresentationRepository,
-          exerciseTemplateRepository: exerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: exerciseTemplateRepository);
       exerciseTemplateRepository.addExercise(exerciseTemplate);
     });
 

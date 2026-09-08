@@ -3,6 +3,7 @@ import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -33,7 +34,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final date1 = DateTime(2023, 1, 1);
     final date2 = DateTime(2023, 1, 2);
@@ -58,14 +58,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -147,15 +145,20 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(allSets);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({
+          RankKey('2023-01-01', 'template1'): 1,
+          RankKey('2023-01-02', 'template1'): 2,
+        });
+      });
 
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -215,15 +218,17 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(initialSets);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({RankKey('2023-01-01', 'template1'): 1});
+      });
 
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -270,6 +275,14 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(updatedSets);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({
+          RankKey('2023-01-01', 'template1'): 1,
+          RankKey('2023-01-02', 'template2'): 1,
+        });
+      });
 
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
@@ -294,6 +307,60 @@ void main() {
       // Both exercises are in different templates, so both should be rank #1
       expect(find.text('#1'), findsNWidgets(2));
     });
+
+    testWidgets(
+        'shows a degraded-ranking banner when the all-time ranks query fails',
+        (WidgetTester tester) async {
+      final sets = [
+        ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 5,
+          platesWeight: 10,
+          equipmentWeight: 10,
+          dateTime: date1,
+          displayName: 'Exercise A',
+          repetitionsRange: RepetitionsRange.medium,
+        ),
+      ];
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.error(ExerciseDatabaseException('boom'));
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      expect(
+          find.textContaining("Couldn't load all-time rankings"),
+          findsOneWidget);
+    });
   });
 
   group('ExerciseSetsPage Groups Sorting', () {
@@ -303,7 +370,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final testDate = DateTime(2023, 1, 1);
 
@@ -326,14 +392,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -395,15 +459,17 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(sets);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({});
+      });
 
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -447,7 +513,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final testDate = DateTime(2023, 1, 1);
 
@@ -470,14 +535,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -510,6 +573,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([unmarkedSet]);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({});
+      });
 
       ExerciseSet? capturedExerciseSet;
       when(() => mockExerciseSetRepository.updateExercise(any()))
@@ -523,9 +591,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -585,6 +650,11 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([markedSet]);
       });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({});
+      });
 
       ExerciseSet? capturedExerciseSet;
       when(() => mockExerciseSetRepository.updateExercise(any()))
@@ -598,9 +668,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -659,6 +726,12 @@ void main() {
             .thenAnswer((invocation) async {
           return Result.ok([unmarkedSet]);
         });
+        when(() => mockExerciseSetPresentationRepository
+                .getSessionVolumeRanks(
+                    exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok({});
+        });
 
         when(() => mockExerciseSetRepository.updateExercise(any()))
             .thenAnswer((invocation) async {
@@ -671,9 +744,6 @@ void main() {
             providers: [
               ChangeNotifierProvider<ExerciseSetsViewModel>.value(
                 value: viewModel,
-              ),
-              Provider<ExerciseRankingManager>.value(
-                value: rankingManager,
               ),
               ChangeNotifierProvider<RestTimerViewModel>.value(
                 value: mockRestTimerViewModel,
@@ -730,6 +800,12 @@ void main() {
             .thenAnswer((invocation) async {
           return Result.ok([forgottenSet]);
         });
+        when(() => mockExerciseSetPresentationRepository
+                .getSessionVolumeRanks(
+                    exerciseTemplateId: any(named: 'exerciseTemplateId')))
+            .thenAnswer((invocation) async {
+          return Result.ok({});
+        });
 
         when(() => mockExerciseSetRepository.updateExercise(any()))
             .thenAnswer((invocation) async {
@@ -742,9 +818,6 @@ void main() {
             providers: [
               ChangeNotifierProvider<ExerciseSetsViewModel>.value(
                 value: viewModel,
-              ),
-              Provider<ExerciseRankingManager>.value(
-                value: rankingManager,
               ),
               ChangeNotifierProvider<RestTimerViewModel>.value(
                 value: mockRestTimerViewModel,
