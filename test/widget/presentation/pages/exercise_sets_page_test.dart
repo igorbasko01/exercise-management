@@ -33,7 +33,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final date1 = DateTime(2023, 1, 1);
     final date2 = DateTime(2023, 1, 2);
@@ -58,14 +57,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -162,9 +159,6 @@ void main() {
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
             ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
-            ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
             ),
@@ -234,9 +228,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -324,7 +315,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final testDate = DateTime(2023, 1, 1);
 
@@ -347,14 +337,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -428,9 +416,6 @@ void main() {
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
             ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
-            ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
             ),
@@ -473,7 +458,6 @@ void main() {
         mockExerciseSetPresentationRepository;
     late MockRestTimerViewModel mockRestTimerViewModel;
     late ExerciseSetsViewModel viewModel;
-    late ExerciseRankingManager rankingManager;
 
     final testDate = DateTime(2023, 1, 1);
 
@@ -496,14 +480,12 @@ void main() {
           MockExerciseSetPresentationRepository();
       mockRestTimerViewModel = MockRestTimerViewModel();
       when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
-      rankingManager = ExerciseRankingManager();
 
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: rankingManager);
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -554,9 +536,6 @@ void main() {
           providers: [
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
-            ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
             ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
@@ -635,9 +614,6 @@ void main() {
             ChangeNotifierProvider<ExerciseSetsViewModel>.value(
               value: viewModel,
             ),
-            Provider<ExerciseRankingManager>.value(
-              value: rankingManager,
-            ),
             ChangeNotifierProvider<RestTimerViewModel>.value(
               value: mockRestTimerViewModel,
             ),
@@ -714,9 +690,6 @@ void main() {
               ChangeNotifierProvider<ExerciseSetsViewModel>.value(
                 value: viewModel,
               ),
-              Provider<ExerciseRankingManager>.value(
-                value: rankingManager,
-              ),
               ChangeNotifierProvider<RestTimerViewModel>.value(
                 value: mockRestTimerViewModel,
               ),
@@ -790,9 +763,6 @@ void main() {
             providers: [
               ChangeNotifierProvider<ExerciseSetsViewModel>.value(
                 value: viewModel,
-              ),
-              Provider<ExerciseRankingManager>.value(
-                value: rankingManager,
               ),
               ChangeNotifierProvider<RestTimerViewModel>.value(
                 value: mockRestTimerViewModel,

@@ -19,11 +19,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     required ExerciseSetPresentationRepository
         exerciseSetPresentationRepository,
     required ExerciseTemplateRepository exerciseTemplateRepository,
-    required ExerciseRankingManager rankingManager,
   })  : _exerciseSetRepository = exerciseSetRepository,
         _exerciseSetPresentationRepository = exerciseSetPresentationRepository,
-        _exerciseTemplateRepository = exerciseTemplateRepository,
-        _rankingManager = rankingManager {
+        _exerciseTemplateRepository = exerciseTemplateRepository {
     fetchExerciseTemplates =
         Command0<List<ExerciseTemplate>>(_fetchExerciseTemplates)
           ..addListener(_onCommandExecuted);
@@ -54,7 +52,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
-  final ExerciseRankingManager _rankingManager;
+  Map<RankKey, int> _ranks = {};
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -87,8 +85,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   /// Get the rank for a specific exercise group (date + template)
+  /// Returns 1 if the rank is not found (default/fallback)
   int getRank(String date, String templateId) {
-    return _rankingManager.getRank(date, templateId);
+    return _ranks[RankKey(date, templateId)] ?? 1;
   }
 
   /// Calculate total volume for a list of exercise sets
@@ -123,11 +122,12 @@ class ExerciseSetsViewModel extends ChangeNotifier {
         _exerciseSets = windowResult.value;
         switch (ranksResult) {
           case Ok<Map<RankKey, int>>():
-            _rankingManager.setRanks(ranksResult.value);
+            _ranks = ranksResult.value;
           case Error():
             // Fall back to ranking just the loaded window rather than
             // failing the whole fetch.
-            _rankingManager.calculateRanks(_exerciseSets, _formatDate);
+            _ranks = ExerciseRankingManager.calculateRanks(
+                _exerciseSets, _formatDate);
         }
         return Result.ok(_exerciseSets);
       case Error():

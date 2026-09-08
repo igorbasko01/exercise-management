@@ -81,9 +81,9 @@ class InMemoryExerciseSetPresentationRepository
         }
 
         final presentations = await _processExerciseSets(setsToProcess);
-        final rankingManager = ExerciseRankingManager();
-        rankingManager.calculateRanks(presentations, _formatDate);
-        return Result.ok(rankingManager.ranks);
+        final ranks =
+            ExerciseRankingManager.calculateRanks(presentations, _formatDate);
+        return Result.ok(ranks);
       case Error():
         return Result.error(result.error);
     }

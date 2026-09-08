@@ -5,14 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
 void main() {
-  late ExerciseRankingManager manager;
   final dateFormat = DateFormat('yyyy-MM-dd');
 
   String formatDate(DateTime date) => dateFormat.format(date);
-
-  setUp(() {
-    manager = ExerciseRankingManager();
-  });
 
   group('RankKey', () {
     test('should be equal when date and templateId match', () {
@@ -123,77 +118,12 @@ void main() {
     });
   });
 
-  group('setRanks / ranks', () {
-    test('getRank reflects ranks set directly via setRanks', () {
-      manager.setRanks({
-        RankKey('2024-01-01', 'template1'): 3,
-        RankKey('2024-01-02', 'template1'): 1,
-      });
-
-      expect(manager.getRank('2024-01-01', 'template1'), equals(3));
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1));
-      expect(manager.getRank('2024-01-03', 'template1'), equals(1));
-    });
-
-    test('ranks getter exposes what calculateRanks computed', () {
-      final sets = [
-        _createExerciseSet(
-          templateId: 'template1',
-          date: DateTime(2024, 1, 1),
-          equipmentWeight: 20.0,
-          platesWeight: 80.0,
-          repetitions: 10,
-        ),
-      ];
-
-      manager.calculateRanks(sets, formatDate);
-
-      expect(manager.ranks, equals({RankKey('2024-01-01', 'template1'): 1}));
-    });
-
-    test('setRanks replaces whatever calculateRanks had computed', () {
-      final sets = [
-        _createExerciseSet(
-          templateId: 'template1',
-          date: DateTime(2024, 1, 1),
-          equipmentWeight: 20.0,
-          platesWeight: 80.0,
-          repetitions: 10,
-        ),
-      ];
-      manager.calculateRanks(sets, formatDate);
-
-      manager.setRanks({RankKey('2024-01-01', 'template1'): 5});
-
-      expect(manager.getRank('2024-01-01', 'template1'), equals(5));
-    });
-  });
-
-  group('getRank', () {
-    test('should return 1 for unknown exercise group (default)', () {
-      final rank = manager.getRank('2024-01-01', 'unknown-template');
-      expect(rank, equals(1));
-    });
-
-    test('should return calculated rank after calculateRanks', () {
-      final sets = [
-        _createExerciseSet(
-          templateId: 'template1',
-          date: DateTime(2024, 1, 1),
-          equipmentWeight: 20.0,
-          platesWeight: 80.0,
-          repetitions: 10,
-        ),
-      ];
-
-      manager.calculateRanks(sets, formatDate);
-      final rank = manager.getRank('2024-01-01', 'template1');
-
-      expect(rank, equals(1));
-    });
-  });
-
   group('calculateRanks', () {
+    test('should return an empty map for an unknown exercise group', () {
+      final ranks = ExerciseRankingManager.calculateRanks([], formatDate);
+      expect(_rankFor(ranks, '2024-01-01', 'unknown-template'), equals(1));
+    });
+
     test('should assign rank 1 to single exercise group', () {
       final sets = [
         _createExerciseSet(
@@ -205,9 +135,9 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(1));
     });
 
     test('should rank by total volume (descending) for same template', () {
@@ -238,11 +168,11 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1)); // Highest volume
-      expect(manager.getRank('2024-01-01', 'template1'), equals(2)); // Middle volume
-      expect(manager.getRank('2024-01-03', 'template1'), equals(3)); // Lowest volume
+      expect(_rankFor(ranks, '2024-01-02', 'template1'), equals(1)); // Highest volume
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(2)); // Middle volume
+      expect(_rankFor(ranks, '2024-01-03', 'template1'), equals(3)); // Lowest volume
     });
 
     test('should calculate total volume across multiple sets in same session', () {
@@ -279,10 +209,10 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1)); // 2400 volume
-      expect(manager.getRank('2024-01-02', 'template1'), equals(2)); // 1500 volume
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(1)); // 2400 volume
+      expect(_rankFor(ranks, '2024-01-02', 'template1'), equals(2)); // 1500 volume
     });
 
     test('should rank independently for different templates', () {
@@ -321,15 +251,15 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
       // Template 1 rankings (independent)
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1));
-      expect(manager.getRank('2024-01-01', 'template1'), equals(2));
+      expect(_rankFor(ranks, '2024-01-02', 'template1'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(2));
 
       // Template 2 rankings (independent)
-      expect(manager.getRank('2024-01-02', 'template2'), equals(1));
-      expect(manager.getRank('2024-01-01', 'template2'), equals(2));
+      expect(_rankFor(ranks, '2024-01-02', 'template2'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template2'), equals(2));
     });
 
     test('should handle same date with different templates', () {
@@ -350,19 +280,19 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1));
-      expect(manager.getRank('2024-01-01', 'template2'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template2'), equals(1));
     });
 
     test('should handle empty sets list', () {
-      manager.calculateRanks([], formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks([], formatDate);
 
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1)); // Default
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(1)); // Default
     });
 
-    test('should update ranks when calculateRanks is called multiple times', () {
+    test('should produce different ranks for different data on each call', () {
       // First calculation
       final sets1 = [
         _createExerciseSet(
@@ -374,8 +304,8 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets1, formatDate);
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1));
+      final ranks1 = ExerciseRankingManager.calculateRanks(sets1, formatDate);
+      expect(_rankFor(ranks1, '2024-01-01', 'template1'), equals(1));
 
       // Second calculation with new data
       final sets2 = [
@@ -395,9 +325,9 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets2, formatDate);
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1)); // Now rank 1
-      expect(manager.getRank('2024-01-01', 'template1'), equals(2)); // Now rank 2
+      final ranks2 = ExerciseRankingManager.calculateRanks(sets2, formatDate);
+      expect(_rankFor(ranks2, '2024-01-02', 'template1'), equals(1)); // Now rank 1
+      expect(_rankFor(ranks2, '2024-01-01', 'template1'), equals(2)); // Now rank 2
     });
 
     test('should handle complex scenario with multiple templates and sessions', () {
@@ -486,16 +416,16 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
       // Bench Press rankings
-      expect(manager.getRank('2024-01-05', 'bench-press'), equals(1)); // 3300 volume
-      expect(manager.getRank('2024-01-01', 'bench-press'), equals(2)); // 2400 volume
-      expect(manager.getRank('2024-01-03', 'bench-press'), equals(3)); // 2100 volume
+      expect(_rankFor(ranks, '2024-01-05', 'bench-press'), equals(1)); // 3300 volume
+      expect(_rankFor(ranks, '2024-01-01', 'bench-press'), equals(2)); // 2400 volume
+      expect(_rankFor(ranks, '2024-01-03', 'bench-press'), equals(3)); // 2100 volume
 
       // Squat rankings (independent from bench press)
-      expect(manager.getRank('2024-01-02', 'squat'), equals(1)); // 3000 volume
-      expect(manager.getRank('2024-01-04', 'squat'), equals(2)); // 1400 volume
+      expect(_rankFor(ranks, '2024-01-02', 'squat'), equals(1)); // 3000 volume
+      expect(_rankFor(ranks, '2024-01-04', 'squat'), equals(2)); // 1400 volume
     });
 
     test('should assign the same rank to sessions tied on volume', () {
@@ -526,13 +456,13 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-01', 'template1'), equals(1));
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1));
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(1));
+      expect(_rankFor(ranks, '2024-01-02', 'template1'), equals(1));
       // Standard competition ranking: the next distinct volume skips to 3,
       // reflecting the two sessions that share rank 1.
-      expect(manager.getRank('2024-01-03', 'template1'), equals(3));
+      expect(_rankFor(ranks, '2024-01-03', 'template1'), equals(3));
     });
 
     test('should handle fractional weights', () {
@@ -553,12 +483,16 @@ void main() {
         ),
       ];
 
-      manager.calculateRanks(sets, formatDate);
+      final ranks = ExerciseRankingManager.calculateRanks(sets, formatDate);
 
-      expect(manager.getRank('2024-01-02', 'template1'), equals(1)); // 1050 volume
-      expect(manager.getRank('2024-01-01', 'template1'), equals(2)); // 1000 volume
+      expect(_rankFor(ranks, '2024-01-02', 'template1'), equals(1)); // 1050 volume
+      expect(_rankFor(ranks, '2024-01-01', 'template1'), equals(2)); // 1000 volume
     });
   });
+}
+
+int _rankFor(Map<RankKey, int> ranks, String date, String templateId) {
+  return ranks[RankKey(date, templateId)] ?? 1;
 }
 
 ExerciseSetPresentation _createExerciseSet({
@@ -579,4 +513,3 @@ ExerciseSetPresentation _createExerciseSet({
     repetitionsRange: RepetitionsRange.medium,
   );
 }
-

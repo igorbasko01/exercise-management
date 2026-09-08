@@ -125,8 +125,7 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       when(() => mockExerciseSetRepository.addExercises(any()))
           .thenAnswer((invocation) async {
@@ -501,8 +500,7 @@ void main() {
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: exerciseSetRepository,
           exerciseSetPresentationRepository: exerciseSetPresentationRepository,
-          exerciseTemplateRepository: exerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: exerciseTemplateRepository);
     });
 
     test(
@@ -783,8 +781,7 @@ void main() {
           exerciseSetRepository: mockExerciseSetRepository,
           exerciseSetPresentationRepository:
               mockExerciseSetPresentationRepository,
-          exerciseTemplateRepository: mockExerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
 
       // Only the recent, lower-volume session is within the loaded window...
       when(() => mockExerciseSetPresentationRepository.getExerciseSets(
@@ -857,8 +854,7 @@ void main() {
       viewModel = ExerciseSetsViewModel(
           exerciseSetRepository: exerciseSetRepository,
           exerciseSetPresentationRepository: exerciseSetPresentationRepository,
-          exerciseTemplateRepository: exerciseTemplateRepository,
-          rankingManager: ExerciseRankingManager());
+          exerciseTemplateRepository: exerciseTemplateRepository);
       exerciseTemplateRepository.addExercise(exerciseTemplate);
     });
 
