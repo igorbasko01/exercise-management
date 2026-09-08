@@ -18,6 +18,7 @@ class ExerciseSetsPage extends StatelessWidget {
     return Column(
       children: [
         _buildFilterBar(context),
+        _buildRankingDegradedBanner(),
         Expanded(
           child: Stack(
             children: [
@@ -49,6 +50,33 @@ class ExerciseSetsPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildRankingDegradedBanner() {
+    return Consumer<ExerciseSetsViewModel>(
+        builder: (context, viewModel, child) {
+      if (!viewModel.rankingDegraded) {
+        return const SizedBox.shrink();
+      }
+      return Container(
+        width: double.infinity,
+        color: Colors.orange.shade100,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                "Couldn't load all-time rankings; ranks shown are based on "
+                'the loaded sets only.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Consumer<ExerciseSetsViewModel> _exerciseSetsList() {

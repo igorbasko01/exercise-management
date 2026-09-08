@@ -3,6 +3,7 @@ import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -305,6 +306,60 @@ void main() {
 
       // Both exercises are in different templates, so both should be rank #1
       expect(find.text('#1'), findsNWidgets(2));
+    });
+
+    testWidgets(
+        'shows a degraded-ranking banner when the all-time ranks query fails',
+        (WidgetTester tester) async {
+      final sets = [
+        ExerciseSetPresentation(
+          setId: '1',
+          exerciseTemplateId: 'template1',
+          repetitions: 5,
+          platesWeight: 10,
+          equipmentWeight: 10,
+          dateTime: date1,
+          displayName: 'Exercise A',
+          repetitionsRange: RepetitionsRange.medium,
+        ),
+      ];
+
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok(sets);
+      });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.error(ExerciseDatabaseException('boom'));
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      expect(
+          find.textContaining("Couldn't load all-time rankings"),
+          findsOneWidget);
     });
   });
 
