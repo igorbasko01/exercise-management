@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/progression_type.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
@@ -296,11 +297,11 @@ void main() {
         'returns progressed sets with higher plates weight (10%) when provided 3 sets of highest repetitions for exercise',
         () async {
       final chestSet1max =
-          chestSet1.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet1.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet2max =
-          chestSet2.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet2.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet3max =
-          chestSet3.copyWith(repetitions: 10, platesWeight: 25);
+          chestSet3.copyWith(repetitions: 9, platesWeight: 25);
       final chestSet4 = chestSet3.copyWith(
           setId: const Value('4'), repetitions: 4, platesWeight: 25);
       await viewModel.progressSets.execute(
@@ -353,28 +354,28 @@ void main() {
       final chestSet4New = chestSet4
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
@@ -397,28 +398,28 @@ void main() {
       final chestSet4New = chestSet4
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet3New = chestSet3
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet2New = chestSet2
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
       final chestSet1New = chestSet1
           .copyWith(
               setId: Value(null),
-              repetitions: 10,
+              repetitions: 9,
               platesWeight: 22.5,
               completedAt: const Value(null))
           .toExerciseSet();
@@ -830,6 +831,133 @@ void main() {
 
       expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
       expect(viewModel.getRank('2023-06-01', '1'), equals(1));
+    });
+  });
+
+  group('ExerciseSetsViewModel completion toggling', () {
+    late InMemoryExerciseRepository exerciseTemplateRepository;
+    late InMemoryExerciseSetRepository exerciseSetRepository;
+    late InMemoryExerciseSetPresentationRepository
+        exerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+
+    setUp(() {
+      exerciseTemplateRepository = InMemoryExerciseRepository();
+      exerciseSetRepository = InMemoryExerciseSetRepository();
+      exerciseSetPresentationRepository =
+          InMemoryExerciseSetPresentationRepository(
+              exerciseSetRepository: exerciseSetRepository,
+              exerciseTemplateRepository: exerciseTemplateRepository);
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: exerciseSetRepository,
+          exerciseSetPresentationRepository: exerciseSetPresentationRepository,
+          exerciseTemplateRepository: exerciseTemplateRepository,
+          rankingManager: ExerciseRankingManager());
+      exerciseTemplateRepository.addExercise(exerciseTemplate);
+    });
+
+    test(
+        'marks a set from today complete with now, and reports a live completion',
+        () async {
+      final now = DateTime(2026, 9, 3, 18, 0);
+      await withClock(Clock.fixed(now), () async {
+        final set = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: now,
+        );
+        await exerciseSetRepository.addExercise(set);
+        await viewModel.fetchExerciseSets.execute();
+        final presentation = viewModel.exerciseSets.single;
+
+        await viewModel.toggleSetCompletion.execute(presentation);
+
+        final result = viewModel.toggleSetCompletion.result;
+        expect((result as Ok<bool>).value, isTrue);
+
+        final stored =
+            (await exerciseSetRepository.getExercise('1') as Ok<ExerciseSet>)
+                .value;
+        expect(stored.completedAt, now);
+      });
+    });
+
+    test(
+        'un-marking a completed set clears completedAt and reports no live completion',
+        () async {
+      final completedAt = DateTime(2026, 9, 3, 18, 0);
+      final set = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        repetitions: 5,
+        platesWeight: 20,
+        equipmentWeight: 0,
+        dateTime: completedAt,
+        completedAt: completedAt,
+      );
+      await exerciseSetRepository.addExercise(set);
+      await viewModel.fetchExerciseSets.execute();
+      final presentation = viewModel.exerciseSets.single;
+
+      await viewModel.toggleSetCompletion.execute(presentation);
+
+      final result = viewModel.toggleSetCompletion.result;
+      expect((result as Ok<bool>).value, isFalse);
+
+      final stored =
+          (await exerciseSetRepository.getExercise('1') as Ok<ExerciseSet>)
+              .value;
+      expect(stored.completedAt, isNull);
+    });
+
+    test(
+        'derives completion time for a past-day set from its latest completed sibling, and reports no live completion',
+        () async {
+      final now = DateTime(2026, 9, 5, 10, 0);
+      await withClock(Clock.fixed(now), () async {
+        final pastDay = DateTime(2026, 9, 1, 18, 0);
+        final completedSibling = ExerciseSet(
+          id: '1',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+          completedAt: DateTime(2026, 9, 1, 18, 47),
+        );
+        final forgottenSet = ExerciseSet(
+          id: '2',
+          exerciseTemplateId: '1',
+          repetitions: 5,
+          platesWeight: 20,
+          equipmentWeight: 0,
+          dateTime: pastDay,
+        );
+        await exerciseSetRepository.addExercise(completedSibling);
+        await exerciseSetRepository.addExercise(forgottenSet);
+        await viewModel.fetchExerciseSets.execute();
+        final presentation =
+            viewModel.exerciseSets.firstWhere((s) => s.setId == '2');
+
+        await viewModel.toggleSetCompletion.execute(presentation);
+
+        final result = viewModel.toggleSetCompletion.result;
+        expect((result as Ok<bool>).value, isFalse);
+
+        final stored = (await exerciseSetRepository.getExercise('2')
+                as Ok<ExerciseSet>)
+            .value;
+        expect(stored.completedAt, DateTime(2026, 9, 1, 18, 48));
+      });
     });
   });
 }
