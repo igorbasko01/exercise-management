@@ -2,6 +2,8 @@ import 'dart:async';
 // ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
+import 'package:clock/clock.dart';
+
 import '../logger.dart';
 import 'rest_timer_notification_service.dart';
 
@@ -20,6 +22,11 @@ class WebRestTimerNotificationService implements RestTimerNotificationService {
   final Map<int, Timer> _pendingTimers = {};
   final Map<int, html.Notification> _activeNotifications = {};
 
+  // Bumped by every schedule/cancel call for an id, so a call left suspended
+  // across an await (permission prompt, browser throttling) can tell it has
+  // been superseded and must not schedule or fire a stale notification.
+  final Map<int, int> _generation = {};
+
   @override
   Future<void> init() async {}
 
@@ -31,6 +38,7 @@ class WebRestTimerNotificationService implements RestTimerNotificationService {
     required DateTime scheduledDate,
   }) async {
     await cancelNotification(id);
+    final myGeneration = _generation[id]!;
 
     if (!html.Notification.supported) {
       logger.w('Web notifications are not supported in this browser.');
@@ -41,18 +49,20 @@ class WebRestTimerNotificationService implements RestTimerNotificationService {
     if (permission != 'granted') {
       permission = await html.Notification.requestPermission();
     }
+    if (_generation[id] != myGeneration) return;
     if (permission != 'granted') {
       logger.w('Web notification permission was not granted.');
       return;
     }
 
-    final delay = scheduledDate.difference(DateTime.now());
+    final delay = scheduledDate.difference(clock.now());
     if (delay.isNegative) {
       logger.w('Notification not scheduled: scheduledDate ($scheduledDate) is in the past.');
       return;
     }
 
     _pendingTimers[id] = Timer(delay, () {
+      if (_generation[id] != myGeneration) return;
       _pendingTimers.remove(id);
       _activeNotifications[id] = html.Notification(title, body: body);
     });
@@ -60,6 +70,7 @@ class WebRestTimerNotificationService implements RestTimerNotificationService {
 
   @override
   Future<void> cancelNotification(int id) async {
+    _generation[id] = (_generation[id] ?? 0) + 1;
     _pendingTimers.remove(id)?.cancel();
     _activeNotifications.remove(id)?.close();
   }
