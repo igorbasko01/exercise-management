@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service_factory.dart';
-import 'package:exercise_management/core/services/rest_timer_notification_service_io.dart';
+import 'package:exercise_management/core/services/rest_timer_notification_service_io.dart'
+    show LocalRestTimerNotificationService;
 
 void main() {
   test(
