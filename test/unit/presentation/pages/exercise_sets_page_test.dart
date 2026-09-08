@@ -146,10 +146,13 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(allSets);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok(allSets);
+        return Result.ok({
+          RankKey('2023-01-01', 'template1'): 1,
+          RankKey('2023-01-02', 'template1'): 2,
+        });
       });
 
       await tester.pumpWidget(
@@ -219,10 +222,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(initialSets);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok(initialSets);
+        return Result.ok({RankKey('2023-01-01', 'template1'): 1});
       });
 
       await tester.pumpWidget(
@@ -279,10 +282,13 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(updatedSets);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok(updatedSets);
+        return Result.ok({
+          RankKey('2023-01-01', 'template1'): 1,
+          RankKey('2023-01-02', 'template2'): 1,
+        });
       });
 
       await viewModel.fetchExerciseSets.execute();
@@ -409,10 +415,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok(sets);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok(sets);
+        return Result.ok({});
       });
 
       await tester.pumpWidget(
@@ -529,10 +535,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([unmarkedSet]);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok([unmarkedSet]);
+        return Result.ok({});
       });
 
       ExerciseSet? capturedExerciseSet;
@@ -609,10 +615,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([markedSet]);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok([markedSet]);
+        return Result.ok({});
       });
 
       ExerciseSet? capturedExerciseSet;

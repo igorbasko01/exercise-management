@@ -123,6 +123,52 @@ void main() {
     });
   });
 
+  group('setRanks / ranks', () {
+    test('getRank reflects ranks set directly via setRanks', () {
+      manager.setRanks({
+        RankKey('2024-01-01', 'template1'): 3,
+        RankKey('2024-01-02', 'template1'): 1,
+      });
+
+      expect(manager.getRank('2024-01-01', 'template1'), equals(3));
+      expect(manager.getRank('2024-01-02', 'template1'), equals(1));
+      expect(manager.getRank('2024-01-03', 'template1'), equals(1));
+    });
+
+    test('ranks getter exposes what calculateRanks computed', () {
+      final sets = [
+        _createExerciseSet(
+          templateId: 'template1',
+          date: DateTime(2024, 1, 1),
+          equipmentWeight: 20.0,
+          platesWeight: 80.0,
+          repetitions: 10,
+        ),
+      ];
+
+      manager.calculateRanks(sets, formatDate);
+
+      expect(manager.ranks, equals({RankKey('2024-01-01', 'template1'): 1}));
+    });
+
+    test('setRanks replaces whatever calculateRanks had computed', () {
+      final sets = [
+        _createExerciseSet(
+          templateId: 'template1',
+          date: DateTime(2024, 1, 1),
+          equipmentWeight: 20.0,
+          platesWeight: 80.0,
+          repetitions: 10,
+        ),
+      ];
+      manager.calculateRanks(sets, formatDate);
+
+      manager.setRanks({RankKey('2024-01-01', 'template1'): 5});
+
+      expect(manager.getRank('2024-01-01', 'template1'), equals(5));
+    });
+  });
+
   group('getRank', () {
     test('should return 1 for unknown exercise group (default)', () {
       final rank = manager.getRank('2024-01-01', 'unknown-template');

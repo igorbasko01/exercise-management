@@ -6,6 +6,7 @@ import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
+import 'package:exercise_management/data/repository/exceptions.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
 import 'package:exercise_management/data/repository/exercise_set_repository.dart';
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
@@ -136,10 +137,10 @@ void main() {
           .thenAnswer((invocation) async {
         return Result.ok([]);
       });
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok([]);
+        return Result.ok({});
       });
     });
 
@@ -759,19 +760,7 @@ void main() {
         mockExerciseSetPresentationRepository;
     late ExerciseSetsViewModel viewModel;
 
-    final oldDate = DateTime(2023, 1, 1);
     final recentDate = DateTime(2023, 6, 1);
-
-    final bestAllTimeSet = ExerciseSetPresentation(
-      setId: 'best',
-      exerciseTemplateId: '1',
-      repetitions: 10,
-      platesWeight: 100,
-      equipmentWeight: 0,
-      dateTime: oldDate,
-      displayName: 'Bench Press',
-      repetitionsRange: RepetitionsRange.medium,
-    );
 
     final recentLowerVolumeSet = ExerciseSetPresentation(
       setId: 'recent',
@@ -804,24 +793,43 @@ void main() {
         return Result.ok([recentLowerVolumeSet]);
       });
 
-      // ...but the all-time best session, from outside that window, still
-      // exists in the full history used for ranking.
-      when(() => mockExerciseSetPresentationRepository.getAllExerciseSets(
+      // ...but the repository ranks it against a higher-volume session from
+      // outside that window (e.g. an old best session), computed without
+      // this view model ever seeing that other session's raw data.
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
-        return Result.ok([bestAllTimeSet, recentLowerVolumeSet]);
+        return Result.ok({
+          RankKey('2023-01-01', '1'): 1,
+          RankKey('2023-06-01', '1'): 2,
+        });
       });
     });
 
     test(
-        'ranks the loaded window against the full set history, not just what is loaded',
+        'uses the repository-computed all-time rank for the loaded window, not a rank derived from just what is loaded',
         () async {
       await viewModel.fetchExerciseSets.execute();
 
       expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
-      // The only session actually loaded is ranked #2, because an
-      // unloaded-but-higher-volume session exists in the full history.
+      // The only session actually loaded is ranked #2, per the repository's
+      // ranks map, even though ranking it locally from just this one loaded
+      // session would have produced #1.
       expect(viewModel.getRank('2023-06-01', '1'), equals(2));
+    });
+
+    test('falls back to ranking the loaded window when the ranks query fails',
+        () async {
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.error(ExerciseDatabaseException('boom'));
+      });
+
+      await viewModel.fetchExerciseSets.execute();
+
+      expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
+      expect(viewModel.getRank('2023-06-01', '1'), equals(1));
     });
   });
 }

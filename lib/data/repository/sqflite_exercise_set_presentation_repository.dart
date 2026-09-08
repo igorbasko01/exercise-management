@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
@@ -75,27 +76,42 @@ class SqfliteExerciseSetPresentationRepository
   }
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getAllExerciseSets(
+  Future<Result<Map<RankKey, int>>> getSessionVolumeRanks(
       {String? exerciseTemplateId}) async {
     try {
       final templateFilter =
-          exerciseTemplateId != null ? 'AND es.exercise_template_id = ?' : '';
+          exerciseTemplateId != null ? 'AND exercise_template_id = ?' : '';
       final templateParams =
           exerciseTemplateId != null ? [exerciseTemplateId] : [];
 
-      final List<Map<String, dynamic>> maps = await database.rawQuery('''
-      $_presentationSelectFromJoin
-      WHERE 1=1 $templateFilter
-      ORDER BY es.id DESC
+      // RANK() gives standard competition ranking (1, 1, 3, 4, 4, 6...)
+      // directly, matching ExerciseRankingManager.calculateRanks, so ties on
+      // total volume share a rank without any post-processing here.
+      final List<Map<String, dynamic>> rows = await database.rawQuery('''
+      SELECT exercise_template_id, exercise_date,
+        RANK() OVER (
+          PARTITION BY exercise_template_id ORDER BY volume DESC
+        ) AS rank
+      FROM (
+        SELECT exercise_template_id,
+          DATE(date_time) AS exercise_date,
+          SUM((equipment_weight + plates_weight) * repetitions) AS volume
+        FROM ${SqfliteExerciseSetsRepository.tableName}
+        WHERE 1=1 $templateFilter
+        GROUP BY exercise_template_id, DATE(date_time)
+      )
       ''', templateParams);
 
-      final exerciseSetPresentations = maps
-          .map((map) => ExerciseSetPresentationMapper.fromMap(map))
-          .toList();
-      return Result.ok(exerciseSetPresentations);
+      final ranks = <RankKey, int>{};
+      for (final row in rows) {
+        final templateId = row['exercise_template_id'].toString();
+        final date = row['exercise_date'].toString();
+        ranks[RankKey(date, templateId)] = int.parse(row['rank'].toString());
+      }
+      return Result.ok(ranks);
     } catch (e) {
-      return Result.error(
-          ExerciseDatabaseException('Failed to fetch all exercise sets: $e'));
+      return Result.error(ExerciseDatabaseException(
+          'Failed to compute session volume ranks: $e'));
     }
   }
 

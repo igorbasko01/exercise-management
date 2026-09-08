@@ -101,25 +101,27 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     // the two calls below.
     final templateId = _selectedExerciseTemplateId;
 
-    // Ranks are computed against the full set history (not just the loaded
-    // window) so a session's rank stays stable as more history is paged in.
-    // The two queries are independent, so they run concurrently.
-    final results = await Future.wait([
-      _exerciseSetPresentationRepository.getExerciseSets(
-          lastNDays: lastNDays, exerciseTemplateId: templateId),
-      _exerciseSetPresentationRepository.getAllExerciseSets(
-          exerciseTemplateId: templateId),
-    ]);
-    final windowResult = results[0];
-    final allSetsResult = results[1];
+    // Ranks are all-time (not just the loaded window) so a session's rank
+    // stays stable as more history is paged in. The repository computes them
+    // directly (a SQL aggregate for sqflite) rather than handing back every
+    // set, and the two queries are independent so they run concurrently.
+    final windowFuture = _exerciseSetPresentationRepository.getExerciseSets(
+        lastNDays: lastNDays, exerciseTemplateId: templateId);
+    final ranksFuture = _exerciseSetPresentationRepository
+        .getSessionVolumeRanks(exerciseTemplateId: templateId);
+
+    final windowResult = await windowFuture;
+    final ranksResult = await ranksFuture;
 
     switch (windowResult) {
       case Ok<List<ExerciseSetPresentation>>():
         _exerciseSets = windowResult.value;
-        switch (allSetsResult) {
-          case Ok<List<ExerciseSetPresentation>>():
-            _rankingManager.calculateRanks(allSetsResult.value, _formatDate);
+        switch (ranksResult) {
+          case Ok<Map<RankKey, int>>():
+            _rankingManager.setRanks(ranksResult.value);
           case Error():
+            // Fall back to ranking just the loaded window rather than
+            // failing the whole fetch.
             _rankingManager.calculateRanks(_exerciseSets, _formatDate);
         }
         return Result.ok(_exerciseSets);

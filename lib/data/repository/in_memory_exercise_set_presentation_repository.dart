@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
@@ -66,7 +67,7 @@ class InMemoryExerciseSetPresentationRepository
   }
 
   @override
-  Future<Result<List<ExerciseSetPresentation>>> getAllExerciseSets(
+  Future<Result<Map<RankKey, int>>> getSessionVolumeRanks(
       {String? exerciseTemplateId}) async {
     final result = await _exerciseSetRepository.getExercises();
 
@@ -79,12 +80,19 @@ class InMemoryExerciseSetPresentationRepository
               .toList();
         }
 
-        final exerciseSetsPresentation =
-            await _processExerciseSets(setsToProcess);
-        return Result.ok(exerciseSetsPresentation);
+        final presentations = await _processExerciseSets(setsToProcess);
+        final rankingManager = ExerciseRankingManager();
+        rankingManager.calculateRanks(presentations, _formatDate);
+        return Result.ok(rankingManager.ranks);
       case Error():
         return Result.error(result.error);
     }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   @override

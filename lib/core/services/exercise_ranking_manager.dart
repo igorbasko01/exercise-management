@@ -41,6 +41,17 @@ class ExerciseRankingManager {
     return _ranks[key] ?? 1;
   }
 
+  /// All currently held ranks, e.g. for a caller that computed them itself
+  /// (a repository doing the ranking in SQL) and wants to hand them back to
+  /// something else that reads through [getRank].
+  Map<RankKey, int> get ranks => Map.unmodifiable(_ranks);
+
+  /// Replace the current ranks with ones computed elsewhere (e.g. by a
+  /// repository query) instead of via [calculateRanks].
+  void setRanks(Map<RankKey, int> ranks) {
+    _ranks = ranks;
+  }
+
   /// Calculate and update ranks for all exercise groups based on total volume
   /// Ranks are calculated per exercise template, comparing sessions of the same exercise
   void calculateRanks(List<ExerciseSetPresentation> allSets, String Function(DateTime) formatDate) {

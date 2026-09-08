@@ -1,6 +1,7 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_creation.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
@@ -496,7 +497,8 @@ void main() {
     expect(incompleteSet.completedAt, isNull);
   });
 
-  test('getAllExerciseSets should return sets regardless of how old they are',
+  test(
+      'getSessionVolumeRanks should rank sessions regardless of how old they are',
       () async {
     // Arrange
     final exerciseTemplateResult = await templatesRepository.addExercise(
@@ -507,28 +509,80 @@ void main() {
     final exerciseTemplate =
         (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
 
+    final oldDate = DateTime.now().subtract(Duration(days: 400));
+    final recentDate = DateTime.now();
+
+    // Old session: volume = (100 + 50) * 5 = 750 (higher)
     await setsRepository.addExercise(ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now().subtract(Duration(days: 400)),
+        dateTime: oldDate,
         equipmentWeight: 100,
         platesWeight: 50,
         repetitions: 5));
+    // Recent session: volume = (10 + 5) * 5 = 75 (lower)
     await setsRepository.addExercise(ExerciseSet(
         exerciseTemplateId: exerciseTemplate.id!,
-        dateTime: DateTime.now(),
-        equipmentWeight: 110,
-        platesWeight: 55,
+        dateTime: recentDate,
+        equipmentWeight: 10,
+        platesWeight: 5,
         repetitions: 5));
 
-    // Act
-    final result = await presentationRepository.getAllExerciseSets();
+    // Act - getExerciseSets(lastNDays: 1) would only see the recent session
+    final result = await presentationRepository.getSessionVolumeRanks();
 
-    // Assert - both sets returned, unlike getExerciseSets which windows by day
-    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-    expect((result as Ok<List<ExerciseSetPresentation>>).value.length, 2);
+    // Assert - the old session still ranks #1, unlike getExerciseSets which
+    // windows by day
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    final oldDateStr =
+        '${oldDate.year}-${oldDate.month.toString().padLeft(2, '0')}-${oldDate.day.toString().padLeft(2, '0')}';
+    final recentDateStr =
+        '${recentDate.year}-${recentDate.month.toString().padLeft(2, '0')}-${recentDate.day.toString().padLeft(2, '0')}';
+    expect(ranks[RankKey(oldDateStr, exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey(recentDateStr, exerciseTemplate.id!)], 2);
   });
 
-  test('getAllExerciseSets should filter by exercise template ID', () async {
+  test('getSessionVolumeRanks should give tied sessions the same rank',
+      () async {
+    final exerciseTemplateResult = await templatesRepository.addExercise(
+        ExerciseTemplate(
+            name: 'Deadlift',
+            muscleGroup: MuscleGroup.hamstrings,
+            repetitionsRangeTarget: RepetitionsRange.low));
+    final exerciseTemplate =
+        (exerciseTemplateResult as Ok<ExerciseTemplate>).value;
+
+    final date1 = DateTime(2023, 1, 1);
+    final date2 = DateTime(2023, 1, 2);
+    final date3 = DateTime(2023, 1, 3);
+
+    // date1 and date2 tie at volume 1000; date3 is lower at 800
+    for (final date in [date1, date2]) {
+      await setsRepository.addExercise(ExerciseSet(
+          exerciseTemplateId: exerciseTemplate.id!,
+          dateTime: date,
+          equipmentWeight: 20,
+          platesWeight: 80,
+          repetitions: 10));
+    }
+    await setsRepository.addExercise(ExerciseSet(
+        exerciseTemplateId: exerciseTemplate.id!,
+        dateTime: date3,
+        equipmentWeight: 20,
+        platesWeight: 80,
+        repetitions: 8));
+
+    final result = await presentationRepository.getSessionVolumeRanks();
+
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    expect(ranks[RankKey('2023-01-01', exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey('2023-01-02', exerciseTemplate.id!)], 1);
+    expect(ranks[RankKey('2023-01-03', exerciseTemplate.id!)], 3);
+  });
+
+  test('getSessionVolumeRanks should filter by exercise template ID',
+      () async {
     // Arrange
     final benchPressTemplateResult = await templatesRepository.addExercise(
         ExerciseTemplate(
@@ -559,22 +613,24 @@ void main() {
         repetitions: 12));
 
     // Act
-    final result = await presentationRepository.getAllExerciseSets(
+    final result = await presentationRepository.getSessionVolumeRanks(
         exerciseTemplateId: benchPressTemplate.id);
 
     // Assert
-    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-    final presentations = (result as Ok<List<ExerciseSetPresentation>>).value;
-    expect(presentations.length, 1);
-    expect(presentations.first.exerciseTemplateId, benchPressTemplate.id);
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    expect(ranks.keys.every((key) => key.templateId == benchPressTemplate.id),
+        isTrue);
+    expect(ranks.keys.any((key) => key.templateId == squatTemplate.id),
+        isFalse);
   });
 
-  test('getAllExerciseSets should return empty list if no sets exist',
+  test('getSessionVolumeRanks should return empty map if no sets exist',
       () async {
-    final result = await presentationRepository.getAllExerciseSets();
+    final result = await presentationRepository.getSessionVolumeRanks();
 
-    expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
-    expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+    expect(result, isA<Ok<Map<RankKey, int>>>());
+    expect((result as Ok<Map<RankKey, int>>).value, isEmpty);
   });
 
   test('getMostRecentCompletionDate should return correct date', () async {
