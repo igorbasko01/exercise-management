@@ -16,6 +16,7 @@ import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/presentation/pages/rest_timer_page.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
+import 'package:exercise_management/core/services/rest_timer_notification_service_factory.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
@@ -42,7 +43,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   tz.initializeTimeZones();
-  final notificationService = LocalRestTimerNotificationService();
+  final notificationService = createRestTimerNotificationService();
   await notificationService.init();
 
   final prefs = await SharedPreferences.getInstance();
