@@ -5,6 +5,7 @@ import 'package:exercise_management/core/csv_serializer.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/export_sink.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -25,7 +26,121 @@ class MockExerciseSetRepository extends Mock implements ExerciseSetRepository {}
 class MockExerciseProgramRepository extends Mock
     implements ExerciseProgramRepository {}
 
+/// Stands in for the platform-specific [ExportSink] so the view model can be
+/// tested without touching the filesystem or a browser.
+class FakeExportSink implements ExportSink {
+  Result<ExportLocation>? nextResult;
+  String? lastFileName;
+  List<int>? lastBytes;
+
+  @override
+  Future<Result<ExportLocation>> store(String fileName, List<int> bytes) async {
+    lastFileName = fileName;
+    lastBytes = bytes;
+    return nextResult ??
+        Result.ok(const ExportLocation(description: 'fake/downloads'));
+  }
+}
+
 void main() {
+  group('SettingsViewModel exportDataCommand', () {
+    late SettingsViewModel viewModel;
+    late MockExerciseTemplateRepository mockTemplateRepository;
+    late MockExerciseSetRepository mockSetRepository;
+    late MockExerciseProgramRepository mockProgramRepository;
+    late FakeExportSink fakeExportSink;
+
+    final dummyTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Push-up',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium,
+        description: 'Basic push-up exercise');
+
+    final dummySet = ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        dateTime: DateTime.parse('2023-01-01T10:00:00.000Z'),
+        equipmentWeight: 0.0,
+        platesWeight: 20.0,
+        repetitions: 10);
+
+    setUp(() {
+      mockTemplateRepository = MockExerciseTemplateRepository();
+      mockSetRepository = MockExerciseSetRepository();
+      mockProgramRepository = MockExerciseProgramRepository();
+      fakeExportSink = FakeExportSink();
+      viewModel = SettingsViewModel(
+        templatesRepository: mockTemplateRepository,
+        setsRepository: mockSetRepository,
+        programsRepository: mockProgramRepository,
+        exportSink: fakeExportSink,
+      );
+
+      when(() => mockTemplateRepository.getExercises())
+          .thenAnswer((_) async => Result.ok([dummyTemplate]));
+      when(() => mockSetRepository.getExercises())
+          .thenAnswer((_) async => Result.ok([dummySet]));
+      when(() => mockProgramRepository.getPrograms())
+          .thenAnswer((_) async => Result.ok(<ExerciseProgram>[]));
+    });
+
+    test('builds a zip in memory and hands it to the sink without touching '
+        'the filesystem', () async {
+      await viewModel.exportDataCommand.execute();
+
+      expect(viewModel.exportDataCommand.result, isA<Ok<ExportedFile>>());
+      expect(fakeExportSink.lastFileName, isNotNull);
+      expect(fakeExportSink.lastFileName, endsWith('.zip'));
+      expect(fakeExportSink.lastBytes, isNotEmpty);
+
+      final archive = ZipDecoder().decodeBytes(fakeExportSink.lastBytes!);
+      final fileNames = archive.map((f) => f.name).toSet();
+      expect(
+          fileNames,
+          containsAll([
+            'exercise_templates.csv',
+            'exercise_sets.csv',
+            'exercise_programs.csv',
+            'exercise_program_sessions.csv',
+            'session_exercises.csv',
+          ]));
+    });
+
+    test('surfaces the sink location description and file path on success',
+        () async {
+      fakeExportSink.nextResult = Result.ok(const ExportLocation(
+          description: '/storage/emulated/0/Download',
+          filePath: '/storage/emulated/0/Download/backup.zip'));
+
+      await viewModel.exportDataCommand.execute();
+
+      final result =
+          viewModel.exportDataCommand.result as Ok<ExportedFile>;
+      expect(result.value.locationDescription, '/storage/emulated/0/Download');
+      expect(result.value.filePath, '/storage/emulated/0/Download/backup.zip');
+    });
+
+    test('returns an error when a repository fetch fails', () async {
+      when(() => mockSetRepository.getExercises()).thenAnswer(
+          (_) async => Result.error(ExerciseDatabaseException('boom')));
+
+      await viewModel.exportDataCommand.execute();
+
+      expect(viewModel.exportDataCommand.result, isA<Error<ExportedFile>>());
+      expect(fakeExportSink.lastBytes, isNull);
+    });
+
+    test('returns an error when the sink fails to store the file', () async {
+      fakeExportSink.nextResult =
+          Result.error(ExportException('disk full'));
+
+      await viewModel.exportDataCommand.execute();
+
+      expect(viewModel.exportDataCommand.result, isA<Error<ExportedFile>>());
+    });
+  });
+
   group('SettingsViewModel importDataCommand', () {
     late SettingsViewModel viewModel;
     late MockExerciseTemplateRepository mockTemplateRepository;
@@ -67,6 +182,7 @@ void main() {
         templatesRepository: mockTemplateRepository,
         setsRepository: mockSetRepository,
         programsRepository: mockProgramRepository,
+        exportSink: FakeExportSink(),
       );
       tempDir = await Directory.systemTemp.createTemp('test_import_');
     });
