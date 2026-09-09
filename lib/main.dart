@@ -15,6 +15,7 @@ import 'package:exercise_management/presentation/pages/exercise_templates_page.d
 import 'package:exercise_management/presentation/pages/home_page.dart';
 import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/presentation/pages/rest_timer_page.dart';
+import 'package:exercise_management/core/services/export_sink.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
@@ -44,6 +45,7 @@ void main() async {
   tz.initializeTimeZones();
   final notificationService = LocalRestTimerNotificationService();
   await notificationService.init();
+  final exportSink = createExportSink();
 
   final prefs = await SharedPreferences.getInstance();
 
@@ -55,6 +57,7 @@ void main() async {
     providers: [
       Provider<SharedPreferences>.value(value: prefs),
       Provider<RestTimerNotificationService>.value(value: notificationService),
+      Provider<ExportSink>.value(value: exportSink),
       Provider<Database>.value(value: database),
       Provider<ExerciseTemplateRepository>(
         create: (_) => SqfliteExerciseTemplateRepository(database),
@@ -91,6 +94,7 @@ void main() async {
                 templatesRepository: context.read(),
                 setsRepository: context.read(),
                 programsRepository: context.read(),
+                exportSink: context.read(),
               )),
       ChangeNotifierProvider(
           create: (context) => ExerciseProgramsViewModel(

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:exercise_management/core/result.dart';
 import 'package:exercise_management/presentation/pages/exercise_programs_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
@@ -5,7 +7,6 @@ import 'package:exercise_management/presentation/view_models/exercise_templates_
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -48,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } else if (!command.running && _isExportDialogShowing) {
       _isExportDialogShowing = false;
       Navigator.of(context).pop();
-      _handleExportResult(command.result as Result<String>?);
+      _handleExportResult(command.result as Result<ExportedFile>?);
     }
   }
 
@@ -89,17 +90,17 @@ class _SettingsPageState extends State<SettingsPage> {
             ])));
   }
 
-  void _handleExportResult(Result<String>? result) {
+  void _handleExportResult(Result<ExportedFile>? result) {
     if (result == null) return;
 
-    if (result is Ok<String>) {
-      final filePath = (result as Ok).value;
-      final folder = path.dirname(filePath);
+    if (result is Ok<ExportedFile>) {
+      final exported = (result as Ok<ExportedFile>).value;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Data exported successfully to $folder folder.'),
+          content: Text(
+              'Data exported successfully to ${exported.locationDescription}.'),
           action: SnackBarAction(
             label: 'Share',
-            onPressed: () => _shareFile(filePath),
+            onPressed: () => _shareFile(exported),
           )));
     } else if (result is Error) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -107,11 +108,14 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _shareFile(String filePath) async {
+  Future<void> _shareFile(ExportedFile exported) async {
     try {
+      final file = exported.filePath != null
+          ? XFile(exported.filePath!)
+          : XFile.fromData(Uint8List.fromList(exported.bytes),
+              name: exported.fileName, mimeType: 'application/zip');
       await SharePlus.instance.share(ShareParams(
-          files: [XFile(filePath)],
-          text: 'Here is my exercise data backup file.'));
+          files: [file], text: 'Here is my exercise data backup file.'));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
