@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
@@ -53,18 +52,24 @@ class SettingsViewModel extends ChangeNotifier {
   Future<Result<ExportedFile>> _exportAndStoreData() async {
     try {
       final archiveResult = await _buildExportArchive();
-      if (archiveResult is Error) {
-        return Result.error((archiveResult as Error).error);
+      final (String, List<int>) archive;
+      switch (archiveResult) {
+        case Ok(:final value):
+          archive = value;
+        case Error(:final error):
+          return Result.error(error);
       }
-
-      final (fileName, bytes) = (archiveResult as Ok).value;
+      final (fileName, bytes) = archive;
 
       final storeResult = await _exportSink.store(fileName, bytes);
-      if (storeResult is Error) {
-        return Result.error((storeResult as Error).error);
+      final ExportLocation location;
+      switch (storeResult) {
+        case Ok(:final value):
+          location = value;
+        case Error(:final error):
+          return Result.error(error);
       }
 
-      final location = (storeResult as Ok).value;
       return Result.ok(ExportedFile(
         fileName: fileName,
         bytes: bytes,
@@ -77,25 +82,35 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Future<Result<(String, List<int>)>> _buildExportArchive() async {
-    final templatesResult = await _templatesRepository.getExercises();
-    final setsResult = await _setsRepository.getExercises();
-    final programsResult = await _programsRepository.getPrograms();
+    final (templatesResult, setsResult, programsResult) = await (
+      _templatesRepository.getExercises(),
+      _setsRepository.getExercises(),
+      _programsRepository.getPrograms(),
+    ).wait;
 
-    if (templatesResult is Error) {
-      return Result.error((templatesResult as Error).error);
+    final List<ExerciseTemplate> templates;
+    switch (templatesResult) {
+      case Ok(:final value):
+        templates = value;
+      case Error(:final error):
+        return Result.error(error);
     }
 
-    if (setsResult is Error) {
-      return Result.error((setsResult as Error).error);
+    final List<ExerciseSet> sets;
+    switch (setsResult) {
+      case Ok(:final value):
+        sets = value;
+      case Error(:final error):
+        return Result.error(error);
     }
 
-    if (programsResult is Error) {
-      return Result.error((programsResult as Error).error);
+    final List<ExerciseProgram> programs;
+    switch (programsResult) {
+      case Ok(:final value):
+        programs = value;
+      case Error(:final error):
+        return Result.error(error);
     }
-
-    final templates = (templatesResult as Ok).value;
-    final sets = (setsResult as Ok).value;
-    final programs = (programsResult as Ok).value as List<ExerciseProgram>;
 
     final templatesCSV = _createTemplatesCSV(templates);
     final setsCSV = _createSetsCSV(sets);
@@ -104,22 +119,20 @@ class SettingsViewModel extends ChangeNotifier {
     final sessionExercisesCSV = _createSessionExercisesCSV(programs);
 
     final archive = Archive();
-    _addCsvToArchive(archive, _templatesFileNamePrefix, templatesCSV);
-    _addCsvToArchive(archive, _setsFileNamePrefix, setsCSV);
-    _addCsvToArchive(archive, _programsFileNamePrefix, programsCSV);
-    _addCsvToArchive(archive, _programSessionsFileNamePrefix, sessionsCSV);
-    _addCsvToArchive(
-        archive, _sessionExercisesFileNamePrefix, sessionExercisesCSV);
+    archive.addFile(
+        ArchiveFile.string('$_templatesFileNamePrefix.csv', templatesCSV));
+    archive.addFile(ArchiveFile.string('$_setsFileNamePrefix.csv', setsCSV));
+    archive.addFile(
+        ArchiveFile.string('$_programsFileNamePrefix.csv', programsCSV));
+    archive.addFile(ArchiveFile.string(
+        '$_programSessionsFileNamePrefix.csv', sessionsCSV));
+    archive.addFile(ArchiveFile.string(
+        '$_sessionExercisesFileNamePrefix.csv', sessionExercisesCSV));
 
     final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
     final zipBytes = ZipEncoder().encode(archive);
 
     return Result.ok(('exercise_data_export_$timestamp.zip', zipBytes));
-  }
-
-  void _addCsvToArchive(Archive archive, String fileNamePrefix, String csv) {
-    final bytes = utf8.encode(csv);
-    archive.addFile(ArchiveFile('$fileNamePrefix.csv', bytes.length, bytes));
   }
 
   Future<Result<void>> _importData(String filePath) async {
