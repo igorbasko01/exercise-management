@@ -94,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (result == null) return;
 
     if (result is Ok<ExportedFile>) {
-      final exported = (result as Ok<ExportedFile>).value;
+      final exported = result.value;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
               'Data exported successfully to ${exported.locationDescription}.'),
