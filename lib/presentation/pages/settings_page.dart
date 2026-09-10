@@ -126,18 +126,34 @@ class _SettingsPageState extends State<SettingsPage> {
         type: FileType.custom,
         allowedExtensions: ['zip'],
         allowMultiple: false,
+        withData: true,
       );
 
-      if (result != null && result.files.single.path != null) {
-        final filePath = result.files.single.path!;
+      if (result == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Importing data from $filePath')));
-          await context
-              .read<SettingsViewModel>()
-              .importDataCommand
-              .execute(filePath);
+              const SnackBar(content: Text('Import cancelled.')));
         }
+        return;
+      }
+
+      final bytes = result.files.single.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Unable to read the selected file.')));
+        }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text('Importing data from ${result.files.single.name}')));
+        await context
+            .read<SettingsViewModel>()
+            .importDataCommand
+            .execute(bytes);
       }
     } catch (e) {
       if (mounted) {
