@@ -233,20 +233,13 @@ class SqfliteExerciseSetPresentationRepository
     try {
       final placeholders = List.filled(templateIds.length, '?').join(', ');
 
+      // completed_at IS NOT NULL is filtered here, in SQL, rather than
+      // fetching every set and filtering in Dart: progression pre-creates
+      // the next session's sets before they're performed, and those must
+      // never count toward ranking or display.
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
-      SELECT
-        es.id AS id,
-        et.id AS exercise_template_id,
-        es.date_time AS date_time,
-        es.equipment_weight AS equipment_weight,
-        es.plates_weight AS plates_weight,
-        es.repetitions AS repetitions,
-        et.name AS display_name,
-        et.repetitions_range AS repetitions_range,
-        es.completed_at AS completed_at
-      FROM ${SqfliteExerciseSetsRepository.tableName} es
-      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
-      WHERE es.exercise_template_id IN ($placeholders)
+      $_presentationSelectFromJoin
+      WHERE es.exercise_template_id IN ($placeholders) AND es.completed_at IS NOT NULL
       ORDER BY es.id DESC
       ''', templateIds);
 

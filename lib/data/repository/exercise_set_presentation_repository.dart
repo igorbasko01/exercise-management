@@ -14,5 +14,10 @@ abstract class ExerciseSetPresentationRepository {
   Future<Result<Map<String, DateTime>>> getMostRecentCompletionDate(List<String> templateIds);
   Future<Result<DateTime?>> getStrictMostRecentRoutineCompletionDate(List<String> templateIds);
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(Map<String, DateTime> templateDates);
+
+  /// Every completed set (`completedAt != null`) for the given templates,
+  /// across all time. Completion is filtered by the implementation itself,
+  /// not by the caller, so progression's pre-created, not-yet-performed
+  /// sets are never returned.
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsForTemplates(List<String> templateIds);
 }

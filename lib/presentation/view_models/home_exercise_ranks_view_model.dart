@@ -74,12 +74,7 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
         await _setPresentationRepository.getExerciseSetsForTemplates(templateIds);
     switch (setsResult) {
       case Ok<List<ExerciseSetPresentation>>():
-        // Progression pre-creates the next session's sets with completedAt
-        // still null; those haven't been performed yet and must not count
-        // as a ranked session.
-        final completedSets =
-            setsResult.value.where((set) => set.completedAt != null).toList();
-        _exerciseRankSummaries = _buildSummaries(templates, completedSets);
+        _exerciseRankSummaries = _buildSummaries(templates, setsResult.value);
         return Result.ok(null);
       case Error():
         return Result.error(setsResult.error);

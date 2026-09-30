@@ -229,7 +229,9 @@ class InMemoryExerciseSetPresentationRepository
     switch (result) {
       case Ok<List<ExerciseSet>>():
         final matchingSets = result.value
-            .where((set) => templateIds.contains(set.exerciseTemplateId))
+            .where((set) =>
+                templateIds.contains(set.exerciseTemplateId) &&
+                set.completedAt != null)
             .toList();
         final exerciseSetsPresentation = await _processExerciseSets(matchingSets);
         return Result.ok(exerciseSetsPresentation);
