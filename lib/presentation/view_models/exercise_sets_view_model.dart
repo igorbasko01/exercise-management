@@ -19,11 +19,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     required ExerciseSetPresentationRepository
         exerciseSetPresentationRepository,
     required ExerciseTemplateRepository exerciseTemplateRepository,
-    required ExerciseRankingManager rankingManager,
   })  : _exerciseSetRepository = exerciseSetRepository,
         _exerciseSetPresentationRepository = exerciseSetPresentationRepository,
-        _exerciseTemplateRepository = exerciseTemplateRepository,
-        _rankingManager = rankingManager {
+        _exerciseTemplateRepository = exerciseTemplateRepository {
     fetchExerciseTemplates =
         Command0<List<ExerciseTemplate>>(_fetchExerciseTemplates)
           ..addListener(_onCommandExecuted);
@@ -54,7 +52,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
-  final ExerciseRankingManager _rankingManager;
+  Map<RankKey, int> _ranks = {};
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -87,8 +85,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   }
 
   /// Get the rank for a specific exercise group (date + template)
+  /// Returns 1 if the rank is not found (default/fallback)
   int getRank(String date, String templateId) {
-    return _rankingManager.getRank(date, templateId);
+    return _ranks[RankKey(date, templateId)] ?? 1;
   }
 
   /// Calculate total volume for a list of exercise sets
@@ -102,22 +101,33 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchExerciseSets(
       {int lastNDays = 7}) async {
-    final result = await _exerciseSetPresentationRepository.getExerciseSets(
-        lastNDays: lastNDays, exerciseTemplateId: _selectedExerciseTemplateId);
-    switch (result) {
-      case Ok<List<ExerciseSetPresentation>>():
-        _exerciseSets = result.value;
-        _rankingManager.calculateRanks(_exerciseSets, _formatDate);
-        return Result.ok(_exerciseSets);
-      case Error():
-        return Result.error(result.error);
-    }
-  }
+    // Captured once so a filter change mid-fetch can't apply to only one of
+    // the two calls below.
+    final templateId = _selectedExerciseTemplateId;
 
-  String _formatDate(DateTime dateTime) {
-    return '${dateTime.year}'
-        '-${dateTime.month.toString().padLeft(2, '0')}'
-        '-${dateTime.day.toString().padLeft(2, '0')}';
+    // The window and ranks queries are independent, so kick both off before
+    // awaiting either.
+    final windowFuture = _exerciseSetPresentationRepository.getExerciseSets(
+        lastNDays: lastNDays, exerciseTemplateId: templateId);
+    final ranksFuture = _exerciseSetPresentationRepository
+        .getSessionVolumeRanks(exerciseTemplateId: templateId);
+
+    final windowResult = await windowFuture;
+    final ranksResult = await ranksFuture;
+
+    switch (windowResult) {
+      case Ok<List<ExerciseSetPresentation>>():
+        switch (ranksResult) {
+          case Ok<Map<RankKey, int>>():
+            _exerciseSets = windowResult.value;
+            _ranks = ranksResult.value;
+            return Result.ok(_exerciseSets);
+          case Error():
+            return Result.error(ranksResult.error);
+        }
+      case Error():
+        return Result.error(windowResult.error);
+    }
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchMoreExerciseSets() async {
