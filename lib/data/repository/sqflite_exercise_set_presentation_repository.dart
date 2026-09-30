@@ -1,4 +1,5 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation_mapper.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
@@ -12,6 +13,23 @@ class SqfliteExerciseSetPresentationRepository
   final Database database;
 
   SqfliteExerciseSetPresentationRepository(this.database);
+
+  /// Shared SELECT+JOIN shape behind every presentation query; callers
+  /// append their own WHERE/ORDER BY/LIMIT and parameters.
+  static final String _presentationSelectFromJoin = '''
+      SELECT
+        es.id AS id,
+        et.id AS exercise_template_id,
+        es.date_time AS date_time,
+        es.equipment_weight AS equipment_weight,
+        es.plates_weight AS plates_weight,
+        es.repetitions AS repetitions,
+        et.name AS display_name,
+        et.repetitions_range AS repetitions_range,
+        es.completed_at AS completed_at
+      FROM ${SqfliteExerciseSetsRepository.tableName} es
+      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      ''';
 
   @override
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSets(
@@ -42,18 +60,7 @@ class SqfliteExerciseSetPresentationRepository
 
       // Fetch all exercise sets from those N days
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
-      SELECT 
-        es.id AS id,
-        et.id AS exercise_template_id,
-        es.date_time AS date_time,
-        es.equipment_weight AS equipment_weight,
-        es.plates_weight AS plates_weight,
-        es.repetitions AS repetitions,
-        et.name AS display_name,
-        et.repetitions_range AS repetitions_range,
-        es.completed_at AS completed_at
-      FROM ${SqfliteExerciseSetsRepository.tableName} es
-      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      $_presentationSelectFromJoin
       WHERE DATE(es.date_time) >= ? $templateFilter
       ORDER BY es.id DESC
       ''', [oldestDate, ...templateParams]);
@@ -69,21 +76,50 @@ class SqfliteExerciseSetPresentationRepository
   }
 
   @override
+  Future<Result<Map<RankKey, int>>> getSessionVolumeRanks(
+      {String? exerciseTemplateId}) async {
+    try {
+      final templateFilter =
+          exerciseTemplateId != null ? 'AND exercise_template_id = ?' : '';
+      final templateParams =
+          exerciseTemplateId != null ? [exerciseTemplateId] : [];
+
+      // RANK() gives standard competition ranking (1, 1, 3, 4, 4, 6...)
+      // directly, matching ExerciseRankingManager.calculateRanks, so ties on
+      // total volume share a rank without any post-processing here.
+      final List<Map<String, dynamic>> rows = await database.rawQuery('''
+      SELECT exercise_template_id, exercise_date,
+        RANK() OVER (
+          PARTITION BY exercise_template_id ORDER BY volume DESC
+        ) AS rank
+      FROM (
+        SELECT exercise_template_id,
+          DATE(date_time) AS exercise_date,
+          SUM((equipment_weight + plates_weight) * repetitions) AS volume
+        FROM ${SqfliteExerciseSetsRepository.tableName}
+        WHERE 1=1 $templateFilter
+        GROUP BY exercise_template_id, DATE(date_time)
+      )
+      ''', templateParams);
+
+      final ranks = <RankKey, int>{};
+      for (final row in rows) {
+        final templateId = row['exercise_template_id'].toString();
+        final date = row['exercise_date'].toString();
+        ranks[RankKey(date, templateId)] = int.parse(row['rank'].toString());
+      }
+      return Result.ok(ranks);
+    } catch (e) {
+      return Result.error(ExerciseDatabaseException(
+          'Failed to compute session volume ranks: $e'));
+    }
+  }
+
+  @override
   Future<Result<ExerciseSetPresentation>> getExerciseSet(String setId) async {
     try {
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
-      SELECT 
-        es.id AS id,
-        et.id AS exercise_template_id,
-        es.date_time AS date_time,
-        es.equipment_weight AS equipment_weight,
-        es.plates_weight AS plates_weight,
-        es.repetitions AS repetitions,
-        et.name AS display_name,
-        et.repetitions_range AS repetitions_range,
-        es.completed_at AS completed_at
-      FROM ${SqfliteExerciseSetsRepository.tableName} es
-      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      $_presentationSelectFromJoin
       WHERE es.id = ?
       ''', [setId]);
 
@@ -174,18 +210,7 @@ class SqfliteExerciseSetPresentationRepository
       final whereClause = conditions.join(' OR ');
 
       final List<Map<String, dynamic>> maps = await database.rawQuery('''
-      SELECT 
-        es.id AS id,
-        et.id AS exercise_template_id,
-        es.date_time AS date_time,
-        es.equipment_weight AS equipment_weight,
-        es.plates_weight AS plates_weight,
-        es.repetitions AS repetitions,
-        et.name AS display_name,
-        et.repetitions_range AS repetitions_range,
-        es.completed_at AS completed_at
-      FROM ${SqfliteExerciseSetsRepository.tableName} es
-      LEFT JOIN ${SqfliteExerciseTemplateRepository.tableName} et ON es.exercise_template_id = et.id
+      $_presentationSelectFromJoin
       WHERE $whereClause
       ORDER BY es.id ASC
       ''', args);
