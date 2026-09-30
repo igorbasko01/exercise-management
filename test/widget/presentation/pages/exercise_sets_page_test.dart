@@ -309,7 +309,7 @@ void main() {
     });
 
     testWidgets(
-        'shows a degraded-ranking banner when the all-time ranks query fails',
+        'shows the fetch error state when the all-time ranks query fails',
         (WidgetTester tester) async {
       final sets = [
         ExerciseSetPresentation(
@@ -357,9 +357,11 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
       await tester.pumpAndSettle();
 
-      expect(
-          find.textContaining("Couldn't load all-time rankings"),
-          findsOneWidget);
+      // A ranks-query failure fails the whole fetch (rather than silently
+      // showing ranks based on partial data), so the page's existing
+      // fetch-error state is what renders.
+      expect(viewModel.fetchExerciseSets.error, isTrue);
+      expect(find.textContaining('boom'), findsOneWidget);
     });
   });
 

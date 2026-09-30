@@ -90,13 +90,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return _ranks[RankKey(date, templateId)] ?? 1;
   }
 
-  bool _rankingDegraded = false;
-
-  /// True when the last fetch couldn't get all-time ranks from the
-  /// repository and fell back to ranking just the loaded window, so
-  /// displayed ranks may not reflect full history.
-  bool get rankingDegraded => _rankingDegraded;
-
   /// Calculate total volume for a list of exercise sets
   static double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
     return ExerciseRankingManager.calculateTotalVolume(exercises);
@@ -120,38 +113,21 @@ class ExerciseSetsViewModel extends ChangeNotifier {
         .getSessionVolumeRanks(exerciseTemplateId: templateId);
 
     final windowResult = await windowFuture;
+    final ranksResult = await ranksFuture;
 
     switch (windowResult) {
       case Ok<List<ExerciseSetPresentation>>():
-        _exerciseSets = windowResult.value;
-        _applyRanks(await ranksFuture);
-        return Result.ok(_exerciseSets);
+        switch (ranksResult) {
+          case Ok<Map<RankKey, int>>():
+            _exerciseSets = windowResult.value;
+            _ranks = ranksResult.value;
+            return Result.ok(_exerciseSets);
+          case Error():
+            return Result.error(ranksResult.error);
+        }
       case Error():
         return Result.error(windowResult.error);
     }
-  }
-
-  /// Ranks are all-time (not just the loaded window) so a session's rank
-  /// stays stable as more history is paged in, sourced from [ranksResult]
-  /// rather than computed from [_exerciseSets] directly. Falls back to
-  /// ranking just the loaded window if the query failed, flagging
-  /// [rankingDegraded] so callers know those ranks may be incomplete.
-  void _applyRanks(Result<Map<RankKey, int>> ranksResult) {
-    switch (ranksResult) {
-      case Ok<Map<RankKey, int>>():
-        _ranks = ranksResult.value;
-        _rankingDegraded = false;
-      case Error():
-        _ranks =
-            ExerciseRankingManager.calculateRanks(_exerciseSets, _formatDate);
-        _rankingDegraded = true;
-    }
-  }
-
-  String _formatDate(DateTime dateTime) {
-    return '${dateTime.year}'
-        '-${dateTime.month.toString().padLeft(2, '0')}'
-        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   Future<Result<List<ExerciseSetPresentation>>> _fetchMoreExerciseSets() async {

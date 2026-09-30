@@ -814,12 +814,9 @@ void main() {
       // ranks map, even though ranking it locally from just this one loaded
       // session would have produced #1.
       expect(viewModel.getRank('2023-06-01', '1'), equals(2));
-      expect(viewModel.rankingDegraded, isFalse);
     });
 
-    test(
-        'falls back to ranking the loaded window and flags rankingDegraded when the ranks query fails',
-        () async {
+    test('fails the whole fetch when the ranks query fails', () async {
       when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
               exerciseTemplateId: any(named: 'exerciseTemplateId')))
           .thenAnswer((invocation) async {
@@ -828,28 +825,7 @@ void main() {
 
       await viewModel.fetchExerciseSets.execute();
 
-      expect(viewModel.exerciseSets, equals([recentLowerVolumeSet]));
-      expect(viewModel.getRank('2023-06-01', '1'), equals(1));
-      expect(viewModel.rankingDegraded, isTrue);
-    });
-
-    test('clears rankingDegraded once a subsequent fetch succeeds', () async {
-      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
-              exerciseTemplateId: any(named: 'exerciseTemplateId')))
-          .thenAnswer((invocation) async {
-        return Result.error(ExerciseDatabaseException('boom'));
-      });
-      await viewModel.fetchExerciseSets.execute();
-      expect(viewModel.rankingDegraded, isTrue);
-
-      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
-              exerciseTemplateId: any(named: 'exerciseTemplateId')))
-          .thenAnswer((invocation) async {
-        return Result.ok({RankKey('2023-06-01', '1'): 2});
-      });
-      await viewModel.fetchExerciseSets.execute();
-
-      expect(viewModel.rankingDegraded, isFalse);
+      expect(viewModel.fetchExerciseSets.error, isTrue);
     });
   });
 
