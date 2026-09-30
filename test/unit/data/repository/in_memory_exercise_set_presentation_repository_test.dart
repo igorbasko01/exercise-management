@@ -1,6 +1,7 @@
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/models/exercise_template.dart';
@@ -531,6 +532,106 @@ void main() {
         (result as Ok<List<ExerciseSetPresentation>>).value;
     
     expect(exerciseSetPresentation.isEmpty, true);
+  });
+
+  test(
+      'getSessionVolumeRanks should rank sessions regardless of how old they are',
+      () async {
+    final now = DateTime.now();
+    final old = now.subtract(const Duration(days: 400));
+
+    final exerciseTemplate = ExerciseTemplate(
+        id: '1',
+        name: 'Deadlift',
+        muscleGroup: MuscleGroup.hamstrings,
+        repetitionsRangeTarget: RepetitionsRange.low);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+    // Old session: volume = 50 * 5 = 250 (higher)
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: old,
+      equipmentWeight: 0,
+      platesWeight: 50,
+      repetitions: 5,
+    ));
+    // Recent session: volume = 5 * 5 = 25 (lower)
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 5,
+      repetitions: 5,
+    ));
+
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getSessionVolumeRanks();
+
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+    final oldDateStr =
+        '${old.year}-${old.month.toString().padLeft(2, '0')}-${old.day.toString().padLeft(2, '0')}';
+    final nowDateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    expect(ranks[RankKey(oldDateStr, '1')], 1);
+    expect(ranks[RankKey(nowDateStr, '1')], 2);
+  });
+
+  test('getSessionVolumeRanks should filter by exercise template ID',
+      () async {
+    final now = DateTime.now();
+    final nowDateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    final exerciseTemplate1 = ExerciseTemplate(
+        id: '1',
+        name: 'Bench Press',
+        muscleGroup: MuscleGroup.chest,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+    final exerciseTemplate2 = ExerciseTemplate(
+        id: '2',
+        name: 'Squat',
+        muscleGroup: MuscleGroup.quadriceps,
+        repetitionsRangeTarget: RepetitionsRange.medium);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate1);
+    await inMemoryExerciseRepository.addExercise(exerciseTemplate2);
+
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '1',
+      exerciseTemplateId: '1',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 45,
+      repetitions: 10,
+    ));
+    await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+      id: '2',
+      exerciseTemplateId: '2',
+      dateTime: now,
+      equipmentWeight: 0,
+      platesWeight: 100,
+      repetitions: 12,
+    ));
+
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getSessionVolumeRanks(exerciseTemplateId: '1');
+
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+
+    expect(ranks.keys.every((key) => key.templateId == '1'), isTrue);
+    expect(ranks[RankKey(nowDateStr, '1')], 1);
+  });
+
+  test('getSessionVolumeRanks should return empty map when no sets are present',
+      () async {
+    final result = await inMemoryExerciseSetPresentationRepository
+        .getSessionVolumeRanks();
+
+    final ranks = (result as Ok<Map<RankKey, int>>).value;
+
+    expect(ranks.isEmpty, true);
   });
 
   test('getMostRecentCompletionDate should return correct date', () async {

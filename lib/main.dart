@@ -31,7 +31,6 @@ import 'package:path/path.dart';
 
 import 'data/database/exercise_database_creation.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 
 Future<String> getDatabasePath() async {
   final databasesPath = await getDatabasesPath();
@@ -75,13 +74,11 @@ void main() async {
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
             ..fetchExerciseTemplates.execute()),
-      Provider(create: (context) => ExerciseRankingManager()),
       ChangeNotifierProvider(
           create: (context) => ExerciseSetsViewModel(
               exerciseSetRepository: context.read(),
               exerciseSetPresentationRepository: context.read(),
-              exerciseTemplateRepository: context.read(),
-              rankingManager: context.read())
+              exerciseTemplateRepository: context.read())
             ..preloadExercises.execute()),
       ChangeNotifierProvider(
           create: (context) => ExerciseStatisticsViewModel(
