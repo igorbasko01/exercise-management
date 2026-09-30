@@ -26,9 +26,6 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
   }
 
   final ExerciseSetPresentationRepository _setPresentationRepository;
-  // A private instance, not the app-wide one: sharing it with ExerciseSetsViewModel
-  // would let each overwrite the other's ranks, since they rank different windows.
-  final ExerciseRankingManager _rankingManager = ExerciseRankingManager();
   StreamSubscription? _setSubscription;
   ExerciseProgram? _activeProgram;
   Completer<void>? _pendingReload;
@@ -106,7 +103,7 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
 
   List<ExerciseRankSummary> _buildSummaries(
       List<ExerciseTemplate> templates, List<ExerciseSetPresentation> allSets) {
-    _rankingManager.calculateRanks(allSets, formatDate);
+    final ranks = ExerciseRankingManager.calculateRanks(allSets, formatDate);
 
     final setsByTemplateAndDate = <String, Map<String, List<ExerciseSetPresentation>>>{};
     for (var set in allSets) {
@@ -126,7 +123,7 @@ class HomeExerciseRanksViewModel extends ChangeNotifier {
         return ExerciseSessionSummary(
           date: DateTime.parse(entry.key),
           totalVolume: ExerciseRankingManager.calculateTotalVolume(sets),
-          rank: _rankingManager.getRank(entry.key, templateId),
+          rank: ranks[RankKey(entry.key, templateId)] ?? 1,
           setsLabel: _formatSetsLabel(sets),
         );
       }).toList()
