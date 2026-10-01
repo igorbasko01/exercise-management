@@ -47,9 +47,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     toggleSetCompletion =
         Command1<bool, ExerciseSetPresentation>(_toggleSetCompletion)
           ..addListener(_onCommandExecuted);
-    loadComparisonSession =
-        Command1<void, ExerciseSetPresentation>(_loadComparisonSession)
-          ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
@@ -57,6 +54,10 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   final ExerciseTemplateRepository _exerciseTemplateRepository;
   Map<RankKey, int> _ranks = {};
   final Map<RankKey, List<ExerciseSetPresentation>> _comparisonSessions = {};
+  // Not a Command: multiple groups can legitimately load concurrently, which
+  // a single shared Command's one `running` flag can't express — a second
+  // group's execute() would just no-op while the first is still in flight.
+  final Set<RankKey> _loadingComparisonSessions = {};
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -69,7 +70,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
   late final Command1<bool, ExerciseSetPresentation> toggleSetCompletion;
-  late final Command1<void, ExerciseSetPresentation> loadComparisonSession;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -95,9 +95,10 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return _ranks[RankKey(date, templateId)] ?? 1;
   }
 
-  /// The best matching historical session for a group (date + template),
-  /// in session order, once [loadComparisonSession] has loaded it. Null
-  /// until loaded; empty if no historical session matched.
+  /// The best matching historical session for a group (date + template), in
+  /// session order, once [loadComparisonSession] has loaded it. Null until
+  /// loaded (or if it failed to load); empty if no historical session
+  /// matched.
   List<ExerciseSetPresentation>? getComparisonSession(
       String date, String templateId) {
     return _comparisonSessions[RankKey(date, templateId)];
@@ -298,13 +299,15 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   /// Loads (and caches) the best matching historical session for the group
   /// [firstSet] belongs to, keyed by that group's own date + template. A
-  /// second call for an already-cached group is a no-op.
-  Future<Result<void>> _loadComparisonSession(
-      ExerciseSetPresentation firstSet) async {
+  /// call for an already-cached or already-loading group is a no-op, but
+  /// calls for different groups run independently and concurrently.
+  Future<void> loadComparisonSession(ExerciseSetPresentation firstSet) async {
     final key = RankKey(_formatDate(firstSet.dateTime), firstSet.exerciseTemplateId);
-    if (_comparisonSessions.containsKey(key)) {
-      return Result.ok(null);
+    if (_comparisonSessions.containsKey(key) ||
+        _loadingComparisonSessions.contains(key)) {
+      return;
     }
+    _loadingComparisonSessions.add(key);
 
     final result = await _exerciseSetPresentationRepository
         .getBestMatchingHistoricalSession(
@@ -314,12 +317,13 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       excludeDate: firstSet.dateTime,
     );
 
+    _loadingComparisonSessions.remove(key);
     switch (result) {
       case Ok<List<ExerciseSetPresentation>>():
         _comparisonSessions[key] = result.value;
-        return Result.ok(null);
+        notifyListeners();
       case Error():
-        return Result.error(result.error);
+        break;
     }
   }
 
@@ -350,7 +354,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.removeListener(_onCommandExecuted);
     fetchMoreExerciseSets.removeListener(_onCommandExecuted);
     toggleSetCompletion.removeListener(_onCommandExecuted);
-    loadComparisonSession.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -362,7 +365,6 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.dispose();
     fetchMoreExerciseSets.dispose();
     toggleSetCompletion.dispose();
-    loadComparisonSession.dispose();
 
     super.dispose();
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/progression_type.dart';
@@ -881,7 +883,7 @@ void main() {
                   excludeDate: firstSet.dateTime))
           .thenAnswer((invocation) async => Result.ok([historicalSet]));
 
-      await viewModel.loadComparisonSession.execute(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
 
       expect(viewModel.getComparisonSession('2023-06-01', '1'),
           equals([historicalSet]));
@@ -897,7 +899,7 @@ void main() {
                   excludeDate: any(named: 'excludeDate')))
           .thenAnswer((invocation) async => Result.ok([]));
 
-      await viewModel.loadComparisonSession.execute(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
 
       expect(viewModel.getComparisonSession('2023-06-01', '1'), isEmpty);
     });
@@ -912,8 +914,8 @@ void main() {
                   excludeDate: any(named: 'excludeDate')))
           .thenAnswer((invocation) async => Result.ok([]));
 
-      await viewModel.loadComparisonSession.execute(firstSet);
-      await viewModel.loadComparisonSession.execute(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
 
       verify(() => mockExerciseSetPresentationRepository
           .getBestMatchingHistoricalSession(
@@ -923,7 +925,7 @@ void main() {
               excludeDate: any(named: 'excludeDate'))).called(1);
     });
 
-    test('loadComparisonSession reports an error without caching a result',
+    test('loadComparisonSession leaves the group uncached on a repository error',
         () async {
       when(() => mockExerciseSetPresentationRepository
               .getBestMatchingHistoricalSession(
@@ -934,10 +936,62 @@ void main() {
           .thenAnswer(
               (invocation) async => Result.error(ExerciseDatabaseException('boom')));
 
-      await viewModel.loadComparisonSession.execute(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
 
-      expect(viewModel.loadComparisonSession.error, isTrue);
       expect(viewModel.getComparisonSession('2023-06-01', '1'), isNull);
+    });
+
+    test(
+        'loading two different groups concurrently does not drop either (regression for a shared single-flight bug)',
+        () async {
+      final otherFirstSet = ExerciseSetPresentation(
+        setId: '2',
+        exerciseTemplateId: '2',
+        repetitions: 10,
+        platesWeight: 10,
+        equipmentWeight: 10,
+        dateTime: DateTime(2023, 7, 1),
+        displayName: 'Squat',
+        repetitionsRange: RepetitionsRange.medium,
+      );
+      final historicalForFirst = firstSet.copyWith(setId: const Value('old-1'));
+      final historicalForOther =
+          otherFirstSet.copyWith(setId: const Value('old-2'));
+
+      final firstCompleter =
+          Completer<Result<List<ExerciseSetPresentation>>>();
+      final otherCompleter =
+          Completer<Result<List<ExerciseSetPresentation>>>();
+
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '1',
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) => firstCompleter.future);
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '2',
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) => otherCompleter.future);
+
+      // Start loading the first group, then — while it's still in flight —
+      // start loading a second, different group.
+      final firstLoad = viewModel.loadComparisonSession(firstSet);
+      final otherLoad = viewModel.loadComparisonSession(otherFirstSet);
+
+      otherCompleter.complete(Result.ok([historicalForOther]));
+      await otherLoad;
+      firstCompleter.complete(Result.ok([historicalForFirst]));
+      await firstLoad;
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'),
+          equals([historicalForFirst]));
+      expect(viewModel.getComparisonSession('2023-07-01', '2'),
+          equals([historicalForOther]));
     });
   });
 

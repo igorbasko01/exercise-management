@@ -219,7 +219,7 @@ class ExerciseSetsPage extends StatelessWidget {
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
       onExpansionChanged: (expanded) {
         if (expanded) {
-          viewModel.loadComparisonSession.execute(sessionOrderSets.first);
+          viewModel.loadComparisonSession(sessionOrderSets.first);
         }
       },
       title: Text(templateName,
