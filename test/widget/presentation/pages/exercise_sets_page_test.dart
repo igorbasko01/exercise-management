@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/repetitions_range.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/value.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
 import 'package:exercise_management/data/models/exercise_set_presentation.dart';
 import 'package:exercise_management/data/repository/exceptions.dart';
@@ -528,6 +529,7 @@ void main() {
         equipmentWeight: 0,
         dateTime: DateTime(2023, 1, 1),
       ));
+      registerFallbackValue(DateTime(2023, 1, 1));
     });
 
     setUp(() {
@@ -549,6 +551,15 @@ void main() {
         return Result.ok(null);
       });
       when(() => mockExerciseTemplateRepository.getExercises())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
           .thenAnswer((invocation) async {
         return Result.ok([]);
       });
@@ -850,6 +861,174 @@ void main() {
 
         expect(find.text('Marked completed for 2023-01-01'), findsOneWidget);
       });
+    });
+  });
+
+  group('ExerciseSetsPage Historical Rep Comparison', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late MockRestTimerViewModel mockRestTimerViewModel;
+    late ExerciseSetsViewModel viewModel;
+
+    final testDate = DateTime(2023, 1, 1);
+
+    final todaysSet = ExerciseSetPresentation(
+      setId: '1',
+      exerciseTemplateId: 'template1',
+      repetitions: 8,
+      platesWeight: 20,
+      equipmentWeight: 45,
+      dateTime: testDate,
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    setUpAll(() {
+      registerFallbackValue(<ExerciseSet>[]);
+      registerFallbackValue(ExerciseSet(
+        id: 'fallback',
+        exerciseTemplateId: 'fallback',
+        repetitions: 0,
+        platesWeight: 0,
+        equipmentWeight: 0,
+        dateTime: DateTime(2023, 1, 1),
+      ));
+      registerFallbackValue(DateTime(2023, 1, 1));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      mockRestTimerViewModel = MockRestTimerViewModel();
+      when(() => mockRestTimerViewModel.startTimer()).thenAnswer((_) {});
+
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
+
+      when(() => mockExerciseSetRepository.addExercises(any()))
+          .thenAnswer((invocation) async {
+        return Result.ok(null);
+      });
+      when(() => mockExerciseTemplateRepository.getExercises())
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+      when(() => mockExerciseSetPresentationRepository.getExerciseSets(
+              lastNDays: any(named: 'lastNDays'),
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok([todaysSet]);
+      });
+      when(() => mockExerciseSetPresentationRepository.getSessionVolumeRanks(
+              exerciseTemplateId: any(named: 'exerciseTemplateId')))
+          .thenAnswer((invocation) async {
+        return Result.ok({});
+      });
+    });
+
+    testWidgets(
+        'shows the best historical session reps once the group is expanded',
+        (WidgetTester tester) async {
+      final bestHistoricalSet = todaysSet.copyWith(
+        setId: const Value('old-1'),
+        repetitions: 12,
+        dateTime: DateTime(2022, 6, 1),
+      );
+
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async {
+        return Result.ok([bestHistoricalSet]);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      // No comparison yet: the template group hasn't been expanded.
+      expect(find.textContaining('Best:'), findsNothing);
+
+      final dateTile = find.text('2023-01-01');
+      await tester.tap(dateTile);
+      await tester.pumpAndSettle();
+
+      final templateTile = find.text('Bench Press').first;
+      await tester.tap(templateTile);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Best: 12 reps'), findsOneWidget);
+    });
+
+    testWidgets('shows no comparison when no historical session matches',
+        (WidgetTester tester) async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async {
+        return Result.ok([]);
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ExerciseSetsViewModel>.value(
+              value: viewModel,
+            ),
+            ChangeNotifierProvider<RestTimerViewModel>.value(
+              value: mockRestTimerViewModel,
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ExerciseSetsPage(),
+            ),
+          ),
+        ),
+      );
+
+      await viewModel.fetchExerciseSets.execute();
+      await tester.pumpAndSettle();
+
+      final dateTile = find.text('2023-01-01');
+      await tester.tap(dateTile);
+      await tester.pumpAndSettle();
+
+      final templateTile = find.text('Bench Press').first;
+      await tester.tap(templateTile);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Best:'), findsNothing);
     });
   });
 }

@@ -183,7 +183,9 @@ class ExerciseSetsPage extends StatelessWidget {
           entry.value,
           context,
           viewModel,
-          rank));
+          rank,
+          date,
+          entry.key));
     }
     return widgets;
   }
@@ -200,8 +202,14 @@ class ExerciseSetsPage extends StatelessWidget {
       List<ExerciseSetPresentation> exercises,
       BuildContext context,
       ExerciseSetsViewModel viewModel,
-      int rank) {
+      int rank,
+      String date,
+      String templateId) {
     final allCompleted = exercises.every((set) => set.completedAt != null);
+    final sessionOrderSets = _sortBySessionOrder(exercises);
+    final comparisonSession = viewModel.getComparisonSession(date, templateId);
+    final comparisonReps = _buildComparisonReps(sessionOrderSets, comparisonSession);
+
     return ExpansionTile(
       key: key,
       controlAffinity: ListTileControlAffinity.leading,
@@ -209,6 +217,11 @@ class ExerciseSetsPage extends StatelessWidget {
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
       backgroundColor:
           allCompleted ? Colors.green.withValues(alpha: 0.2) : null,
+      onExpansionChanged: (expanded) {
+        if (expanded) {
+          viewModel.loadComparisonSession.execute(sessionOrderSets.first);
+        }
+      },
       title: Text(templateName,
           style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(_buildExerciseTemplateSubtitle(exercises, context)),
@@ -232,10 +245,39 @@ class ExerciseSetsPage extends StatelessWidget {
               // Ascending order (most recent at bottom, just above nulls)
               return a.completedAt!.compareTo(b.completedAt!);
             }))
-          .map<Widget>((exercise) =>
-              _buildExerciseListTile(context, exercise, viewModel))
+          .map<Widget>((exercise) => _buildExerciseListTile(
+              context, exercise, viewModel, comparisonReps[exercise.setId]))
           .toList(),
     );
+  }
+
+  /// Sets in the order they were logged within their session: earliest
+  /// `dateTime` first, with `setId` as a tiebreaker for sets sharing a
+  /// timestamp (e.g. ones copied forward together by progressSets).
+  List<ExerciseSetPresentation> _sortBySessionOrder(
+      List<ExerciseSetPresentation> exercises) {
+    return List<ExerciseSetPresentation>.from(exercises)
+      ..sort((a, b) {
+        final cmp = a.dateTime.compareTo(b.dateTime);
+        if (cmp != 0) return cmp;
+        return (a.setId ?? '').compareTo(b.setId ?? '');
+      });
+  }
+
+  /// Empty until the group's comparison session has been loaded and matched.
+  Map<String?, int> _buildComparisonReps(
+      List<ExerciseSetPresentation> sessionOrderSets,
+      List<ExerciseSetPresentation>? comparisonSession) {
+    if (comparisonSession == null || comparisonSession.isEmpty) return {};
+
+    final comparisonReps = <String?, int>{};
+    for (var i = 0;
+        i < sessionOrderSets.length && i < comparisonSession.length;
+        i++) {
+      comparisonReps[sessionOrderSets[i].setId] =
+          comparisonSession[i].repetitions;
+    }
+    return comparisonReps;
   }
 
   String _buildExerciseTemplateSubtitle(
@@ -281,13 +323,16 @@ class ExerciseSetsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseListTile(BuildContext context,
-      ExerciseSetPresentation exercise, ExerciseSetsViewModel viewModel) {
+  Widget _buildExerciseListTile(
+      BuildContext context,
+      ExerciseSetPresentation exercise,
+      ExerciseSetsViewModel viewModel,
+      int? comparisonReps) {
     final isCompleted = exercise.completedAt != null;
     return ListTile(
       tileColor: isCompleted ? Colors.green.withValues(alpha: 0.2) : null,
       title: Text(exercise.displayName),
-      subtitle: Text(_buildExerciseSubtitle(exercise)),
+      subtitle: Text(_buildExerciseSubtitle(exercise, comparisonReps)),
       onTap: () => _navigateToEditExerciseSet(context, exercise),
       onLongPress: () => exercise.setId != null
           ? _toggleSetCompletion(context, exercise, viewModel)
@@ -296,10 +341,14 @@ class ExerciseSetsPage extends StatelessWidget {
     );
   }
 
-  String _buildExerciseSubtitle(ExerciseSetPresentation exercise) {
+  String _buildExerciseSubtitle(
+      ExerciseSetPresentation exercise, int? comparisonReps) {
+    final comparisonText =
+        comparisonReps != null ? ', Best: $comparisonReps reps' : '';
     return 'Reps: ${exercise.repetitions} (${exercise.repetitionsRange.range.toString()}), '
         'Plates Weight: ${exercise.platesWeight}, '
-        'Volume: ${ExerciseSetsViewModel.calculateTotalVolume([exercise])}';
+        'Volume: ${ExerciseSetsViewModel.calculateTotalVolume([exercise])}'
+        '$comparisonText';
   }
 
   void _navigateToEditExerciseSet(

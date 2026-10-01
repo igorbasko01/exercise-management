@@ -47,12 +47,16 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     toggleSetCompletion =
         Command1<bool, ExerciseSetPresentation>(_toggleSetCompletion)
           ..addListener(_onCommandExecuted);
+    loadComparisonSession =
+        Command1<void, ExerciseSetPresentation>(_loadComparisonSession)
+          ..addListener(_onCommandExecuted);
   }
 
   final ExerciseSetRepository _exerciseSetRepository;
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
   Map<RankKey, int> _ranks = {};
+  final Map<RankKey, List<ExerciseSetPresentation>> _comparisonSessions = {};
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -65,6 +69,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
       progressSets;
   late final Command0<List<ExerciseSetPresentation>> fetchMoreExerciseSets;
   late final Command1<bool, ExerciseSetPresentation> toggleSetCompletion;
+  late final Command1<void, ExerciseSetPresentation> loadComparisonSession;
 
   List<ExerciseTemplate> _exerciseTemplates = [];
 
@@ -88,6 +93,14 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   /// Returns 1 if the rank is not found (default/fallback)
   int getRank(String date, String templateId) {
     return _ranks[RankKey(date, templateId)] ?? 1;
+  }
+
+  /// The best matching historical session for a group (date + template),
+  /// in session order, once [loadComparisonSession] has loaded it. Null
+  /// until loaded; empty if no historical session matched.
+  List<ExerciseSetPresentation>? getComparisonSession(
+      String date, String templateId) {
+    return _comparisonSessions[RankKey(date, templateId)];
   }
 
   /// Calculate total volume for a list of exercise sets
@@ -121,6 +134,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           case Ok<Map<RankKey, int>>():
             _exerciseSets = windowResult.value;
             _ranks = ranksResult.value;
+            // The underlying data may have changed, so any previously loaded
+            // comparison sessions could now be stale.
+            _comparisonSessions.clear();
             return Result.ok(_exerciseSets);
           case Error():
             return Result.error(ranksResult.error);
@@ -280,6 +296,39 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return algorithm.determineFrom(sets).apply(sets);
   }
 
+  /// Loads (and caches) the best matching historical session for the group
+  /// [firstSet] belongs to, keyed by that group's own date + template. A
+  /// second call for an already-cached group is a no-op.
+  Future<Result<void>> _loadComparisonSession(
+      ExerciseSetPresentation firstSet) async {
+    final key = RankKey(_formatDate(firstSet.dateTime), firstSet.exerciseTemplateId);
+    if (_comparisonSessions.containsKey(key)) {
+      return Result.ok(null);
+    }
+
+    final result = await _exerciseSetPresentationRepository
+        .getBestMatchingHistoricalSession(
+      exerciseTemplateId: firstSet.exerciseTemplateId,
+      firstSetWeight: firstSet.totalWeight,
+      firstSetReps: firstSet.repetitions,
+      excludeDate: firstSet.dateTime,
+    );
+
+    switch (result) {
+      case Ok<List<ExerciseSetPresentation>>():
+        _comparisonSessions[key] = result.value;
+        return Result.ok(null);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
+  }
+
   Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(
       List<ExerciseSetPresentation> sets) {
     final Map<String, List<ExerciseSetPresentation>> groupedSets = {};
@@ -301,6 +350,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.removeListener(_onCommandExecuted);
     fetchMoreExerciseSets.removeListener(_onCommandExecuted);
     toggleSetCompletion.removeListener(_onCommandExecuted);
+    loadComparisonSession.removeListener(_onCommandExecuted);
 
     fetchExerciseSets.dispose();
     addExerciseSet.dispose();
@@ -312,6 +362,7 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     progressSets.dispose();
     fetchMoreExerciseSets.dispose();
     toggleSetCompletion.dispose();
+    loadComparisonSession.dispose();
 
     super.dispose();
   }

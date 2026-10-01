@@ -829,6 +829,118 @@ void main() {
     });
   });
 
+  group('ExerciseSetsViewModel Historical Rep Comparison', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final firstSet = ExerciseSetPresentation(
+      setId: '1',
+      exerciseTemplateId: '1',
+      repetitions: 8,
+      platesWeight: 20,
+      equipmentWeight: 45,
+      dateTime: DateTime(2023, 6, 1),
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    setUpAll(() {
+      registerFallbackValue(DateTime(2023, 1, 1));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
+    });
+
+    test('getComparisonSession is null before loadComparisonSession runs',
+        () {
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isNull);
+    });
+
+    test('loadComparisonSession caches the matching session by date + template',
+        () async {
+      final historicalSet = firstSet.copyWith(
+          setId: const Value('old-1'), dateTime: DateTime(2022, 1, 1));
+
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '1',
+                  firstSetWeight: 65,
+                  firstSetReps: 8,
+                  excludeDate: firstSet.dateTime))
+          .thenAnswer((invocation) async => Result.ok([historicalSet]));
+
+      await viewModel.loadComparisonSession.execute(firstSet);
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'),
+          equals([historicalSet]));
+    });
+
+    test('loadComparisonSession caches an empty list when nothing matches',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async => Result.ok([]));
+
+      await viewModel.loadComparisonSession.execute(firstSet);
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isEmpty);
+    });
+
+    test('loadComparisonSession does not re-query an already-cached group',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async => Result.ok([]));
+
+      await viewModel.loadComparisonSession.execute(firstSet);
+      await viewModel.loadComparisonSession.execute(firstSet);
+
+      verify(() => mockExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: any(named: 'exerciseTemplateId'),
+              firstSetWeight: any(named: 'firstSetWeight'),
+              firstSetReps: any(named: 'firstSetReps'),
+              excludeDate: any(named: 'excludeDate'))).called(1);
+    });
+
+    test('loadComparisonSession reports an error without caching a result',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer(
+              (invocation) async => Result.error(ExerciseDatabaseException('boom')));
+
+      await viewModel.loadComparisonSession.execute(firstSet);
+
+      expect(viewModel.loadComparisonSession.error, isTrue);
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isNull);
+    });
+  });
+
   group('ExerciseSetsViewModel completion toggling', () {
     late InMemoryExerciseRepository exerciseTemplateRepository;
     late InMemoryExerciseSetRepository exerciseSetRepository;
