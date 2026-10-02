@@ -22,6 +22,7 @@ class TestBuildBanner extends StatelessWidget {
         buildInfo.buildLabel.isEmpty ? 'TEST' : 'TEST ${buildInfo.buildLabel}';
 
     return Banner(
+      key: const Key('testBuildBanner'),
       location: BannerLocation.topEnd,
       message: message,
       color: Colors.red,

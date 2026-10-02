@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  const bannerKey = Key('testBuildBanner');
+
   group('TestBuildBanner', () {
     testWidgets('shows a TEST banner when isTestBuild is true',
         (tester) async {
@@ -14,9 +16,9 @@ void main() {
         ),
       ));
 
-      expect(find.byType(Banner), findsOneWidget);
+      expect(find.byKey(bannerKey), findsOneWidget);
       expect(find.text('content'), findsOneWidget);
-      final banner = tester.widget<Banner>(find.byType(Banner));
+      final banner = tester.widget<Banner>(find.byKey(bannerKey));
       expect(banner.message, 'TEST pr94');
     });
 
@@ -29,7 +31,7 @@ void main() {
         ),
       ));
 
-      final banner = tester.widget<Banner>(find.byType(Banner));
+      final banner = tester.widget<Banner>(find.byKey(bannerKey));
       expect(banner.message, 'TEST');
     });
 
@@ -42,7 +44,7 @@ void main() {
         ),
       ));
 
-      expect(find.byType(Banner), findsNothing);
+      expect(find.byKey(bannerKey), findsNothing);
       expect(find.text('content'), findsOneWidget);
     });
   });
