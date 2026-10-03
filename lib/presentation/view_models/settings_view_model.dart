@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:exercise_management/core/csv_serializer.dart';
-import 'package:path/path.dart' as path;
 import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/export_sink.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
@@ -15,16 +15,17 @@ import 'package:exercise_management/data/repository/exercise_set_repository.dart
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   SettingsViewModel({
     required ExerciseTemplateRepository templatesRepository,
     required ExerciseSetRepository setsRepository,
     required ExerciseProgramRepository programsRepository,
+    required ExportSink exportSink,
   })  : _templatesRepository = templatesRepository,
         _setsRepository = setsRepository,
-        _programsRepository = programsRepository {
+        _programsRepository = programsRepository,
+        _exportSink = exportSink {
     exportDataCommand = Command0(_exportAndStoreData)
       ..addListener(_onCommandExecuted);
     importDataCommand = Command1(_importData)..addListener(_onCommandExecuted);
@@ -33,6 +34,7 @@ class SettingsViewModel extends ChangeNotifier {
   final ExerciseTemplateRepository _templatesRepository;
   final ExerciseSetRepository _setsRepository;
   final ExerciseProgramRepository _programsRepository;
+  final ExportSink _exportSink;
 
   final String _templatesFileNamePrefix = 'exercise_templates';
   final String _setsFileNamePrefix = 'exercise_sets';
@@ -40,49 +42,75 @@ class SettingsViewModel extends ChangeNotifier {
   final String _programSessionsFileNamePrefix = 'exercise_program_sessions';
   final String _sessionExercisesFileNamePrefix = 'session_exercises';
 
-  late final Command0<String> exportDataCommand;
+  late final Command0<ExportedFile> exportDataCommand;
   late final Command1<void, String> importDataCommand;
 
   void _onCommandExecuted() {
     notifyListeners();
   }
 
-  Future<Result<String>> _exportAndStoreData() async {
+  Future<Result<ExportedFile>> _exportAndStoreData() async {
     try {
-      final exportResult = await _exportData();
-      if (exportResult is Error) {
-        return exportResult;
+      final archiveResult = await _buildExportArchive();
+      final (String, List<int>) archive;
+      switch (archiveResult) {
+        case Ok(:final value):
+          archive = value;
+        case Error(:final error):
+          return Result.error(error);
+      }
+      final (fileName, bytes) = archive;
+
+      final storeResult = await _exportSink.store(fileName, bytes);
+      final ExportLocation location;
+      switch (storeResult) {
+        case Ok(:final value):
+          location = value;
+        case Error(:final error):
+          return Result.error(error);
       }
 
-      final tempFilePath = (exportResult as Ok).value;
-
-      final storeResult = await _storeInDownloads(tempFilePath);
-      return storeResult;
+      return Result.ok(ExportedFile(
+        fileName: fileName,
+        bytes: bytes,
+        locationDescription: location.description,
+        filePath: location.filePath,
+      ));
     } catch (e) {
       return Result.error(ExportException(e.toString()));
     }
   }
 
-  Future<Result<String>> _exportData() async {
-    final templatesResult = await _templatesRepository.getExercises();
-    final setsResult = await _setsRepository.getExercises();
-    final programsResult = await _programsRepository.getPrograms();
+  Future<Result<(String, List<int>)>> _buildExportArchive() async {
+    final (templatesResult, setsResult, programsResult) = await (
+      _templatesRepository.getExercises(),
+      _setsRepository.getExercises(),
+      _programsRepository.getPrograms(),
+    ).wait;
 
-    if (templatesResult is Error) {
-      return Result.error((templatesResult as Error).error);
+    final List<ExerciseTemplate> templates;
+    switch (templatesResult) {
+      case Ok(:final value):
+        templates = value;
+      case Error(:final error):
+        return Result.error(error);
     }
 
-    if (setsResult is Error) {
-      return Result.error((setsResult as Error).error);
+    final List<ExerciseSet> sets;
+    switch (setsResult) {
+      case Ok(:final value):
+        sets = value;
+      case Error(:final error):
+        return Result.error(error);
     }
 
-    if (programsResult is Error) {
-      return Result.error((programsResult as Error).error);
+    final List<ExerciseProgram> programs;
+    switch (programsResult) {
+      case Ok(:final value):
+        programs = value;
+      case Error(:final error):
+        return Result.error(error);
     }
-
-    final templates = (templatesResult as Ok).value;
-    final sets = (setsResult as Ok).value;
-    final programs = (programsResult as Ok).value as List<ExerciseProgram>;
 
     final templatesCSV = _createTemplatesCSV(templates);
     final setsCSV = _createSetsCSV(sets);
@@ -90,75 +118,21 @@ class SettingsViewModel extends ChangeNotifier {
     final sessionsCSV = _createProgramSessionsCSV(programs);
     final sessionExercisesCSV = _createSessionExercisesCSV(programs);
 
-    final tempDir = await getTemporaryDirectory();
-    final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
-
-    final templatesFile =
-        File('${tempDir.path}/${_templatesFileNamePrefix}_$timestamp.csv');
-    final setsFile =
-        File('${tempDir.path}/${_setsFileNamePrefix}_$timestamp.csv');
-    final programsFile =
-        File('${tempDir.path}/${_programsFileNamePrefix}_$timestamp.csv');
-    final sessionsFile =
-        File('${tempDir.path}/${_programSessionsFileNamePrefix}_$timestamp.csv');
-    final sessionExercisesFile =
-        File('${tempDir.path}/${_sessionExercisesFileNamePrefix}_$timestamp.csv');
-
-    await templatesFile.writeAsString(templatesCSV);
-    await setsFile.writeAsString(setsCSV);
-    await programsFile.writeAsString(programsCSV);
-    await sessionsFile.writeAsString(sessionsCSV);
-    await sessionExercisesFile.writeAsString(sessionExercisesCSV);
-
     final archive = Archive();
-    archive.addFile(ArchiveFile('$_templatesFileNamePrefix.csv',
-        templatesFile.lengthSync(), templatesFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_setsFileNamePrefix.csv',
-        setsFile.lengthSync(), setsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_programsFileNamePrefix.csv',
-        programsFile.lengthSync(), programsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_programSessionsFileNamePrefix.csv',
-        sessionsFile.lengthSync(), sessionsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_sessionExercisesFileNamePrefix.csv',
-        sessionExercisesFile.lengthSync(),
-        sessionExercisesFile.readAsBytesSync()));
+    archive.addFile(
+        ArchiveFile.string('$_templatesFileNamePrefix.csv', templatesCSV));
+    archive.addFile(ArchiveFile.string('$_setsFileNamePrefix.csv', setsCSV));
+    archive.addFile(
+        ArchiveFile.string('$_programsFileNamePrefix.csv', programsCSV));
+    archive.addFile(ArchiveFile.string(
+        '$_programSessionsFileNamePrefix.csv', sessionsCSV));
+    archive.addFile(ArchiveFile.string(
+        '$_sessionExercisesFileNamePrefix.csv', sessionExercisesCSV));
 
-    final zipFile = File('${tempDir.path}/exercise_data_export_$timestamp.zip');
-    await zipFile.writeAsBytes(ZipEncoder().encode(archive));
+    final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
+    final zipBytes = ZipEncoder().encode(archive);
 
-    await templatesFile.delete();
-    await setsFile.delete();
-    await programsFile.delete();
-    await sessionsFile.delete();
-    await sessionExercisesFile.delete();
-
-    return Result.ok(zipFile.path);
-  }
-
-  Future<Result<String>> _storeInDownloads(String filePath) async {
-    try {
-      final downloadsDir = await _getDownloadsDirectory();
-      final fileName = path.basename(filePath);
-      final downloadPath = path.join(downloadsDir.path, fileName);
-
-      final originalFile = File(filePath);
-      await originalFile.copy(downloadPath);
-
-      return Result.ok(downloadPath);
-    } catch (e) {
-      return Result.error(ExportException('Error saving file: $e'));
-    }
-  }
-
-  Future<Directory> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      return Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      return await getApplicationDocumentsDirectory();
-    } else {
-      return await getDownloadsDirectory() ??
-          await getApplicationDocumentsDirectory();
-    }
+    return Result.ok(('exercise_data_export_$timestamp.zip', zipBytes));
   }
 
   Future<Result<void>> _importData(String filePath) async {
@@ -368,14 +342,21 @@ class SettingsViewModel extends ChangeNotifier {
   }
 }
 
-class ExportException implements BaseException {
-  @override
-  final String message;
+/// Result of a successful export, in terms the UI can present on any
+/// platform. [filePath] is only set where the platform has a real
+/// filesystem path to share (see [ExportSink]).
+class ExportedFile {
+  const ExportedFile({
+    required this.fileName,
+    required this.bytes,
+    required this.locationDescription,
+    this.filePath,
+  });
 
-  ExportException(this.message);
-
-  @override
-  String toString() => 'ExportException: $message';
+  final String fileName;
+  final List<int> bytes;
+  final String locationDescription;
+  final String? filePath;
 }
 
 class ImportException implements BaseException {
