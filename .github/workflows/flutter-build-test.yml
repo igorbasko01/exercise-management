@@ -75,7 +75,9 @@ jobs:
         run: |
           flutter build apk --release \
             --build-name="$BUILD_NAME" \
-            --build-number=${{ github.run_number }}
+            --build-number=${{ github.run_number }} \
+            --dart-define=TEST_BUILD=true \
+            --dart-define=BUILD_NAME="$BUILD_NAME"
           mv build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
 
       - name: Upload APK as Artifact

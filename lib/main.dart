@@ -1,3 +1,4 @@
+import 'package:exercise_management/core/build_info.dart';
 import 'package:exercise_management/data/database/database_factory.dart';
 import 'package:exercise_management/data/database/exercise_database_migrations.dart';
 import 'package:exercise_management/data/repository/exercise_set_presentation_repository.dart';
@@ -24,6 +25,7 @@ import 'package:exercise_management/presentation/view_models/exercise_templates_
 import 'package:exercise_management/presentation/view_models/program_progression_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:exercise_management/presentation/view_models/rest_timer_view_model.dart';
+import 'package:exercise_management/presentation/widgets/test_build_banner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -53,6 +55,7 @@ void main() async {
 
   runApp(MultiProvider(
     providers: [
+      Provider<BuildInfo>.value(value: const BuildInfo()),
       Provider<SharedPreferences>.value(value: prefs),
       Provider<RestTimerNotificationService>.value(value: notificationService),
       Provider<Database>.value(value: database),
@@ -120,6 +123,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+      ),
+      builder: (context, child) => TestBuildBanner(
+        buildInfo: context.read<BuildInfo>(),
+        child: child!,
       ),
       home: const MyHomePage(title: 'Exercise Management'),
     );
