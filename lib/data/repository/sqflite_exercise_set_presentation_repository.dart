@@ -224,4 +224,64 @@ class SqfliteExerciseSetPresentationRepository
           ExerciseDatabaseException('Failed to fetch exercise sets by date and templates: $e'));
     }
   }
+
+  @override
+  Future<Result<List<ExerciseSetPresentation>>> getBestMatchingHistoricalSession({
+    required String exerciseTemplateId,
+    required double firstSetWeight,
+    required int firstSetReps,
+    required DateTime excludeDate,
+  }) async {
+    try {
+      final excludeDateStr =
+          '${excludeDate.year}-${excludeDate.month.toString().padLeft(2, '0')}-${excludeDate.day.toString().padLeft(2, '0')}';
+
+      // A session's "first set" is the earliest one logged that day (by
+      // date_time, then id as a tiebreaker for sets sharing a timestamp,
+      // e.g. ones copied forward together by progressSets).
+      final List<Map<String, dynamic>> dateRows = await database.rawQuery('''
+      WITH session_sets AS (
+        SELECT *,
+          ROW_NUMBER() OVER (
+            PARTITION BY DATE(date_time)
+            ORDER BY date_time ASC, id ASC
+          ) AS set_order
+        FROM ${SqfliteExerciseSetsRepository.tableName}
+        WHERE exercise_template_id = ?
+      ),
+      session_summary AS (
+        SELECT DATE(date_time) AS exercise_date,
+          SUM((equipment_weight + plates_weight) * repetitions) AS volume,
+          MAX(CASE WHEN set_order = 1 THEN (equipment_weight + plates_weight) END) AS first_weight,
+          MAX(CASE WHEN set_order = 1 THEN repetitions END) AS first_reps
+        FROM session_sets
+        GROUP BY DATE(date_time)
+      )
+      SELECT exercise_date FROM session_summary
+      WHERE first_weight = ? AND first_reps = ? AND exercise_date != ?
+      ORDER BY volume DESC, exercise_date DESC
+      LIMIT 1
+      ''', [exerciseTemplateId, firstSetWeight, firstSetReps, excludeDateStr]);
+
+      if (dateRows.isEmpty) {
+        return Result.ok([]);
+      }
+
+      final bestDate = dateRows.first['exercise_date'].toString();
+
+      final List<Map<String, dynamic>> maps = await database.rawQuery('''
+      $_presentationSelectFromJoin
+      WHERE es.exercise_template_id = ? AND DATE(es.date_time) = ?
+      ORDER BY es.date_time ASC, es.id ASC
+      ''', [exerciseTemplateId, bestDate]);
+
+      final exerciseSetPresentations = maps
+          .map((map) => ExerciseSetPresentationMapper.fromMap(map))
+          .toList();
+      return Result.ok(exerciseSetPresentations);
+    } catch (e) {
+      return Result.error(ExerciseDatabaseException(
+          'Failed to fetch best matching historical session: $e'));
+    }
+  }
 }

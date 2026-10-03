@@ -738,4 +738,180 @@ void main() {
     final d = (result as Ok<DateTime?>).value;
     expect(d, isNull);
   });
+
+  group('getBestMatchingHistoricalSession', () {
+    test('returns the sets of the highest-volume session whose first set matches', () async {
+      final exerciseTemplate = ExerciseTemplate(
+          id: '1',
+          name: 'Bench Press',
+          muscleGroup: MuscleGroup.chest,
+          repetitionsRangeTarget: RepetitionsRange.medium);
+      await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+      final lowerVolumeMatchDate = DateTime(2022, 1, 1);
+      final higherVolumeMatchDate = DateTime(2022, 6, 1);
+      final today = DateTime(2023, 1, 1);
+
+      // Lower-volume matching session: first set 65kg x 8, total volume 520.
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: 'low-1',
+        exerciseTemplateId: '1',
+        dateTime: lowerVolumeMatchDate,
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 8,
+      ));
+
+      // Higher-volume matching session: same first set, higher total volume.
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: 'high-1',
+        exerciseTemplateId: '1',
+        dateTime: higherVolumeMatchDate,
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 8,
+      ));
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: 'high-2',
+        exerciseTemplateId: '1',
+        dateTime: higherVolumeMatchDate.add(const Duration(minutes: 2)),
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 10,
+      ));
+
+      // Today's session, which should be excluded from the search.
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: 'today-1',
+        exerciseTemplateId: '1',
+        dateTime: today,
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 8,
+      ));
+
+      final result = await inMemoryExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: '1',
+              firstSetWeight: 65,
+              firstSetReps: 8,
+              excludeDate: today);
+
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      final sets = (result as Ok<List<ExerciseSetPresentation>>).value;
+      expect(sets.length, 2);
+      expect(sets.any((s) => s.setId == 'high-1'), isTrue);
+      expect(sets.any((s) => s.setId == 'high-2'), isTrue);
+    });
+
+    test('ignores sessions whose first set does not match', () async {
+      final exerciseTemplate = ExerciseTemplate(
+          id: '1',
+          name: 'Squat',
+          muscleGroup: MuscleGroup.quadriceps,
+          repetitionsRangeTarget: RepetitionsRange.high);
+      await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        dateTime: DateTime(2022, 1, 1),
+        equipmentWeight: 100,
+        platesWeight: 0,
+        repetitions: 5,
+      ));
+
+      final result = await inMemoryExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: '1',
+              firstSetWeight: 60,
+              firstSetReps: 8,
+              excludeDate: DateTime(2023, 1, 1));
+
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+    });
+
+    test('ignores a non-first set that happens to match', () async {
+      final exerciseTemplate = ExerciseTemplate(
+          id: '1',
+          name: 'Bench Press',
+          muscleGroup: MuscleGroup.chest,
+          repetitionsRangeTarget: RepetitionsRange.medium);
+      await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+      final sessionDate = DateTime(2022, 1, 1);
+
+      // First set is 45kg x 10, not a match for the 65kg x 8 we're searching.
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        dateTime: sessionDate,
+        equipmentWeight: 25,
+        platesWeight: 20,
+        repetitions: 10,
+      ));
+      // Second set happens to be 65kg x 8, but it isn't the session's first set.
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: '2',
+        exerciseTemplateId: '1',
+        dateTime: sessionDate.add(const Duration(minutes: 2)),
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 8,
+      ));
+
+      final result = await inMemoryExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: '1',
+              firstSetWeight: 65,
+              firstSetReps: 8,
+              excludeDate: DateTime(2023, 1, 1));
+
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+    });
+
+    test('excludes the given date even if it would otherwise be the best match', () async {
+      final exerciseTemplate = ExerciseTemplate(
+          id: '1',
+          name: 'Bench Press',
+          muscleGroup: MuscleGroup.chest,
+          repetitionsRangeTarget: RepetitionsRange.medium);
+      await inMemoryExerciseRepository.addExercise(exerciseTemplate);
+
+      final excludedDate = DateTime(2023, 1, 1);
+
+      await inMemoryExerciseSetRepository.addExercise(ExerciseSet(
+        id: '1',
+        exerciseTemplateId: '1',
+        dateTime: excludedDate,
+        equipmentWeight: 45,
+        platesWeight: 20,
+        repetitions: 8,
+      ));
+
+      final result = await inMemoryExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: '1',
+              firstSetWeight: 65,
+              firstSetReps: 8,
+              excludeDate: excludedDate);
+
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+    });
+
+    test('returns empty list when no sets exist for the template', () async {
+      final result = await inMemoryExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: '1',
+              firstSetWeight: 65,
+              firstSetReps: 8,
+              excludeDate: DateTime(2023, 1, 1));
+
+      expect(result, isA<Ok<List<ExerciseSetPresentation>>>());
+      expect((result as Ok<List<ExerciseSetPresentation>>).value, isEmpty);
+    });
+  });
 }

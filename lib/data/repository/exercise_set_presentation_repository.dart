@@ -14,4 +14,16 @@ abstract class ExerciseSetPresentationRepository {
   Future<Result<Map<String, DateTime>>> getMostRecentCompletionDate(List<String> templateIds);
   Future<Result<DateTime?>> getStrictMostRecentRoutineCompletionDate(List<String> templateIds);
   Future<Result<List<ExerciseSetPresentation>>> getExerciseSetsByDateAndTemplates(Map<String, DateTime> templateDates);
+
+  /// The sets, in session order, of the best all-time historical session for
+  /// [exerciseTemplateId] whose first set matches [firstSetWeight]
+  /// (equipment + plates) and [firstSetReps] — "best" meaning highest total
+  /// volume — among sessions other than [excludeDate]. Empty when no session
+  /// matches.
+  Future<Result<List<ExerciseSetPresentation>>> getBestMatchingHistoricalSession({
+    required String exerciseTemplateId,
+    required double firstSetWeight,
+    required int firstSetReps,
+    required DateTime excludeDate,
+  });
 }

@@ -53,6 +53,11 @@ class ExerciseSetsViewModel extends ChangeNotifier {
   final ExerciseSetPresentationRepository _exerciseSetPresentationRepository;
   final ExerciseTemplateRepository _exerciseTemplateRepository;
   Map<RankKey, int> _ranks = {};
+  final Map<RankKey, List<ExerciseSetPresentation>> _comparisonSessions = {};
+  // Not a Command: multiple groups can legitimately load concurrently, which
+  // a single shared Command's one `running` flag can't express — a second
+  // group's execute() would just no-op while the first is still in flight.
+  final Set<RankKey> _loadingComparisonSessions = {};
 
   late final Command0<List<ExerciseSetPresentation>> fetchExerciseSets;
   late final Command1<ExerciseSet, ExerciseSet> addExerciseSet;
@@ -90,6 +95,15 @@ class ExerciseSetsViewModel extends ChangeNotifier {
     return _ranks[RankKey(date, templateId)] ?? 1;
   }
 
+  /// The best matching historical session for a group (date + template), in
+  /// session order, once [loadComparisonSession] has loaded it. Null until
+  /// loaded (or if it failed to load); empty if no historical session
+  /// matched.
+  List<ExerciseSetPresentation>? getComparisonSession(
+      String date, String templateId) {
+    return _comparisonSessions[RankKey(date, templateId)];
+  }
+
   /// Calculate total volume for a list of exercise sets
   static double calculateTotalVolume(List<ExerciseSetPresentation> exercises) {
     return ExerciseRankingManager.calculateTotalVolume(exercises);
@@ -121,6 +135,9 @@ class ExerciseSetsViewModel extends ChangeNotifier {
           case Ok<Map<RankKey, int>>():
             _exerciseSets = windowResult.value;
             _ranks = ranksResult.value;
+            // The underlying data may have changed, so any previously loaded
+            // comparison sessions could now be stale.
+            _comparisonSessions.clear();
             return Result.ok(_exerciseSets);
           case Error():
             return Result.error(ranksResult.error);
@@ -278,6 +295,42 @@ class ExerciseSetsViewModel extends ChangeNotifier {
 
   List<ExerciseSet> _progressSetsGroup(List<ExerciseSetPresentation> sets, SessionProgressionAlgorithm algorithm) {
     return algorithm.determineFrom(sets).apply(sets);
+  }
+
+  /// Loads (and caches) the best matching historical session for the group
+  /// [firstSet] belongs to, keyed by that group's own date + template. A
+  /// call for an already-cached or already-loading group is a no-op, but
+  /// calls for different groups run independently and concurrently.
+  Future<void> loadComparisonSession(ExerciseSetPresentation firstSet) async {
+    final key = RankKey(_formatDate(firstSet.dateTime), firstSet.exerciseTemplateId);
+    if (_comparisonSessions.containsKey(key) ||
+        _loadingComparisonSessions.contains(key)) {
+      return;
+    }
+    _loadingComparisonSessions.add(key);
+
+    final result = await _exerciseSetPresentationRepository
+        .getBestMatchingHistoricalSession(
+      exerciseTemplateId: firstSet.exerciseTemplateId,
+      firstSetWeight: firstSet.totalWeight,
+      firstSetReps: firstSet.repetitions,
+      excludeDate: firstSet.dateTime,
+    );
+
+    _loadingComparisonSessions.remove(key);
+    switch (result) {
+      case Ok<List<ExerciseSetPresentation>>():
+        _comparisonSessions[key] = result.value;
+        notifyListeners();
+      case Error():
+        break;
+    }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}'
+        '-${dateTime.month.toString().padLeft(2, '0')}'
+        '-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
   Map<String, List<ExerciseSetPresentation>> _groupSetsByTemplate(

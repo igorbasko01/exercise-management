@@ -219,4 +219,70 @@ class InMemoryExerciseSetPresentationRepository
         return Result.error(result.error);
     }
   }
+
+  @override
+  Future<Result<List<ExerciseSetPresentation>>> getBestMatchingHistoricalSession({
+    required String exerciseTemplateId,
+    required double firstSetWeight,
+    required int firstSetReps,
+    required DateTime excludeDate,
+  }) async {
+    final result = await _exerciseSetRepository.getExercises();
+
+    switch (result) {
+      case Ok<List<ExerciseSet>>():
+        final excludeDateKey = _formatDate(excludeDate);
+
+        final byDate = <String, List<ExerciseSet>>{};
+        for (final set in result.value) {
+          if (set.exerciseTemplateId != exerciseTemplateId) continue;
+          byDate.putIfAbsent(_formatDate(set.dateTime), () => []).add(set);
+        }
+
+        String? bestDateKey;
+        double? bestVolume;
+        for (final entry in byDate.entries) {
+          if (entry.key == excludeDateKey) continue;
+
+          final sessionSets = _sortBySessionOrder(entry.value);
+          final firstSet = sessionSets.first;
+          if (firstSet.totalWeight != firstSetWeight ||
+              firstSet.repetitions != firstSetReps) {
+            continue;
+          }
+
+          final volume = sessionSets
+              .map((s) => s.totalWeight * s.repetitions)
+              .fold(0.0, (value, element) => value + element);
+
+          final isBetter = bestVolume == null ||
+              volume > bestVolume ||
+              (volume == bestVolume &&
+                  entry.key.compareTo(bestDateKey!) > 0);
+          if (isBetter) {
+            bestVolume = volume;
+            bestDateKey = entry.key;
+          }
+        }
+
+        if (bestDateKey == null) {
+          return Result.ok([]);
+        }
+
+        final bestSessionSets = _sortBySessionOrder(byDate[bestDateKey]!);
+        final presentations = await _processExerciseSets(bestSessionSets);
+        return Result.ok(presentations);
+      case Error():
+        return Result.error(result.error);
+    }
+  }
+
+  List<ExerciseSet> _sortBySessionOrder(List<ExerciseSet> sets) {
+    return List<ExerciseSet>.from(sets)
+      ..sort((a, b) {
+        final cmp = a.dateTime.compareTo(b.dateTime);
+        if (cmp != 0) return cmp;
+        return (a.id ?? '').compareTo(b.id ?? '');
+      });
+  }
 }

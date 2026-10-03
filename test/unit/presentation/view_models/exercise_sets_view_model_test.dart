@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:exercise_management/core/enums/muscle_group.dart';
 import 'package:exercise_management/core/enums/progression_type.dart';
@@ -826,6 +828,170 @@ void main() {
       await viewModel.fetchExerciseSets.execute();
 
       expect(viewModel.fetchExerciseSets.error, isTrue);
+    });
+  });
+
+  group('ExerciseSetsViewModel Historical Rep Comparison', () {
+    late MockExerciseSetRepository mockExerciseSetRepository;
+    late MockExerciseTemplateRepository mockExerciseTemplateRepository;
+    late MockExerciseSetPresentationRepository
+        mockExerciseSetPresentationRepository;
+    late ExerciseSetsViewModel viewModel;
+
+    final firstSet = ExerciseSetPresentation(
+      setId: '1',
+      exerciseTemplateId: '1',
+      repetitions: 8,
+      platesWeight: 20,
+      equipmentWeight: 45,
+      dateTime: DateTime(2023, 6, 1),
+      displayName: 'Bench Press',
+      repetitionsRange: RepetitionsRange.medium,
+    );
+
+    setUpAll(() {
+      registerFallbackValue(DateTime(2023, 1, 1));
+    });
+
+    setUp(() {
+      mockExerciseSetRepository = MockExerciseSetRepository();
+      mockExerciseTemplateRepository = MockExerciseTemplateRepository();
+      mockExerciseSetPresentationRepository =
+          MockExerciseSetPresentationRepository();
+      viewModel = ExerciseSetsViewModel(
+          exerciseSetRepository: mockExerciseSetRepository,
+          exerciseSetPresentationRepository:
+              mockExerciseSetPresentationRepository,
+          exerciseTemplateRepository: mockExerciseTemplateRepository);
+    });
+
+    test('getComparisonSession is null before loadComparisonSession runs',
+        () {
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isNull);
+    });
+
+    test('loadComparisonSession caches the matching session by date + template',
+        () async {
+      final historicalSet = firstSet.copyWith(
+          setId: const Value('old-1'), dateTime: DateTime(2022, 1, 1));
+
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '1',
+                  firstSetWeight: 65,
+                  firstSetReps: 8,
+                  excludeDate: firstSet.dateTime))
+          .thenAnswer((invocation) async => Result.ok([historicalSet]));
+
+      await viewModel.loadComparisonSession(firstSet);
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'),
+          equals([historicalSet]));
+    });
+
+    test('loadComparisonSession caches an empty list when nothing matches',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async => Result.ok([]));
+
+      await viewModel.loadComparisonSession(firstSet);
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isEmpty);
+    });
+
+    test('loadComparisonSession does not re-query an already-cached group',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) async => Result.ok([]));
+
+      await viewModel.loadComparisonSession(firstSet);
+      await viewModel.loadComparisonSession(firstSet);
+
+      verify(() => mockExerciseSetPresentationRepository
+          .getBestMatchingHistoricalSession(
+              exerciseTemplateId: any(named: 'exerciseTemplateId'),
+              firstSetWeight: any(named: 'firstSetWeight'),
+              firstSetReps: any(named: 'firstSetReps'),
+              excludeDate: any(named: 'excludeDate'))).called(1);
+    });
+
+    test('loadComparisonSession leaves the group uncached on a repository error',
+        () async {
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: any(named: 'exerciseTemplateId'),
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer(
+              (invocation) async => Result.error(ExerciseDatabaseException('boom')));
+
+      await viewModel.loadComparisonSession(firstSet);
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'), isNull);
+    });
+
+    test(
+        'loading two different groups concurrently does not drop either (regression for a shared single-flight bug)',
+        () async {
+      final otherFirstSet = ExerciseSetPresentation(
+        setId: '2',
+        exerciseTemplateId: '2',
+        repetitions: 10,
+        platesWeight: 10,
+        equipmentWeight: 10,
+        dateTime: DateTime(2023, 7, 1),
+        displayName: 'Squat',
+        repetitionsRange: RepetitionsRange.medium,
+      );
+      final historicalForFirst = firstSet.copyWith(setId: const Value('old-1'));
+      final historicalForOther =
+          otherFirstSet.copyWith(setId: const Value('old-2'));
+
+      final firstCompleter =
+          Completer<Result<List<ExerciseSetPresentation>>>();
+      final otherCompleter =
+          Completer<Result<List<ExerciseSetPresentation>>>();
+
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '1',
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) => firstCompleter.future);
+      when(() => mockExerciseSetPresentationRepository
+              .getBestMatchingHistoricalSession(
+                  exerciseTemplateId: '2',
+                  firstSetWeight: any(named: 'firstSetWeight'),
+                  firstSetReps: any(named: 'firstSetReps'),
+                  excludeDate: any(named: 'excludeDate')))
+          .thenAnswer((invocation) => otherCompleter.future);
+
+      // Start loading the first group, then — while it's still in flight —
+      // start loading a second, different group.
+      final firstLoad = viewModel.loadComparisonSession(firstSet);
+      final otherLoad = viewModel.loadComparisonSession(otherFirstSet);
+
+      otherCompleter.complete(Result.ok([historicalForOther]));
+      await otherLoad;
+      firstCompleter.complete(Result.ok([historicalForFirst]));
+      await firstLoad;
+
+      expect(viewModel.getComparisonSession('2023-06-01', '1'),
+          equals([historicalForFirst]));
+      expect(viewModel.getComparisonSession('2023-07-01', '2'),
+          equals([historicalForOther]));
     });
   });
 
