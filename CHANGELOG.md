@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/igorbasko01/exercise-management/compare/v1.6.0...v1.7.0) (2026-10-03)
+
+
+### Features
+
+* **timer:** web implementation of RestTimerNotificationService ([#90](https://github.com/igorbasko01/exercise-management/issues/90)) ([#103](https://github.com/igorbasko01/exercise-management/issues/103)) ([ba23ce3](https://github.com/igorbasko01/exercise-management/commit/ba23ce36cb18579759bb0236f558f068f36678de))
+
+
+### Bug Fixes
+
+* rank exercise sets against all-time history, not just the loaded window ([#83](https://github.com/igorbasko01/exercise-management/issues/83)) ([#100](https://github.com/igorbasko01/exercise-management/issues/100)) ([ff0eccf](https://github.com/igorbasko01/exercise-management/commit/ff0eccfd25d796f62e6eebff07c8fd687f5dff56))
+
 ## [1.6.0](https://github.com/igorbasko01/exercise-management/compare/v1.5.0...v1.6.0) (2026-09-07)
 
 
