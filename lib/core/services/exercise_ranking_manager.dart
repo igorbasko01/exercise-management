@@ -30,20 +30,14 @@ class VolumeEntry {
   VolumeEntry(this.key, this.volume);
 }
 
-/// Manages ranking of exercise groups by total volume
+/// Pure ranking calculations shared by callers that need to rank exercise
+/// groups by total volume without a database to do it in SQL (e.g. the
+/// in-memory repository, or a fallback when a SQL ranks query fails).
 class ExerciseRankingManager {
-  Map<RankKey, int> _ranks = {};
-
-  /// Get the rank for a specific exercise group
-  /// Returns 1 if the rank is not found (default/fallback)
-  int getRank(String date, String templateId) {
-    final key = RankKey(date, templateId);
-    return _ranks[key] ?? 1;
-  }
-
-  /// Calculate and update ranks for all exercise groups based on total volume
-  /// Ranks are calculated per exercise template, comparing sessions of the same exercise
-  void calculateRanks(List<ExerciseSetPresentation> allSets, String Function(DateTime) formatDate) {
+  /// Rank (1-based; ties share a rank, e.g. 1, 1, 3, 4, 4, 6...) of every
+  /// exercise group in [allSets], grouped by date (via [formatDate]) and
+  /// template, ranked within each template by total volume descending.
+  static Map<RankKey, int> calculateRanks(List<ExerciseSetPresentation> allSets, String Function(DateTime) formatDate) {
     // Group sets by date and template
     final groupedSets = <RankKey, List<ExerciseSetPresentation>>{};
     for (var set in allSets) {
@@ -67,20 +61,27 @@ class ExerciseRankingManager {
           .add(entry);
     }
 
-    // Assign ranks per template
-    final newRanks = <RankKey, int>{};
+    // Assign ranks per template, using standard competition ranking so that
+    // sessions tied on volume share the same rank (e.g. 1, 1, 3, 4, 4, 6...)
+    final ranks = <RankKey, int>{};
     for (var templateEntries in volumesByTemplate.values) {
       // Sort entries for this template by volume (descending)
       final sortedEntries = templateEntries.toList()
         ..sort((a, b) => b.volume.compareTo(a.volume));
-      
-      // Assign ranks within this template
+
+      int rank = 0;
+      double? previousVolume;
       for (var i = 0; i < sortedEntries.length; i++) {
-        newRanks[sortedEntries[i].key] = i + 1;
+        final entry = sortedEntries[i];
+        if (previousVolume == null || entry.volume < previousVolume) {
+          rank = i + 1;
+        }
+        ranks[entry.key] = rank;
+        previousVolume = entry.volume;
       }
     }
 
-    _ranks = newRanks;
+    return ranks;
   }
 
   /// Calculate total volume for a list of exercise sets

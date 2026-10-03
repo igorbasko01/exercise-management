@@ -17,6 +17,7 @@ import 'package:exercise_management/presentation/pages/settings_page.dart';
 import 'package:exercise_management/presentation/pages/rest_timer_page.dart';
 import 'package:exercise_management/core/services/export_sink.dart';
 import 'package:exercise_management/core/services/rest_timer_notification_service.dart';
+import 'package:exercise_management/core/services/rest_timer_notification_service_factory.dart';
 import 'package:exercise_management/presentation/view_models/exercise_programs_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_statistics_view_model.dart';
@@ -32,7 +33,6 @@ import 'package:path/path.dart';
 
 import 'data/database/exercise_database_creation.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:exercise_management/core/services/exercise_ranking_manager.dart';
 
 Future<String> getDatabasePath() async {
   final databasesPath = await getDatabasesPath();
@@ -43,7 +43,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   tz.initializeTimeZones();
-  final notificationService = LocalRestTimerNotificationService();
+  final notificationService = createRestTimerNotificationService();
   await notificationService.init();
   final exportSink = createExportSink();
 
@@ -78,13 +78,11 @@ void main() async {
           create: (context) => ExerciseTemplatesViewModel(
               exerciseTemplateRepository: context.read())
             ..fetchExerciseTemplates.execute()),
-      Provider(create: (context) => ExerciseRankingManager()),
       ChangeNotifierProvider(
           create: (context) => ExerciseSetsViewModel(
               exerciseSetRepository: context.read(),
               exerciseSetPresentationRepository: context.read(),
-              exerciseTemplateRepository: context.read(),
-              rankingManager: context.read())
+              exerciseTemplateRepository: context.read())
             ..preloadExercises.execute()),
       ChangeNotifierProvider(
           create: (context) => ExerciseStatisticsViewModel(
