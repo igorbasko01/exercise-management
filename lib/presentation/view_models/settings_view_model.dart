@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:exercise_management/core/csv_serializer.dart';
@@ -41,7 +42,7 @@ class SettingsViewModel extends ChangeNotifier {
   final String _sessionExercisesFileNamePrefix = 'session_exercises';
 
   late final Command0<String> exportDataCommand;
-  late final Command1<void, String> importDataCommand;
+  late final Command1<void, Uint8List> importDataCommand;
 
   void _onCommandExecuted() {
     notifyListeners();
@@ -161,15 +162,13 @@ class SettingsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Result<void>> _importData(String filePath) async {
-    // check if zip file exists
-    final zipFile = File(filePath);
-    if (!await zipFile.exists()) {
-      return Result.error(ImportException('File not found: $filePath'));
+  Future<Result<void>> _importData(Uint8List bytes) async {
+    if (bytes.isEmpty) {
+      return Result.error(
+          ImportException('Selected file is empty or unreadable.'));
     }
 
     try {
-      final bytes = await zipFile.readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
 
       List<ExerciseTemplate> templates = [];

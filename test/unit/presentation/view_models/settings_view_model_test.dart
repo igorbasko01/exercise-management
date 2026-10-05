@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:exercise_management/core/csv_serializer.dart';
@@ -101,7 +102,7 @@ void main() {
         return Result.ok(dummySet);
       });
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Ok<void>>());
       verify(() => mockProgramRepository.clearAll()).called(1);
@@ -138,7 +139,7 @@ void main() {
         return Result.ok(dummyProgram);
       });
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Ok<void>>());
       verify(() => mockProgramRepository.clearAll()).called(1);
@@ -149,10 +150,8 @@ void main() {
       verify(() => mockProgramRepository.addProgram(any())).called(1);
     });
 
-    test('should return error when zip file does not exist', () async {
-      final nonExistentFilePath = path.join(tempDir.path, 'non_existent.zip');
-
-      await viewModel.importDataCommand.execute(nonExistentFilePath);
+    test('should return error when the selected file has no bytes', () async {
+      await viewModel.importDataCommand.execute(Uint8List(0));
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verifyNever(() => mockProgramRepository.clearAll());
@@ -167,7 +166,8 @@ void main() {
       final invalidZipFile = File(path.join(tempDir.path, 'invalid.zip'));
       await invalidZipFile.writeAsString('This is not a valid zip file');
 
-      await viewModel.importDataCommand.execute(invalidZipFile.path);
+      await viewModel.importDataCommand
+          .execute(await invalidZipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verifyNever(() => mockProgramRepository.clearAll());
@@ -194,7 +194,7 @@ void main() {
             ExerciseDatabaseException('Failed to clear templates'));
       });
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verify(() => mockProgramRepository.clearAll()).called(1);
@@ -220,7 +220,7 @@ void main() {
         return Result.error(ExerciseDatabaseException('Failed to clear sets'));
       });
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verify(() => mockProgramRepository.clearAll()).called(1);
@@ -240,7 +240,7 @@ void main() {
             ExerciseDatabaseException('Failed to clear programs'));
       });
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verify(() => mockProgramRepository.clearAll()).called(1);
@@ -254,7 +254,7 @@ void main() {
     test('should return error when template has invalid enum value', () async {
       final zipFile = await _createInvalidEnumZipFile(tempDir);
 
-      await viewModel.importDataCommand.execute(zipFile.path);
+      await viewModel.importDataCommand.execute(await zipFile.readAsBytes());
 
       expect(viewModel.importDataCommand.result, isA<Error<void>>());
       verifyNever(() => mockProgramRepository.clearAll());
