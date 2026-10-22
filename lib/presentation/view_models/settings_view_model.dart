@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:exercise_management/core/csv_serializer.dart';
-import 'package:path/path.dart' as path;
 import 'package:exercise_management/core/base_exception.dart';
 import 'package:exercise_management/core/command.dart';
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/backup_file_sink.dart';
 import 'package:exercise_management/data/models/exercise_program.dart';
 import 'package:exercise_management/data/models/exercise_program_session.dart';
 import 'package:exercise_management/data/models/exercise_set.dart';
@@ -15,24 +15,28 @@ import 'package:exercise_management/data/repository/exercise_set_repository.dart
 import 'package:exercise_management/data/repository/exercise_template_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   SettingsViewModel({
     required ExerciseTemplateRepository templatesRepository,
     required ExerciseSetRepository setsRepository,
     required ExerciseProgramRepository programsRepository,
+    required BackupFileSink backupFileSink,
   })  : _templatesRepository = templatesRepository,
         _setsRepository = setsRepository,
-        _programsRepository = programsRepository {
+        _programsRepository = programsRepository,
+        _backupFileSink = backupFileSink {
     exportDataCommand = Command0(_exportAndStoreData)
       ..addListener(_onCommandExecuted);
     importDataCommand = Command1(_importData)..addListener(_onCommandExecuted);
+    shareExportCommand = Command1(_shareExport)
+      ..addListener(_onCommandExecuted);
   }
 
   final ExerciseTemplateRepository _templatesRepository;
   final ExerciseSetRepository _setsRepository;
   final ExerciseProgramRepository _programsRepository;
+  final BackupFileSink _backupFileSink;
 
   final String _templatesFileNamePrefix = 'exercise_templates';
   final String _setsFileNamePrefix = 'exercise_sets';
@@ -40,30 +44,48 @@ class SettingsViewModel extends ChangeNotifier {
   final String _programSessionsFileNamePrefix = 'exercise_program_sessions';
   final String _sessionExercisesFileNamePrefix = 'session_exercises';
 
-  late final Command0<String> exportDataCommand;
+  late final Command0<SavedBackup> exportDataCommand;
   late final Command1<void, String> importDataCommand;
+  late final Command1<void, SavedBackup> shareExportCommand;
+
+  bool get canShareExport => _backupFileSink.canShare;
 
   void _onCommandExecuted() {
     notifyListeners();
   }
 
-  Future<Result<String>> _exportAndStoreData() async {
+  @override
+  void dispose() {
+    exportDataCommand
+      ..removeListener(_onCommandExecuted)
+      ..dispose();
+    importDataCommand
+      ..removeListener(_onCommandExecuted)
+      ..dispose();
+    shareExportCommand
+      ..removeListener(_onCommandExecuted)
+      ..dispose();
+    super.dispose();
+  }
+
+  Future<Result<SavedBackup>> _exportAndStoreData() async {
     try {
       final exportResult = await _exportData();
       if (exportResult is Error) {
-        return exportResult;
+        return Result.error((exportResult as Error).error);
       }
 
-      final tempFilePath = (exportResult as Ok).value;
+      final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
+      final fileName = 'exercise_data_export_$timestamp.zip';
+      final bytes = (exportResult as Ok<List<int>>).value;
 
-      final storeResult = await _storeInDownloads(tempFilePath);
-      return storeResult;
+      return await _storeBackup(fileName, bytes);
     } catch (e) {
       return Result.error(ExportException(e.toString()));
     }
   }
 
-  Future<Result<String>> _exportData() async {
+  Future<Result<List<int>>> _exportData() async {
     final templatesResult = await _templatesRepository.getExercises();
     final setsResult = await _setsRepository.getExercises();
     final programsResult = await _programsRepository.getPrograms();
@@ -90,86 +112,49 @@ class SettingsViewModel extends ChangeNotifier {
     final sessionsCSV = _createProgramSessionsCSV(programs);
     final sessionExercisesCSV = _createSessionExercisesCSV(programs);
 
-    final tempDir = await getTemporaryDirectory();
-    final timestamp = DateFormat("yyyyMMddHHmmss").format(DateTime.now());
-
-    final templatesFile =
-        File('${tempDir.path}/${_templatesFileNamePrefix}_$timestamp.csv');
-    final setsFile =
-        File('${tempDir.path}/${_setsFileNamePrefix}_$timestamp.csv');
-    final programsFile =
-        File('${tempDir.path}/${_programsFileNamePrefix}_$timestamp.csv');
-    final sessionsFile =
-        File('${tempDir.path}/${_programSessionsFileNamePrefix}_$timestamp.csv');
-    final sessionExercisesFile =
-        File('${tempDir.path}/${_sessionExercisesFileNamePrefix}_$timestamp.csv');
-
-    await templatesFile.writeAsString(templatesCSV);
-    await setsFile.writeAsString(setsCSV);
-    await programsFile.writeAsString(programsCSV);
-    await sessionsFile.writeAsString(sessionsCSV);
-    await sessionExercisesFile.writeAsString(sessionExercisesCSV);
-
     final archive = Archive();
-    archive.addFile(ArchiveFile('$_templatesFileNamePrefix.csv',
-        templatesFile.lengthSync(), templatesFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_setsFileNamePrefix.csv',
-        setsFile.lengthSync(), setsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_programsFileNamePrefix.csv',
-        programsFile.lengthSync(), programsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_programSessionsFileNamePrefix.csv',
-        sessionsFile.lengthSync(), sessionsFile.readAsBytesSync()));
-    archive.addFile(ArchiveFile('$_sessionExercisesFileNamePrefix.csv',
-        sessionExercisesFile.lengthSync(),
-        sessionExercisesFile.readAsBytesSync()));
+    _addCsvToArchive(archive, _templatesFileNamePrefix, templatesCSV);
+    _addCsvToArchive(archive, _setsFileNamePrefix, setsCSV);
+    _addCsvToArchive(archive, _programsFileNamePrefix, programsCSV);
+    _addCsvToArchive(archive, _programSessionsFileNamePrefix, sessionsCSV);
+    _addCsvToArchive(
+        archive, _sessionExercisesFileNamePrefix, sessionExercisesCSV);
 
-    final zipFile = File('${tempDir.path}/exercise_data_export_$timestamp.zip');
-    await zipFile.writeAsBytes(ZipEncoder().encode(archive));
-
-    await templatesFile.delete();
-    await setsFile.delete();
-    await programsFile.delete();
-    await sessionsFile.delete();
-    await sessionExercisesFile.delete();
-
-    return Result.ok(zipFile.path);
+    return Result.ok(ZipEncoder().encode(archive));
   }
 
-  Future<Result<String>> _storeInDownloads(String filePath) async {
+  void _addCsvToArchive(Archive archive, String fileNamePrefix, String csv) {
+    final bytes = utf8.encode(csv);
+    archive.addFile(ArchiveFile('$fileNamePrefix.csv', bytes.length, bytes));
+  }
+
+  Future<Result<SavedBackup>> _storeBackup(
+      String fileName, List<int> bytes) async {
     try {
-      final downloadsDir = await _getDownloadsDirectory();
-      final fileName = path.basename(filePath);
-      final downloadPath = path.join(downloadsDir.path, fileName);
-
-      final originalFile = File(filePath);
-      await originalFile.copy(downloadPath);
-
-      return Result.ok(downloadPath);
+      return Result.ok(await _backupFileSink.save(fileName, bytes));
     } catch (e) {
       return Result.error(ExportException('Error saving file: $e'));
     }
   }
 
-  Future<Directory> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      return Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      return await getApplicationDocumentsDirectory();
-    } else {
-      return await getDownloadsDirectory() ??
-          await getApplicationDocumentsDirectory();
+  Future<Result<void>> _shareExport(SavedBackup backup) async {
+    try {
+      await _backupFileSink.share(backup);
+      return Result.ok(null);
+    } catch (e) {
+      return Result.error(ExportException('Error sharing file: $e'));
     }
   }
 
   Future<Result<void>> _importData(String filePath) async {
-    // check if zip file exists
-    final zipFile = File(filePath);
-    if (!await zipFile.exists()) {
-      return Result.error(ImportException('File not found: $filePath'));
+    final List<int> bytes;
+    try {
+      bytes = await _backupFileSink.readBytes(filePath);
+    } catch (e) {
+      return Result.error(ImportException('Could not read $filePath: $e'));
     }
 
     try {
-      final bytes = await zipFile.readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
 
       List<ExerciseTemplate> templates = [];

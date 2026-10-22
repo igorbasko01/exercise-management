@@ -1,13 +1,12 @@
 import 'package:exercise_management/core/result.dart';
+import 'package:exercise_management/core/services/backup_file_sink.dart';
 import 'package:exercise_management/presentation/pages/exercise_programs_page.dart';
 import 'package:exercise_management/presentation/view_models/exercise_sets_view_model.dart';
 import 'package:exercise_management/presentation/view_models/exercise_templates_view_model.dart';
 import 'package:exercise_management/presentation/view_models/settings_view_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -48,7 +47,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } else if (!command.running && _isExportDialogShowing) {
       _isExportDialogShowing = false;
       Navigator.of(context).pop();
-      _handleExportResult(command.result as Result<String>?);
+      _handleExportResult(command.result as Result<SavedBackup>?);
     }
   }
 
@@ -89,34 +88,33 @@ class _SettingsPageState extends State<SettingsPage> {
             ])));
   }
 
-  void _handleExportResult(Result<String>? result) {
+  void _handleExportResult(Result<SavedBackup>? result) {
     if (result == null) return;
 
-    if (result is Ok<String>) {
-      final filePath = (result as Ok).value;
-      final folder = path.dirname(filePath);
+    if (result is Ok<SavedBackup>) {
+      final backup = result.value;
+      final viewModel = context.read<SettingsViewModel>();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Data exported successfully to $folder folder.'),
-          action: SnackBarAction(
-            label: 'Share',
-            onPressed: () => _shareFile(filePath),
-          )));
+          content: Text('Data exported successfully to ${backup.location}.'),
+          action: viewModel.canShareExport
+              ? SnackBarAction(
+                  label: 'Share',
+                  onPressed: () => _shareBackup(backup),
+                )
+              : null));
     } else if (result is Error) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error exporting data: ${(result as Error).error}')));
     }
   }
 
-  Future<void> _shareFile(String filePath) async {
-    try {
-      await SharePlus.instance.share(ShareParams(
-          files: [XFile(filePath)],
-          text: 'Here is my exercise data backup file.'));
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error sharing file: $e')));
-      }
+  Future<void> _shareBackup(SavedBackup backup) async {
+    final command = context.read<SettingsViewModel>().shareExportCommand;
+    await command.execute(backup);
+    final result = command.result;
+    if (mounted && result is Error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sharing file: ${result.error}')));
     }
   }
 
