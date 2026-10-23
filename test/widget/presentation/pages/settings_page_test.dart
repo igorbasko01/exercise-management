@@ -80,4 +80,17 @@ void main() {
         findsOneWidget);
     expect(find.text('Share'), findsNothing);
   });
+
+  testWidgets('a failed share shows the error once', (tester) async {
+    when(() => viewModel.canShareExport).thenReturn(true);
+    when(() => viewModel.shareExportCommand).thenReturn(Command1(
+        (SavedBackup _) async =>
+            Result.error(ExportException('Error sharing file: boom'))));
+
+    await exportData(tester);
+    await tester.tap(find.text('Share'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Error sharing file: boom'), findsOneWidget);
+  });
 }

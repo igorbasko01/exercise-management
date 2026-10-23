@@ -19,7 +19,7 @@ class WebBackupFileSink implements BackupFileSink {
   @override
   Future<SavedBackup> save(String fileName, List<int> bytes) async {
     final blob = web.Blob(
-      [Uint8List.fromList(bytes).toJS].toJS,
+      [(bytes is Uint8List ? bytes : Uint8List.fromList(bytes)).toJS].toJS,
       web.BlobPropertyBag(type: 'application/zip'),
     );
     final url = web.URL.createObjectURL(blob);

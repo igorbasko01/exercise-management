@@ -93,10 +93,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (result is Ok<SavedBackup>) {
       final backup = result.value;
-      final viewModel = context.read<SettingsViewModel>();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Data exported successfully to ${backup.location}.'),
-          action: viewModel.canShareExport
+          action: _settingsViewModel.canShareExport
               ? SnackBarAction(
                   label: 'Share',
                   onPressed: () => _shareBackup(backup),
@@ -109,12 +108,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _shareBackup(SavedBackup backup) async {
-    final command = context.read<SettingsViewModel>().shareExportCommand;
+    final command = _settingsViewModel.shareExportCommand;
     await command.execute(backup);
     final result = command.result;
     if (mounted && result is Error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sharing file: ${result.error}')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(result.error.message)));
     }
   }
 
